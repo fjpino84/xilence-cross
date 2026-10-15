@@ -214,7 +214,10 @@ class TitleScene {
         size: 62, colors: ['#ffffff', COLORS.YELLOW, '#d06000'], glow: '#ffb000', glowBlur: 20, rim: '#4a2400', tracking: 3,
       });
     }
-    Draw.text(ctx, 'ENTER empezar · WASD/flechas mover · Espacio saltar · J golpe · K rayo (mantén) · L súper · Shift bloquear', x, 520, {
+    const hint = TouchControls.enabled
+      ? 'Toca la pantalla para empezar · joystick a la izquierda · botones a la derecha (mantén RAYO para cargar)'
+      : 'ENTER empezar · WASD/flechas mover · Espacio saltar · J golpe · K rayo (mantén) · L súper · Shift bloquear';
+    Draw.text(ctx, hint, x, 520, {
       size: 13, color: '#b79bff', strokeWidth: 3,
     });
   }

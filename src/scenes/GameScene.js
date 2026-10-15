@@ -51,6 +51,11 @@ class GameScene {
     this.level.spawnPatrols((x, y, aggressive) => this.spawnEnemy(x, y, aggressive));
   }
 
+  // Los controles táctiles solo se muestran mientras se juega
+  usesTouchControls() {
+    return !this.finale && !this.finished;
+  }
+
   exit() {
     this.game.modal.hide();
     this.game.audio.duckMusic(false); // por si se sale desde la pausa
@@ -983,7 +988,7 @@ class GameScene {
   updateAmbient(dt) {
     const type = this.level.config.ambient;
     if (type) {
-      this.ambientBudget += GameScene.AMBIENT_RATES[type] * dt;
+      this.ambientBudget += GameScene.AMBIENT_RATES[type] * dt * (FX.low ? 0.4 : 1);
       while (this.ambientBudget >= 1) {
         this.ambientBudget -= 1;
         this.spawnAmbient(type);

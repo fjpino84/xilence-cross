@@ -8,6 +8,8 @@ class ParticleSystem {
   }
 
   add(particle) {
+    // En efectos reducidos se descarta la mitad de las partículas pequeñas (los anillos se conservan)
+    if (FX.low && particle.type !== 'ring' && Math.random() < 0.5) return;
     if (this.items.length >= ParticleSystem.MAX) this.items.shift();
     this.items.push({
       vx: 0, vy: 0, gravity: 0, drag: 0,

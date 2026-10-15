@@ -2,7 +2,15 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#03030a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Xilence Cross">
+  <link rel="icon" href="assets/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icon-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
   <title>Xilence Cross</title>
   <style>
     :root {
@@ -48,6 +56,151 @@
       height: 1px;
       overflow: hidden;
       clip: rect(0 0 0 0);
+    }
+
+    /* ---------------------------------------------------------------- Controles táctiles (teléfono y tableta) */
+    html, body { overscroll-behavior: none; }
+
+    body.touch {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100dvh;
+      min-height: 0;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body.touch .game-shell { width: min(100vw, calc(100dvh * 16 / 9)); }
+
+    /* La capa ocupa toda la pantalla (los controles se apoyan en los bordes, también sobre las franjas negras) */
+    .touch-layer { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
+    #modal-root { z-index: 20; }
+
+    .touch-layer button, .touch-stick-zone { pointer-events: auto; touch-action: none; }
+
+    .touch-stick-zone {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 46vw;
+      height: 78vh;
+    }
+
+    .touch-stick-base {
+      position: absolute;
+      left: calc(8vh + env(safe-area-inset-left, 0px));
+      bottom: calc(8vh + env(safe-area-inset-bottom, 0px));
+      width: 27vh;
+      height: 27vh;
+      border-radius: 50%;
+      border: 0.7vh solid rgba(0, 245, 255, 0.55);
+      background: radial-gradient(circle, rgba(0, 245, 255, 0.10), rgba(3, 3, 10, 0.45));
+      box-shadow: 0 0 2vh rgba(0, 245, 255, 0.35), inset 0 0 2vh rgba(0, 0, 0, 0.6);
+      opacity: 0.8;
+      transition: opacity 0.15s;
+    }
+
+    .touch-stick-base.active { opacity: 1; border-color: var(--cyan); }
+
+    .touch-stick-knob {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 11vh;
+      height: 11vh;
+      margin: -5.5vh 0 0 -5.5vh;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #ffffff, var(--cyan) 55%, #005e8a);
+      box-shadow: 0 0 1.6vh var(--cyan);
+    }
+
+    .touch-button {
+      position: absolute;
+      border-radius: 50%;
+      border: 0.7vh solid var(--cyan);
+      background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.22), rgba(3, 3, 10, 0.62));
+      color: #fff;
+      font-family: var(--font);
+      font-style: italic;
+      font-size: 3.1vh;
+      letter-spacing: 0.04em;
+      text-shadow: 0 0.3vh 0 #000, 0 0 1vh currentColor;
+      box-shadow: 0 0 1.8vh rgba(0, 245, 255, 0.4);
+      padding: 0;
+      opacity: 0.85;
+    }
+
+    .touch-button.touch-yellow { border-color: var(--yellow); color: var(--yellow); box-shadow: 0 0 1.8vh rgba(255, 230, 0, 0.45); font-size: 3.6vh; }
+    .touch-button.touch-purple { border-color: #b78cff; color: #d9c4ff; box-shadow: 0 0 1.8vh rgba(124, 58, 255, 0.55); }
+    .touch-button.touch-cyan { color: #aef9ff; }
+    .touch-button.touch-white { border-color: #cfd6e6; color: #e8edf8; box-shadow: 0 0 1.4vh rgba(255, 255, 255, 0.3); font-size: 2.7vh; }
+
+    .touch-button.pressed {
+      opacity: 1;
+      transform: scale(0.92);
+      background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6), rgba(0, 245, 255, 0.35));
+    }
+
+    .touch-system {
+      position: absolute;
+      top: calc(1.6vh + env(safe-area-inset-top, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 1.6vh;
+    }
+
+    .touch-small {
+      width: 7vh;
+      height: 7vh;
+      border-radius: 1.4vh;
+      border: 0.5vh solid rgba(255, 255, 255, 0.55);
+      background: rgba(3, 3, 10, 0.55);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 3.2vh;
+      padding: 0;
+      opacity: 0.8;
+    }
+
+    /* Aviso para girar el teléfono: el juego es panorámico */
+    .rotate-hint {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3vh;
+      background: var(--navy);
+      color: var(--cyan);
+      font-size: 7vw;
+      text-align: center;
+      text-shadow: 0 0 2vw var(--cyan);
+      pointer-events: auto;
+    }
+
+    .rotate-hint .phone {
+      width: 16vw;
+      height: 26vw;
+      border: 1vw solid var(--cyan);
+      border-radius: 3vw;
+      box-shadow: 0 0 3vw var(--cyan);
+      animation: rotate-phone 2.4s ease-in-out infinite;
+    }
+
+    @keyframes rotate-phone {
+      0%, 20% { transform: rotate(0deg); }
+      60%, 100% { transform: rotate(-90deg); }
+    }
+
+    @media (orientation: portrait) {
+      body.touch .rotate-hint { display: flex; }
     }
 
     /* Modal con el estilo visual del juego */
@@ -144,35 +297,36 @@
   </main>
 
   <!-- Orden de carga: configuración → motor → entidades → niveles → UI → escenas → arranque -->
-  <script src="src/config.js?v=18"></script>
-  <script src="src/engine/Draw.js?v=18"></script>
-  <script src="src/engine/Assets.js?v=18"></script>
-  <script src="src/engine/Sprite.js?v=18"></script>
-  <script src="src/engine/ParticleSystem.js?v=18"></script>
-  <script src="src/engine/AudioManager.js?v=18"></script>
-  <script src="src/engine/InputManager.js?v=18"></script>
-  <script src="src/engine/Camera.js?v=18"></script>
-  <script src="src/engine/Collision.js?v=18"></script>
-  <script src="src/engine/SceneManager.js?v=18"></script>
-  <script src="src/engine/Game.js?v=18"></script>
-  <script src="src/entities/Entity.js?v=18"></script>
-  <script src="src/entities/Player.js?v=18"></script>
-  <script src="src/entities/Trino.js?v=18"></script>
-  <script src="src/entities/VoidharFinale.js?v=18"></script>
-  <script src="src/entities/enemies/Enemy.js?v=18"></script>
-  <script src="src/entities/enemies/Silenciador.js?v=18"></script>
-  <script src="src/levels/PuddleData.js?v=18"></script>
-  <script src="src/levels/Level.js?v=18"></script>
-  <script src="src/levels/Level01.js?v=18"></script>
-  <script src="src/levels/Level02.js?v=18"></script>
-  <script src="src/levels/Level04.js?v=18"></script>
-  <script src="src/levels/Level07.js?v=18"></script>
-  <script src="src/ui/HUD.js?v=18"></script>
-  <script src="src/ui/Modal.js?v=18"></script>
-  <script src="src/scenes/TitleScene.js?v=18"></script>
-  <script src="src/scenes/GameScene.js?v=18"></script>
-  <script src="src/scenes/GameOverScene.js?v=18"></script>
-  <script src="src/scenes/EndingScene.js?v=18"></script>
-  <script src="src/main.js?v=18"></script>
+  <script src="src/config.js?v=21"></script>
+  <script src="src/engine/Draw.js?v=21"></script>
+  <script src="src/engine/Assets.js?v=21"></script>
+  <script src="src/engine/Sprite.js?v=21"></script>
+  <script src="src/engine/ParticleSystem.js?v=21"></script>
+  <script src="src/engine/AudioManager.js?v=21"></script>
+  <script src="src/engine/InputManager.js?v=21"></script>
+  <script src="src/engine/TouchControls.js?v=21"></script>
+  <script src="src/engine/Camera.js?v=21"></script>
+  <script src="src/engine/Collision.js?v=21"></script>
+  <script src="src/engine/SceneManager.js?v=21"></script>
+  <script src="src/engine/Game.js?v=21"></script>
+  <script src="src/entities/Entity.js?v=21"></script>
+  <script src="src/entities/Player.js?v=21"></script>
+  <script src="src/entities/Trino.js?v=21"></script>
+  <script src="src/entities/VoidharFinale.js?v=21"></script>
+  <script src="src/entities/enemies/Enemy.js?v=21"></script>
+  <script src="src/entities/enemies/Silenciador.js?v=21"></script>
+  <script src="src/levels/PuddleData.js?v=21"></script>
+  <script src="src/levels/Level.js?v=21"></script>
+  <script src="src/levels/Level01.js?v=21"></script>
+  <script src="src/levels/Level02.js?v=21"></script>
+  <script src="src/levels/Level04.js?v=21"></script>
+  <script src="src/levels/Level07.js?v=21"></script>
+  <script src="src/ui/HUD.js?v=21"></script>
+  <script src="src/ui/Modal.js?v=21"></script>
+  <script src="src/scenes/TitleScene.js?v=21"></script>
+  <script src="src/scenes/GameScene.js?v=21"></script>
+  <script src="src/scenes/GameOverScene.js?v=21"></script>
+  <script src="src/scenes/EndingScene.js?v=21"></script>
+  <script src="src/main.js?v=21"></script>
 </body>
 </html>

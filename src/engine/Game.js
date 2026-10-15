@@ -7,6 +7,8 @@ class Game {
     this.audio = new AudioManager();
     this.modal = new Modal(modalRoot);
     this.scenes = new SceneManager();
+    this.touch = new TouchControls(this.input, document.body);
+    this.slowFrames = 0;
     this.lastTimestamp = 0;
     this.accumulator = 0;
 
@@ -17,6 +19,25 @@ class Game {
     const unlock = () => this.audio.unlock();
     window.addEventListener('keydown', unlock);
     window.addEventListener('pointerdown', unlock);
+    // Safari en iPhone solo permite sonido tras soltar el dedo (touchend) o un clic
+    window.addEventListener('touchend', unlock, { passive: true });
+    window.addEventListener('click', unlock);
+    if (FX.low) this.enableLowFx();
+  }
+
+  // Efectos reducidos: sin resplandores (shadowBlur es lo más caro en el canvas), menos partículas y menos lluvia
+  enableLowFx() {
+    FX.low = true;
+    Object.defineProperty(this.ctx, 'shadowBlur', { get: () => 0, set: () => {}, configurable: true });
+    console.info('Efectos reducidos activados');
+  }
+
+  // Si el dispositivo no mantiene ~40 fps durante un buen rato, pasa solo al modo de efectos reducidos
+  watchPerformance(frameSeconds) {
+    if (FX.low || document.hidden || !(this.scenes.current instanceof GameScene)) return;
+    if (frameSeconds > 0.026) this.slowFrames += 1;
+    else this.slowFrames = Math.max(0, this.slowFrames - 2);
+    if (this.slowFrames > 90) this.enableLowFx();
   }
 
   start() {
@@ -38,6 +59,7 @@ class Game {
 
   loop(timestamp) {
     // Limita dt para no acumular pasos tras cambiar de pestaña
+    this.watchPerformance((timestamp - this.lastTimestamp) / 1000);
     const frameTime = Math.min((timestamp - this.lastTimestamp) / 1000, 0.1);
     this.lastTimestamp = timestamp;
     this.accumulator += frameTime;
@@ -51,6 +73,8 @@ class Game {
 
     this.scenes.render(this.ctx);
     this.renderAudioStatus();
+    const scene = this.scenes.current;
+    this.touch.setVisible(!!(scene && scene.usesTouchControls && scene.usesTouchControls()) && !this.modal.isOpen);
     requestAnimationFrame((next) => this.loop(next));
   }
 }

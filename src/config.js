@@ -3,6 +3,9 @@ const frameAssets = (key, folder, name, count) => Object.fromEntries(
   Array.from({ length: count }, (_, i) => [`${key}${i + 1}`, `assets/sprites/${folder}/${name}_${i + 1}.png`]),
 );
 
+// Calidad de efectos: se activa sola en dispositivos lentos, o con ?fx=low en la dirección
+const FX = { low: typeof window !== 'undefined' && !!window.location && /[?&]fx=low/.test(window.location.search || '') };
+
 // Constantes globales del juego. Un único lugar para ajustar el balance y la paleta.
 const CONFIG = Object.freeze({
   WIDTH: 960,

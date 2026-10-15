@@ -129,87 +129,129 @@ class HUD {
   }
 
   // --- Barra de vida: metal, segmentos, brillo móvil y vida fantasma ---
+  // Las piezas estáticas (marco, relleno, muescas) se pintan una vez en lienzos pequeños y luego solo se copian:
+  // dibujarlas cada fotograma con recortes de trazado costaba ~40 ms sin aceleración gráfica (un solo trazo de muescas, 35 ms).
+  static BAR = { x: 112, y: 34, w: 310, h: 28, slant: 16, pad: 30 };
+
+  static barAssets(maxHp) {
+    if (HUD.barCache && HUD.barCache.maxHp === maxHp) return HUD.barCache;
+    const { w, h, slant, pad } = HUD.BAR;
+    const make = (draw) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = w + pad * 2;
+      canvas.height = h + pad * 2;
+      draw(canvas.getContext('2d'));
+      return canvas;
+    };
+    const fill = (colors) => make((c) => {
+      const gradient = c.createLinearGradient(0, pad, 0, pad + h);
+      colors.forEach((color, i) => gradient.addColorStop(i / 2, color));
+      Draw.parallelogram(c, pad, pad, w, h, slant);
+      c.fillStyle = gradient;
+      c.fill();
+      c.globalCompositeOperation = 'source-atop'; // el reflejo superior solo afecta al relleno
+      c.fillStyle = 'rgba(255, 255, 255, 0.28)';
+      c.fillRect(pad, pad, w, h * 0.32);
+    });
+
+    const shine = document.createElement('canvas');
+    shine.width = 50;
+    shine.height = h;
+    const sc = shine.getContext('2d');
+    const sg = sc.createLinearGradient(0, 0, 50, 0);
+    sg.addColorStop(0, 'rgba(255,255,255,0)');
+    sg.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+    sg.addColorStop(1, 'rgba(255,255,255,0)');
+    sc.fillStyle = sg;
+    sc.fillRect(0, 0, 50, h);
+
+    HUD.barCache = {
+      maxHp,
+      frame: make((c) => {
+        Draw.parallelogram(c, pad - 5, pad - 5, w + 10, h + 10, slant);
+        c.fillStyle = '#000';
+        c.fill();
+        Draw.parallelogram(c, pad - 3, pad - 3, w + 6, h + 6, slant);
+        c.fillStyle = Draw.metal(c, pad - 3, h + 6);
+        c.fill();
+        Draw.parallelogram(c, pad, pad, w, h, slant);
+        c.fillStyle = '#07070f';
+        c.fill();
+      }),
+      glow: make((c) => {
+        c.shadowColor = CONFIG.COLORS.RED;
+        c.shadowBlur = 20;
+        Draw.parallelogram(c, pad - 5, pad - 5, w + 10, h + 10, slant);
+        c.fillStyle = '#000';
+        c.fill();
+      }),
+      ghost: make((c) => {
+        Draw.parallelogram(c, pad, pad, w, h, slant);
+        c.fillStyle = '#ffe9a8';
+        c.fill();
+      }),
+      fillNormal: fill(['#ffb066', '#ff2a2a', '#6a0010']),
+      fillLow: fill(['#ff7a7a', '#ff0030', '#5a0010']),
+      notches: make((c) => {
+        // Muescas cada 10 puntos de vida, inclinadas como la barra
+        c.strokeStyle = 'rgba(0, 0, 0, 0.55)';
+        c.lineWidth = 2;
+        c.beginPath();
+        const segments = maxHp / 10;
+        for (let i = 1; i < segments; i++) {
+          const sx = pad + (w * i) / segments;
+          c.moveTo(sx + slant, pad);
+          c.lineTo(sx, pad + h);
+        }
+        c.stroke();
+      }),
+      shine,
+    };
+    return HUD.barCache;
+  }
+
   renderHealth(ctx, player) {
-    const [x, y, w, h, slant] = [112, 34, 310, 28, 16];
+    const { x, y, w, h, pad } = HUD.BAR;
+    const assets = HUD.barAssets(player.maxHp);
     const ratio = Math.max(0, player.hp / player.maxHp);
     const low = ratio < 0.3 && player.isAlive;
     const beat = low ? 0.5 + 0.5 * Math.sin(this.time * 9) : 0;
+    const left = x - pad;
+    const top = y - pad;
 
     Draw.rock(ctx, 'ECO', x + 4, y - 7, {
       size: 27, colors: ['#ffffff', '#00f5ff', '#00608f'], glow: CONFIG.COLORS.CYAN, glowBlur: 10, rim: '#00323f',
     });
 
-    ctx.save();
-    // Marco exterior
+    // Con poca vida el marco late en rojo
     if (low) {
-      ctx.shadowColor = CONFIG.COLORS.RED;
-      ctx.shadowBlur = 8 + 14 * beat;
+      ctx.save();
+      ctx.globalAlpha *= 0.35 + 0.65 * beat;
+      ctx.drawImage(assets.glow, left, top);
+      ctx.restore();
     }
-    Draw.parallelogram(ctx, x - 5, y - 5, w + 10, h + 10, slant);
-    ctx.fillStyle = '#000';
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    Draw.parallelogram(ctx, x - 3, y - 3, w + 6, h + 6, slant);
-    ctx.fillStyle = Draw.metal(ctx, y - 3, h + 6);
-    ctx.fill();
-    Draw.parallelogram(ctx, x, y, w, h, slant);
-    ctx.fillStyle = '#07070f';
-    ctx.fill();
+    ctx.drawImage(assets.frame, left, top);
 
-    // Contenido recortado al interior
-    Draw.parallelogram(ctx, x, y, w, h, slant);
-    ctx.clip();
-
-    // Daño fantasma: el trozo recién perdido, blanco cálido
-    ctx.fillStyle = '#ffe9a8';
-    ctx.fillRect(x, y, w * this.ghostHp, h);
-
-    // Vida: degradado rojo-naranja con reflejo superior
+    // Un trozo de una textura: la barra se "recorta" por el ancho, sin recortes de trazado
+    const slice = (canvas, width) => {
+      if (width < 1) return;
+      const sliceWidth = Math.min(w + 2, width + 1);
+      ctx.drawImage(canvas, pad - 1, 0, sliceWidth, canvas.height, x - 1, top, sliceWidth, canvas.height);
+    };
+    slice(assets.ghost, w * this.ghostHp); // daño fantasma: el trozo recién perdido
     const fillW = w * ratio;
-    const gradient = ctx.createLinearGradient(0, y, 0, y + h);
-    if (low) {
-      gradient.addColorStop(0, '#ff7a7a');
-      gradient.addColorStop(0.5, '#ff0030');
-      gradient.addColorStop(1, '#5a0010');
-    } else {
-      gradient.addColorStop(0, '#ffb066');
-      gradient.addColorStop(0.5, '#ff2a2a');
-      gradient.addColorStop(1, '#6a0010');
-    }
-    ctx.fillStyle = gradient;
-    ctx.fillRect(x, y, fillW, h);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
-    ctx.fillRect(x, y, fillW, h * 0.32);
+    slice(low ? assets.fillLow : assets.fillNormal, fillW);
 
-    // Brillo diagonal que recorre la barra
+    // Brillo diagonal que recorre la barra, limitado a la parte llena
     const sweep = x - 60 + ((this.time * 120) % (w + 160));
-    const shine = ctx.createLinearGradient(sweep, 0, sweep + 50, 0);
-    shine.addColorStop(0, 'rgba(255,255,255,0)');
-    shine.addColorStop(0.5, 'rgba(255,255,255,0.35)');
-    shine.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(x, y, fillW, h);
-    ctx.clip();
-    ctx.fillStyle = shine;
-    ctx.fillRect(sweep, y, 50, h);
-    ctx.restore();
+    const from = Math.max(sweep, x);
+    const to = Math.min(sweep + 50, x + fillW);
+    if (to > from) ctx.drawImage(assets.shine, from - sweep, 0, to - from, h, from, y, to - from, h);
 
-    // Muescas de segmento (cada 10 puntos de vida), inclinadas como la barra
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
-    ctx.lineWidth = 2;
-    const segments = player.maxHp / 10;
-    for (let i = 1; i < segments; i++) {
-      const sx = x + (w * i) / segments;
-      ctx.beginPath();
-      ctx.moveTo(sx + slant, y);
-      ctx.lineTo(sx, y + h);
-      ctx.stroke();
-    }
-    ctx.restore();
+    ctx.drawImage(assets.notches, left, top);
 
     // Cifra de vida sobre la barra
-    Draw.rock(ctx, String(Math.ceil(player.hp)), x + w - slant - 8, y + h - 5, {
+    Draw.rock(ctx, String(Math.ceil(player.hp)), x + w - HUD.BAR.slant - 8, y + h - 5, {
       size: 20, align: 'right', colors: ['#ffffff', '#ffffff', '#c8c8d8'], outlineWidth: 4,
     });
   }
@@ -445,6 +487,7 @@ class HUD {
   }
 
   renderControlsHint(ctx) {
+    if (TouchControls.enabled) return; // en el teléfono los botones ya están a la vista
     if (this.time > HUD.CONTROLS_HINT_TIME) return;
     const fade = Math.min(1, (HUD.CONTROLS_HINT_TIME - this.time) / 1.5);
     ctx.save();

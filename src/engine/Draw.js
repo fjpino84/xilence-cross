@@ -37,9 +37,61 @@ const Draw = {
     ctx.strokeRect(x, y, w, h);
   },
 
+  // Caché de textos de rock: dibujar contorno triple + degradado + resplandor cada fotograma era lo más caro de toda la escena.
+  // Cada texto se pinta una vez en un lienzo pequeño y después solo se copia (~50 veces más barato).
+  rockCache: new Map(),
+  ROCK_CACHE_MAX: 220,
+
   // Texto de rock: cromado inclinado, con contorno grueso, sombra y brillo.
   // colors = [reflejo superior, color, color oscuro del horizonte]; rim = filete de color entre contorno y relleno.
   rock(ctx, str, x, y, options = {}) {
+    // Con zoom (banner que entra de golpe, título que late) el mapa de bits saldría borroso: se dibuja directo
+    const matrix = ctx.getTransform();
+    if (typeof document === 'undefined' || Math.abs(matrix.a - 1) > 0.12 || Math.abs(matrix.d - 1) > 0.12 || matrix.b || matrix.c) {
+      this.rockDirect(ctx, str, x, y, options);
+      return;
+    }
+    const {
+      size = 28, align = 'left', colors = ['#ffffff', '#ffe600', '#c46a00'], skew = 0.2,
+      glow = null, glowBlur = 14, tracking = 0, rim = null, alpha = 1, outlineWidth = size * 0.2,
+    } = options;
+    const qSize = Math.round(size / 2) * 2; // tamaños cercanos comparten imagen
+    const qGlow = glow ? Math.round(glowBlur / 6) * 6 : 0;
+    const key = [str, qSize, align, colors.join(), skew, glow, qGlow, tracking, rim, Math.round(outlineWidth)].join('|');
+    let entry = this.rockCache.get(key);
+    if (!entry) {
+      entry = this.buildRock(str, { ...options, size: qSize, glowBlur: qGlow || glowBlur, outlineWidth: outlineWidth * qSize / size });
+      this.rockCache.set(key, entry);
+      if (this.rockCache.size > this.ROCK_CACHE_MAX) this.rockCache.delete(this.rockCache.keys().next().value); // descarta el más antiguo
+    } else {
+      this.rockCache.delete(key); // lo reinserta al final: los más usados sobreviven
+      this.rockCache.set(key, entry);
+    }
+    ctx.save();
+    ctx.globalAlpha *= alpha;
+    ctx.drawImage(entry.canvas, x - entry.originX, y - entry.originY);
+    ctx.restore();
+  },
+
+  // Pinta un texto de rock en su propio lienzo, con margen para el contorno, la inclinación y el resplandor
+  buildRock(str, options) {
+    const { size, align = 'left', tracking = 0, skew = 0.2, glow = null, glowBlur = 14, outlineWidth = size * 0.2 } = options;
+    const probe = document.createElement('canvas').getContext('2d');
+    probe.font = size + 'px ' + CONFIG.FONT;
+    if ('letterSpacing' in probe) probe.letterSpacing = tracking + 'px';
+    const width = Math.ceil(probe.measureText(str).width);
+    const pad = Math.ceil(outlineWidth * 0.8 + size * 0.15 + (glow ? glowBlur * 1.6 : 0) + 4);
+    const slant = Math.ceil(skew * size);
+    const canvas = document.createElement('canvas');
+    canvas.width = width + pad * 2 + slant;
+    canvas.height = Math.ceil(size * 1.3) + pad * 2;
+    const originX = pad + (align === 'center' ? width / 2 : align === 'right' ? width : 0);
+    const originY = pad + Math.ceil(size * 0.95);
+    this.rockDirect(canvas.getContext('2d'), str, originX, originY, { ...options, alpha: 1 });
+    return { canvas, originX, originY };
+  },
+
+  rockDirect(ctx, str, x, y, options = {}) {
     const {
       size = 28, align = 'left', colors = ['#ffffff', '#ffe600', '#c46a00'], skew = 0.2,
       glow = null, glowBlur = 14, tracking = 0, rim = null, alpha = 1, outlineWidth = size * 0.2,

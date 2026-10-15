@@ -11,7 +11,16 @@ En un universo donde la música fue prohibida por el régimen de La Quietud, **E
 - **Online:** https://fjpino84.github.io/xilence-cross/
 - **En tu equipo:** descarga o clona el repositorio y abre `index.html` en Chrome o Edge. No necesita servidor ni instalación.
 
-El navegador no deja sonar nada hasta tu primera pulsación de tecla.
+El navegador no deja sonar nada hasta tu primera pulsación de tecla o toque.
+
+### En el teléfono o la tableta
+
+Se juega con controles táctiles: joystick flotante a la izquierda y botones a la derecha (GOLPE, SALTO, RAYO, SÚPER y BLOQ). Mantén **RAYO** para cargarlo y suéltalo para disparar; se pueden pulsar varios botones a la vez. Arriba, al centro, hay botones de pausa y de sonido.
+
+- **Gira el teléfono** en horizontal: el juego es panorámico.
+- **iPhone (Safari):** no permite pantalla completa en páginas web. Para jugar sin barras, toca *Compartir → Añadir a pantalla de inicio* y ábrelo desde ese icono.
+- **Android (Chrome):** el botón ⛶ activa la pantalla completa, o usa *Añadir a pantalla de inicio*.
+- Si el dispositivo va lento, el juego pasa solo a un modo de efectos reducidos. También puedes forzarlo con `?fx=low` al final de la dirección, y probar los controles táctiles en un ordenador con `?touch=1`.
 
 ## Controles
 
@@ -41,7 +50,7 @@ El navegador no deja sonar nada hasta tu primera pulsación de tecla.
 index.html          Página y estilos de los menús
 src/
   config.js         Constantes y lista de recursos
-  engine/           Bucle, entrada, cámara, partículas, audio, sprites
+  engine/           Bucle, entrada (teclado y táctil), cámara, partículas, audio, sprites
   entities/         ECO, Trino, enemigos, Vóidhar
   levels/           Nivel 1 (los niveles 2, 4 y 7 están aún sin activar)
   scenes/           Título, juego, fin de partida y cierre
