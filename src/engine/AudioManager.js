@@ -548,15 +548,24 @@ AudioManager.SOUNDS = {
   },
 
   // --- ECO: movimiento ---
+  // Golpe parado por el escudo: chasquido de cristal, resonancia de energía y golpe sordo
   block: (a) => {
-    a.noise({ type: 'highpass', from: 3500, to: 7000, duration: 0.05, volume: 0.28, attack: 0.001 });
-    a.clang({ base: 1100, duration: 0.3, volume: 0.14, wet: 0.15 });
-    a.tone({ from: 150, to: 66, duration: 0.1, volume: 0.34, attack: 0.001 });
+    a.noise({ type: 'highpass', from: 3500, to: 8000, duration: 0.06, volume: 0.34, attack: 0.001 });
+    a.clang({ base: 1500, duration: 0.55, volume: 0.2, wet: 0.35 });
+    a.tone({ type: 'sawtooth', from: 700, to: 260, duration: 0.2, volume: 0.1, shape: 'soft', lowpass: 3000, attack: 0.002 });
+    a.tone({ from: 150, to: 60, duration: 0.12, volume: 0.4, attack: 0.001 });
+    a.crackle({ duration: 0.22, rate: 60, volume: 0.09 });
   },
   hurt: (a) => {
     a.noise({ type: 'lowpass', from: 3400, to: 160, duration: 0.26, volume: 0.46, attack: 0.001 });
     a.tone({ from: 160, to: 40, duration: 0.24, volume: 0.6, attack: 0.001 });
     a.tone({ type: 'sawtooth', from: 480, to: 100, duration: 0.32, volume: 0.2, shape: 'hard', lowpass: 1700, attack: 0.002 });
+  },
+  // El escudo se activa: zumbido eléctrico ascendente con un tintineo
+  shieldOn: (a) => {
+    a.tone({ type: 'sawtooth', from: 180, to: 700, duration: 0.22, volume: 0.26, shape: 'soft', lowpass: 2600, attack: 0.02, wet: 0.2 });
+    a.tone({ type: 'sine', from: 900, to: 1800, duration: 0.18, volume: 0.15, attack: 0.01 });
+    a.crackle({ duration: 0.2, rate: 55, volume: 0.12 });
   },
   jump: (a) => {
     a.tone({ from: 220, to: 560, duration: 0.14, volume: 0.11, sweep: 'lin' });

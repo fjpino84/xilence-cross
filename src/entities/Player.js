@@ -4,8 +4,9 @@ class Player extends Entity {
   static SPEED = 220;
   static DEPTH_SPEED = 150; // movimiento vertical por el suelo (profundidad)
   static JUMP_VELOCITY = 640;
-  static BLOCK_DELAY = 0.12;
-  static BLOCK_REDUCTION = 0.2; // fracción del daño que pasa al bloquear
+  static BLOCK_DELAY = 0.08; // casi inmediato: el escudo protege en cuanto se pulsa
+  static BLOCK_REDUCTION = 0.15; // fracción del daño que pasa al bloquear
+  static BLOCK_GRACE = 0.3; // margen de invulnerabilidad tras parar un golpe (evita que varios golpes seguidos lo traspasen)
   static INVULNERABLE_TIME = 1.3; // tras un golpe, más margen para reaccionar
   static MAX_ENERGY = 100;
   static COMBO_RESET_TIME = 1.5;
@@ -78,6 +79,10 @@ class Player extends Entity {
     this.score = 0;
     this.invulnerable = 0;
     this.blockTime = 0;
+    this.shieldLevel = 0; // 0 = sin escudo, 1 = completo
+    this.shieldFlash = 0; // destello al recibir un golpe
+    this.shieldHitSide = 1;
+    this.shieldWasActive = false;
     this.attackStep = 0; // eslabón actual (1-5), 0 = ninguno
     this.chainStep = 1; // siguiente eslabón si se pulsa a tiempo
     this.chainTimer = 0;
@@ -115,6 +120,7 @@ class Player extends Entity {
     this.chainTimer = Math.max(0, this.chainTimer - dt);
     this.specialCooldown = Math.max(0, this.specialCooldown - dt);
     this.landSquash = Math.max(0, this.landSquash - dt);
+    this.updateShield(dt, world);
     this.walkTime = this.state === 'walk' ? this.walkTime + dt : 0;
     if (this.comboTimer > 0) {
       this.comboTimer -= dt;
@@ -456,12 +462,18 @@ class Player extends Entity {
 
     const awayFromAttacker = Math.sign(this.x - fromX) || -this.facing;
     const towardAttacker = Math.sign(fromX - this.x) === this.facing;
-    if (this.isBlocking && towardAttacker) {
+    if (this.isBlocking) {
+      // El escudo es una burbuja: protege de frente y por la espalda
       this.hp -= Math.max(1, Math.round(amount * Player.BLOCK_REDUCTION));
-      this.energy = Math.min(Player.MAX_ENERGY, this.energy + 3);
+      this.energy = Math.min(Player.MAX_ENERGY, this.energy + 5);
       this.kx = awayFromAttacker * 90;
-      world.particles.burst({ x: this.x + this.facing * 26, y: this.y - 80, count: 10, speed: [150, 400], angle: this.facing > 0 ? [-0.9, 0.9] : [Math.PI - 0.9, Math.PI + 0.9], life: [0.12, 0.28], size: [2, 4], colors: [CONFIG.COLORS.CYAN, '#ffffff'], type: 'spark', drag: 3 });
-      world.particles.add({ type: 'ring', x: this.x + this.facing * 26, y: this.y - 80, size: 5, sizeEnd: 36, life: 0.2, color: '#ffffff', width: 5 });
+      this.invulnerable = Math.max(this.invulnerable, Player.BLOCK_GRACE);
+      this.shieldFlash = 1;
+      this.shieldHitSide = -awayFromAttacker; // el golpe llegó desde el lado contrario al empuje
+      const impactX = this.x + this.shieldHitSide * Player.SHIELD.rx;
+      world.particles.burst({ x: impactX, y: this.y - this.z - 74, count: 14, speed: [150, 440], angle: this.shieldHitSide > 0 ? [-1.0, 1.0] : [Math.PI - 1.0, Math.PI + 1.0], life: [0.14, 0.34], size: [2, 4.2], colors: [CONFIG.COLORS.CYAN, '#ffffff', '#aef9ff'], type: 'spark', drag: 3 });
+      world.particles.add({ type: 'ring', x: impactX, y: this.y - this.z - 74, size: 6, sizeEnd: 52, life: 0.28, color: '#ffffff', width: 6, flat: 0.9 });
+      world.addText(this.x + this.shieldHitSide * 30, this.y, this.z + this.h + 6, '¡BLOQUEO!', { color: CONFIG.COLORS.CYAN, size: 20 });
       world.audio.play('block');
       world.shake(3, 0.1);
     } else {
@@ -749,7 +761,7 @@ class Player extends Entity {
       if (finisher) { if (!sprite.effect) this.renderLightning(ctx); }
       else if (this.attackStep % 2 === 0 && !Assets.image('ecoCombo1')) this.renderSwing(ctx); // las patadas ya traen su estela
     }
-    if (this.isBlocking) this.renderGuard(ctx, this.screenTop);
+    this.renderShield(ctx);
     if (this.state === 'specialAttack' && this.releaseTime < 0) this.renderChargeAura(ctx);
   }
 
@@ -875,18 +887,148 @@ class Player extends Entity {
     Draw.outlinedRect(ctx, left + 6, top, this.w - 12, 30, '#16163a');
     ctx.fillStyle = CONFIG.COLORS.CYAN;
     ctx.fillRect(left + 4, top + 11, this.w - 8, 7);
-    if (this.isBlocking) this.renderGuard(ctx, top);
+    this.renderShield(ctx);
     ctx.restore();
   }
 
-  renderGuard(ctx, top) {
+  // Anima el escudo: crece al bloquear, se desvanece al soltar, y avisa cuando empieza a proteger
+  updateShield(dt, world) {
+    const target = this.state === 'block' ? 1 : 0;
+    this.shieldLevel += (target - this.shieldLevel) * Math.min(1, dt * (target ? 16 : 10));
+    if (target === 0 && this.shieldLevel < 0.02) this.shieldLevel = 0;
+    this.shieldFlash = Math.max(0, this.shieldFlash - dt * 3.2);
+    const active = this.isBlocking;
+    if (active && !this.shieldWasActive && world) {
+      world.audio.play('shieldOn');
+      this.shieldFlash = Math.max(this.shieldFlash, 0.5);
+      world.particles.add({ type: 'ring', x: this.x, y: this.y - this.z - Player.SHIELD.cy, size: 20, sizeEnd: 90, life: 0.3, color: CONFIG.COLORS.CYAN, width: 5 });
+    }
+    this.shieldWasActive = active;
+  }
+
+  // --- Escudo de energía: burbuja translúcida con malla hexagonal y borde brillante ---
+  static SHIELD = { rx: 64, ry: 92, cy: 74 }; // semiejes de la burbuja y altura de su centro sobre los pies
+
+  // Textura del escudo, pintada una sola vez (dibujarla con recortes cada fotograma saldría caro)
+  static shieldTexture() {
+    if (Player.shieldCanvas) return Player.shieldCanvas;
+    const { rx, ry } = Player.SHIELD;
+    const pad = 16;
+    const canvas = document.createElement('canvas');
+    canvas.width = (rx + pad) * 2;
+    canvas.height = (ry + pad) * 2;
+    const c = canvas.getContext('2d');
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+
+    // Cuerpo: casi transparente en el centro y más intenso hacia el borde (efecto "fresnel" de una esfera de cristal)
+    c.save();
+    c.translate(cx, cy);
+    c.scale(rx, ry);
+    const body = c.createRadialGradient(0, 0, 0.05, 0, 0, 1);
+    body.addColorStop(0, 'rgba(0, 245, 255, 0.03)');
+    body.addColorStop(0.6, 'rgba(0, 220, 255, 0.10)');
+    body.addColorStop(0.9, 'rgba(110, 255, 255, 0.34)');
+    body.addColorStop(1, 'rgba(210, 255, 255, 0.55)');
+    c.fillStyle = body;
+    c.beginPath();
+    c.arc(0, 0, 1, 0, Math.PI * 2);
+    c.fill();
+    c.restore();
+
+    // Malla hexagonal dentro de la burbuja
+    c.save();
+    c.beginPath();
+    c.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    c.clip();
+    c.strokeStyle = 'rgba(170, 255, 255, 0.30)';
+    c.lineWidth = 1.2;
+    const r = 15;
+    const dx = r * Math.sqrt(3);
+    for (let row = -8; row <= 8; row++) {
+      for (let col = -6; col <= 6; col++) {
+        const hx = cx + col * dx + (row % 2 ? dx / 2 : 0);
+        const hy = cy + row * r * 1.5;
+        c.beginPath();
+        for (let k = 0; k < 6; k++) {
+          const a = Math.PI / 6 + (k * Math.PI) / 3;
+          const px = hx + r * 0.94 * Math.cos(a);
+          const py = hy + r * 0.94 * Math.sin(a);
+          if (k === 0) c.moveTo(px, py); else c.lineTo(px, py);
+        }
+        c.closePath();
+        c.stroke();
+      }
+    }
+    // Reflejo de luz en la parte superior izquierda
+    const shine = c.createLinearGradient(cx - rx, cy - ry, cx + rx * 0.2, cy + ry * 0.2);
+    shine.addColorStop(0, 'rgba(255, 255, 255, 0.34)');
+    shine.addColorStop(0.35, 'rgba(255, 255, 255, 0.08)');
+    shine.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    c.fillStyle = shine;
+    c.fillRect(0, 0, canvas.width, canvas.height);
+    c.restore();
+
+    // Borde brillante con resplandor
+    c.shadowColor = '#00f5ff';
+    c.shadowBlur = 12;
+    c.strokeStyle = 'rgba(200, 255, 255, 0.95)';
+    c.lineWidth = 3;
+    c.beginPath();
+    c.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    c.stroke();
+    Player.shieldCanvas = canvas;
+    return canvas;
+  }
+
+  // El escudo aparece al mantener el botón de bloqueo y reacciona a cada golpe parado
+  renderShield(ctx) {
+    const level = this.shieldLevel;
+    if (level < 0.02) return;
+    const { cy } = Player.SHIELD;
+    const texture = Player.shieldTexture();
+    const centerX = this.x;
+    const centerY = this.y - this.z - cy;
+    const active = this.isBlocking;
+    const flash = this.shieldFlash;
+    const scale = (0.55 + 0.45 * level) * (1 + 0.018 * Math.sin(this.age * 13) + flash * 0.07);
+
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    ctx.strokeStyle = CONFIG.COLORS.CYAN;
-    ctx.lineWidth = 5;
+
+    // Brillo en el suelo bajo el escudo
+    ctx.globalAlpha = level * (0.25 + flash * 0.3);
+    ctx.fillStyle = CONFIG.COLORS.CYAN;
     ctx.beginPath();
-    ctx.arc(this.x + this.facing * 8, top + this.h * 0.55, 46, this.facing > 0 ? -1.1 : Math.PI - 1.1, this.facing > 0 ? 1.1 : Math.PI + 1.1);
-    ctx.stroke();
+    ctx.ellipse(this.x, this.y, 56 * level, 13 * level, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // La burbuja: tenue mientras se está formando, más firme cuando ya protege, y más viva al recibir un golpe
+    ctx.globalAlpha = Math.min(1, level * (active ? 0.82 : 0.4) + flash * 0.55);
+    ctx.translate(centerX, centerY);
+    ctx.scale(scale, scale);
+    ctx.drawImage(texture, -texture.width / 2, -texture.height / 2);
+    if (flash > 0.05) {
+      // Destello blanco de la superficie y onda en el punto del impacto
+      ctx.globalAlpha = flash * 0.55;
+      ctx.drawImage(texture, -texture.width / 2, -texture.height / 2);
+      const { rx, ry } = Player.SHIELD;
+      const angle = this.shieldHitSide > 0 ? 0 : Math.PI;
+      ctx.globalAlpha = Math.min(1, flash * 1.4);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 6 * flash + 1;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rx, ry, 0, angle - 0.7, angle + 0.7);
+      ctx.stroke();
+      ctx.strokeStyle = CONFIG.COLORS.CYAN;
+      ctx.lineWidth = 12 * flash + 2;
+      ctx.globalAlpha = flash * 0.5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rx, ry, 0, angle - 0.9, angle + 0.9);
+      ctx.stroke();
+    }
     ctx.restore();
   }
+
 }
