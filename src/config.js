@@ -1,0 +1,95 @@
+// Cuadros numerados de una animación: clave1..claveN → carpeta/prefijo_1..N.png
+const frameAssets = (key, folder, name, count) => Object.fromEntries(
+  Array.from({ length: count }, (_, i) => [`${key}${i + 1}`, `assets/sprites/${folder}/${name}_${i + 1}.png`]),
+);
+
+// Constantes globales del juego. Un único lugar para ajustar el balance y la paleta.
+const CONFIG = Object.freeze({
+  WIDTH: 960,
+  HEIGHT: 540,
+  STEP: 1 / 60, // paso fijo de simulación (segundos)
+  GRAVITY: 1800,
+
+  // Franja jugable del suelo (eje de profundidad) y carril fijo de ECO
+  GROUND_TOP: 390,
+  GROUND_BOTTOM: 500,
+  PLAYER_LANE: 450,
+
+  FONT: 'Impact, "Arial Black", sans-serif',
+
+  // Música de fondo (bucle)
+  MUSIC: 'assets/audio/zero.mp3',
+
+  // Imágenes a precargar: clave → ruta
+  ASSETS: Object.freeze({
+    bgTitle: 'assets/backgrounds/titulo-eco.jpg',
+    bgFinal: 'assets/backgrounds/final-batalla.jpg',
+    spriteVoidhar: 'assets/sprites/voidhar.png',
+    bgLevel01: 'assets/backgrounds/nivel01-cementerio-naves.jpg',
+    bgLevel01a: 'assets/backgrounds/nivel01-a.jpg',
+    bgLevel01b: 'assets/backgrounds/nivel01-b.jpg',
+    bgLevel01c: 'assets/backgrounds/nivel01-c.jpg',
+    bgLevel02: 'assets/backgrounds/nivel02-estacion-transito.jpg',
+    bgLevel04: 'assets/backgrounds/nivel04-colonia-agricola.jpg',
+    bgLevel07: 'assets/backgrounds/nivel07-planeta-en-llamas.jpg',
+    spriteEco: 'assets/sprites/eco.png',
+    ecoCaminar: 'assets/sprites/eco/caminar.png',
+    ecoCaminar1: 'assets/sprites/eco/caminar_1.png',
+    ecoCaminar2: 'assets/sprites/eco/caminar_2.png',
+    ecoCaminar3: 'assets/sprites/eco/caminar_3.png',
+    ecoCaminar4: 'assets/sprites/eco/caminar_4.png',
+    ecoCaminar5: 'assets/sprites/eco/caminar_5.png',
+    ecoCombo1: 'assets/sprites/eco/combo_1.png',
+    ecoCombo2: 'assets/sprites/eco/combo_2.png',
+    ecoCombo3: 'assets/sprites/eco/combo_3.png',
+    ecoCombo4: 'assets/sprites/eco/combo_4.png',
+    ecoCombo5: 'assets/sprites/eco/combo_5.png',
+    ecoCombo6: 'assets/sprites/eco/combo_6.png',
+    ecoCombo7: 'assets/sprites/eco/combo_7.png',
+    ecoCombo8: 'assets/sprites/eco/combo_8.png',
+    ecoCombo9: 'assets/sprites/eco/combo_9.png',
+    ecoCombo10: 'assets/sprites/eco/combo_10.png',
+    ecoGolpes1: 'assets/sprites/eco/golpes_1.png',
+    ecoGolpes2: 'assets/sprites/eco/golpes_2.png',
+    ecoGolpes3: 'assets/sprites/eco/golpes_3.png',
+    ecoGolpes4: 'assets/sprites/eco/golpes_4.png',
+    ecoGolpes5: 'assets/sprites/eco/golpes_5.png',
+    ecoRayo1: 'assets/sprites/eco/rayo_1.png',
+    ecoRayo2: 'assets/sprites/eco/rayo_2.png',
+    ecoRayo3: 'assets/sprites/eco/rayo_3.png',
+    ecoRayo4: 'assets/sprites/eco/rayo_4.png',
+    ecoRayo5: 'assets/sprites/eco/rayo_5.png',
+    ecoSuper1: 'assets/sprites/eco/super_1.png',
+    ecoSuper2: 'assets/sprites/eco/super_2.png',
+    ecoSuper3: 'assets/sprites/eco/super_3.png',
+    ecoSuper4: 'assets/sprites/eco/super_4.png',
+    ecoSuper5: 'assets/sprites/eco/super_5.png',
+    trinoVuelo1: 'assets/sprites/trino/vuelo_1.png',
+    trinoVuelo2: 'assets/sprites/trino/vuelo_2.png',
+    trinoVuelo3: 'assets/sprites/trino/vuelo_3.png',
+    trinoVuelo4: 'assets/sprites/trino/vuelo_4.png',
+    trinoVuelo5: 'assets/sprites/trino/vuelo_5.png',
+    ...frameAssets('ecoRayoB', 'eco', 'rayo2', 9),
+    ecoGolpe: 'assets/sprites/eco/golpe.png',
+    ecoRayo: 'assets/sprites/eco/rayo.png',
+    ecoPoder: 'assets/sprites/eco/poder.png',
+    ...frameAssets('adv2Walk', 'adversario2', 'caminar', 4),
+    ...frameAssets('adv2Slam', 'adversario2', 'ataque1', 6),
+    ...frameAssets('adv2Spin', 'adversario2', 'ataque2', 8),
+    ...frameAssets('adv2Hurt', 'adversario2', 'herido', 6),
+    spriteAdversario1: 'assets/sprites/adversario1.png',
+    spriteAdversario2: 'assets/sprites/adversario2.png',
+    spriteAdversario3: 'assets/sprites/adversario3.png',
+    spriteTrino: 'assets/sprites/trino.png',
+    portraitEco: 'assets/sprites/retrato-eco.png',
+  }),
+
+  COLORS: Object.freeze({
+    NAVY: '#03030a',
+    CYAN: '#00f5ff',
+    RED: '#ff003c',
+    YELLOW: '#ffe600',
+    PURPLE: '#7c3aff',
+    OUTLINE: '#000000',
+  }),
+});

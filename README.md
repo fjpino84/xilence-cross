@@ -1,0 +1,62 @@
+# XILENCE CROSS
+
+> *El silencio que combates, y la nota que te salva.*
+
+Beat 'em up 2D de desplazamiento lateral con estética rock y cyberpunk, hecho en **HTML5 Canvas y JavaScript puro**, sin frameworks ni dependencias. Todo el contenido está en español.
+
+En un universo donde la música fue prohibida por el régimen de La Quietud, **ECO**, un guerrero ciego, empuña su guitarra de chatarra como arma. Su compañero **Trino** lo acompaña en el aire. Esta demo incluye el **primer nivel** y el cierre con la aparición de **Vóidhar**.
+
+## Jugar
+
+- **Online:** https://fjpino84.github.io/xilence-cross/
+- **En tu equipo:** descarga o clona el repositorio y abre `index.html` en Chrome o Edge. No necesita servidor ni instalación.
+
+El navegador no deja sonar nada hasta tu primera pulsación de tecla.
+
+## Controles
+
+| Acción | Tecla |
+|---|---|
+| Mover (también por profundidad) | `WASD` o flechas |
+| Saltar | `Espacio` |
+| Golpe (combo de 5 golpes) | `J` o `Z` |
+| Rayo cargable: mantén para cargar, suelta para disparar | `K` o `X` |
+| Súper (con la barra AMP llena) | `L` o `C` |
+| Bloquear | `Shift` o `E` |
+| Pausa | `P` o `Esc` |
+| Silenciar | `M` |
+
+## Qué incluye
+
+- Combo de cinco golpes con animación por cuadros, rayo con carga estilo Mega Man y súper que limpia la pantalla.
+- **Trino**, el compañero que orbita a ECO y dispara un proyectil sónico.
+- Enemigo pesado (el Martillo) con embestida, combos y rugido propio.
+- Efectos al estilo de los juegos de lucha: congelado de impacto, esquirlas de energía, estrellas de cómic, cámara lenta, grietas en el suelo, salpicaduras en los charcos.
+- Sonido sintetizado con Web Audio (sin archivos de efectos) y música de fondo.
+- Interfaz de rock: barra de vida con daño fantasma, medidor de amplificador por LEDs, combo por niveles (¡RIFF!, ¡SOLO!, ¡LEYENDA!).
+
+## Estructura
+
+```
+index.html          Página y estilos de los menús
+src/
+  config.js         Constantes y lista de recursos
+  engine/           Bucle, entrada, cámara, partículas, audio, sprites
+  entities/         ECO, Trino, enemigos, Vóidhar
+  levels/           Nivel 1 (los niveles 2, 4 y 7 están aún sin activar)
+  scenes/           Título, juego, fin de partida y cierre
+  ui/               HUD y modales
+assets/             Imágenes recortadas y música
+tools/              Scripts de PowerShell para recortar hojas de sprites (ver tools/LEEME.md)
+Claude.md           Especificación original del proyecto
+```
+
+El código usa scripts clásicos (sin módulos ES) para poder abrirse con doble clic.
+
+## Créditos y licencias
+
+- **Código y diseño del juego:** fjpino84.
+- **Música:** *APEX* (sin coros), de PlayerZero, usada como música de fondo.
+- **Arte:** ilustraciones generadas con herramientas de IA y recortadas para el juego.
+
+No se ha definido aún una licencia para el código ni para el arte, por lo que, por defecto, todos los derechos están reservados. Si quieres reutilizar algo, abre una *issue*.

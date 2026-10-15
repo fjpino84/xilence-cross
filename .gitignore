@@ -1,0 +1,12 @@
+# Hojas originales de arte (JPG con fondo blanco, carpetas por personaje y la canción original): quedan solo en el equipo local.
+# Lo que usa el juego ya está recortado en assets/.
+src/levels/*.jpg
+src/levels/*.jpeg
+src/levels/*.mp3
+src/levels/*/
+
+# Sistema y editores
+Thumbs.db
+.DS_Store
+node_modules/
+*.log

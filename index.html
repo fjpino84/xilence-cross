@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xilence Cross</title>
+  <style>
+    :root {
+      --navy: #03030a;
+      --cyan: #00f5ff;
+      --red: #ff003c;
+      --yellow: #ffe600;
+      --purple: #7c3aff;
+      --font: Impact, "Arial Black", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--navy);
+      color: #fff;
+      font-family: var(--font);
+    }
+
+    .game-shell {
+      position: relative;
+      width: min(100vw, calc(100vh * 16 / 9));
+      aspect-ratio: 16 / 9;
+      box-shadow: 0 0 40px rgba(0, 245, 255, 0.25);
+    }
+
+    #game-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: var(--navy);
+      border: 3px solid var(--cyan);
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    /* Modal con el estilo visual del juego */
+    #modal-root { position: absolute; inset: 0; pointer-events: none; }
+
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(3, 3, 10, 0.78);
+      pointer-events: auto;
+    }
+
+    /* Tarjeta de cierre: sin velo oscuro, pegada abajo para dejar ver la ilustración */
+    .modal-overlay--card {
+      align-items: flex-end;
+      justify-content: flex-start;
+      padding: 0 0 4% 3.5%;
+      background: linear-gradient(to top, rgba(3, 3, 10, 0.7) 0%, rgba(3, 3, 10, 0) 55%);
+    }
+
+    .modal-overlay--card .modal-panel { min-width: 300px; padding: 22px 30px; }
+
+    .modal-panel {
+      min-width: 320px;
+      max-width: 80%;
+      padding: 28px 36px;
+      text-align: center;
+      background: var(--navy);
+      border: 4px solid #000;
+      outline: 3px solid var(--cyan);
+      box-shadow: 0 0 32px var(--cyan), inset 0 0 24px rgba(124, 58, 255, 0.35);
+    }
+
+    .modal-title {
+      margin: 0 0 14px;
+      font-size: 2.9rem;
+      font-style: italic;
+      letter-spacing: 0.06em;
+      line-height: 1.05;
+      /* Cromo: reflejo arriba, horizonte oscuro en el centro */
+      background: linear-gradient(180deg, #fff 0%, var(--cyan) 46%, #00608f 50%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(0, 0, 0, 0.9);
+      filter: drop-shadow(3px 4px 0 #000) drop-shadow(0 0 14px var(--cyan));
+      transform: skewX(-8deg);
+    }
+
+    .modal-message {
+      margin: 0 0 22px;
+      font-family: Arial, sans-serif;
+      font-size: 1.05rem;
+      color: #cfe;
+    }
+
+    .modal-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+    .modal-button {
+      padding: 11px 28px;
+      font-family: var(--font);
+      font-size: 1.2rem;
+      font-style: italic;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #1a0a00;
+      background: linear-gradient(180deg, #fff6a8 0%, var(--yellow) 45%, #d06000 50%, #ffb000 100%);
+      border: 3px solid #000;
+      box-shadow: 5px 5px 0 #000, 0 0 16px rgba(255, 176, 0, 0.55);
+      transform: skewX(-10deg);
+      cursor: pointer;
+      transition: transform 0.08s, box-shadow 0.08s;
+    }
+
+    .modal-button:hover,
+    .modal-button:focus-visible {
+      background: linear-gradient(180deg, #ffffff 0%, var(--cyan) 45%, #00608f 50%, #00c8d8 100%);
+      box-shadow: 5px 5px 0 #000, 0 0 22px var(--cyan);
+      transform: skewX(-10deg) scale(1.07);
+      outline: none;
+    }
+
+    .modal-button:active { transform: skewX(-10deg) translate(3px, 3px); box-shadow: 2px 2px 0 #000; }
+  </style>
+</head>
+<body>
+  <main class="game-shell">
+    <h1 class="visually-hidden">Xilence Cross</h1>
+    <canvas id="game-canvas" width="960" height="540" aria-label="Xilence Cross, beat 'em up 2D"></canvas>
+    <div id="modal-root"></div>
+  </main>
+
+  <!-- Orden de carga: configuración → motor → entidades → niveles → UI → escenas → arranque -->
+  <script src="src/config.js?v=18"></script>
+  <script src="src/engine/Draw.js?v=18"></script>
+  <script src="src/engine/Assets.js?v=18"></script>
+  <script src="src/engine/Sprite.js?v=18"></script>
+  <script src="src/engine/ParticleSystem.js?v=18"></script>
+  <script src="src/engine/AudioManager.js?v=18"></script>
+  <script src="src/engine/InputManager.js?v=18"></script>
+  <script src="src/engine/Camera.js?v=18"></script>
+  <script src="src/engine/Collision.js?v=18"></script>
+  <script src="src/engine/SceneManager.js?v=18"></script>
+  <script src="src/engine/Game.js?v=18"></script>
+  <script src="src/entities/Entity.js?v=18"></script>
+  <script src="src/entities/Player.js?v=18"></script>
+  <script src="src/entities/Trino.js?v=18"></script>
+  <script src="src/entities/VoidharFinale.js?v=18"></script>
+  <script src="src/entities/enemies/Enemy.js?v=18"></script>
+  <script src="src/entities/enemies/Silenciador.js?v=18"></script>
+  <script src="src/levels/PuddleData.js?v=18"></script>
+  <script src="src/levels/Level.js?v=18"></script>
+  <script src="src/levels/Level01.js?v=18"></script>
+  <script src="src/levels/Level02.js?v=18"></script>
+  <script src="src/levels/Level04.js?v=18"></script>
+  <script src="src/levels/Level07.js?v=18"></script>
+  <script src="src/ui/HUD.js?v=18"></script>
+  <script src="src/ui/Modal.js?v=18"></script>
+  <script src="src/scenes/TitleScene.js?v=18"></script>
+  <script src="src/scenes/GameScene.js?v=18"></script>
+  <script src="src/scenes/GameOverScene.js?v=18"></script>
+  <script src="src/scenes/EndingScene.js?v=18"></script>
+  <script src="src/main.js?v=18"></script>
+</body>
+</html>
