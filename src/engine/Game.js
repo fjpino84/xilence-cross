@@ -8,7 +8,7 @@ class Game {
     this.modal = new Modal(modalRoot);
     this.scenes = new SceneManager();
     this.touch = new TouchControls(this.input, document.body);
-    this.slowFrames = 0;
+    this.slowTime = 0;
     this.lastTimestamp = 0;
     this.accumulator = 0;
 
@@ -32,12 +32,13 @@ class Game {
     console.info('Efectos reducidos activados');
   }
 
-  // Si el dispositivo no mantiene ~40 fps durante un buen rato, pasa solo al modo de efectos reducidos
+  // Si el dispositivo no mantiene ~40 fps durante unos segundos, pasa solo al modo de efectos reducidos
   watchPerformance(frameSeconds) {
     if (FX.low || document.hidden || !(this.scenes.current instanceof GameScene)) return;
-    if (frameSeconds > 0.026) this.slowFrames += 1;
-    else this.slowFrames = Math.max(0, this.slowFrames - 2);
-    if (this.slowFrames > 90) this.enableLowFx();
+    // Se mide en segundos (no en fotogramas) para que un dispositivo muy lento también lo detecte pronto
+    if (frameSeconds > 0.026) this.slowTime += Math.min(frameSeconds, 0.25);
+    else this.slowTime = Math.max(0, this.slowTime - frameSeconds * 2);
+    if (this.slowTime > 2.5) this.enableLowFx();
   }
 
   start() {
