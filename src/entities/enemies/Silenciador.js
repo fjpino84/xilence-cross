@@ -36,8 +36,8 @@ class Silenciador extends Enemy {
     }),
     // 2 — Martillo: pesado y agresivo; embiste al golpear y puede encadenar martillazo y giro
     2: Object.freeze({
-      hp: 46, speed: 70, patrolSpeed: 34, patrolRange: 100, aggroRange: 460,
-      attackRange: 118, damage: 10, windup: 0.68, strike: 0.14, recovery: 0.55, cooldown: 1.9, scoreValue: 180,
+      hp: 46, speed: 76, patrolSpeed: 34, patrolRange: 100, aggroRange: 620,
+      attackRange: 118, damage: 11, windup: 0.58, strike: 0.14, recovery: 0.5, cooldown: 1.15, scoreValue: 180,
     }),
     // 3 — Disco: rápido y frágil
     3: Object.freeze({
@@ -46,10 +46,17 @@ class Silenciador extends Enemy {
     }),
   });
 
-  constructor(x, y, aggressive = false, variant = 1) {
-    const scale = variant === 2 ? Silenciador.SIZE2 : 1;
-    super({ x, y, w: 60 * scale, h: Silenciador.SPRITE_HEIGHT * scale, stats: Silenciador.VARIANTS[variant], aggressive });
+  // opts.elite: versión de sub jefe/jefe (más grande, con más vida y más daño)
+  constructor(x, y, aggressive = false, variant = 1, opts = {}) {
+    const elite = !!opts.elite && variant === 2;
+    const scale = variant === 2 ? Silenciador.SIZE2 * (elite ? 1.22 : 1) : 1;
+    const base = Silenciador.VARIANTS[variant];
+    const stats = elite
+      ? { ...base, hp: Math.round(base.hp * 2.8), damage: Math.round(base.damage * 1.35), scoreValue: base.scoreValue * 4, windup: base.windup * 0.92, cooldown: base.cooldown * 0.8 }
+      : base;
+    super({ x, y, w: 60 * scale, h: Silenciador.SPRITE_HEIGHT * scale, stats, aggressive });
     this.variant = variant;
+    this.elite = elite;
     this.sizeScale = scale; // los efectos (aura, torbellino, chispas) se escalan con el personaje
     this.ghosts = [];
     this.ghostTimer = 0;
@@ -61,7 +68,7 @@ class Silenciador extends Enemy {
   // La variante 2 alterna martillazo y giro
   chooseAttackKind() {
     this.swingPlayed = false;
-    return this.variant === 2 && Assets.image('adv2Spin1') && Math.random() < 0.45 ? 'spin' : 'slam';
+    return this.variant === 2 && Assets.image('adv2Spin1') && Math.random() < 0.5 ? 'spin' : 'slam';
   }
 
   // --- Dinamismo del ataque ---
@@ -88,7 +95,7 @@ class Silenciador extends Enemy {
     const dx = player.x - this.x;
     const dy = player.y - this.y;
     if (Math.abs(dx) > this.stats.attackRange + 90 || Math.abs(dy) > 26) return false;
-    if (Math.random() > (this.attackKind === 'slam' ? 0.22 : 0.12)) return false; // el combo de dos golpes es poco frecuente
+    if (Math.random() > (this.attackKind === 'slam' ? 0.36 : 0.22)) return false; // combos de dos golpes más frecuentes
 
     this.chained = true;
     this.attackKind = this.attackKind === 'slam' ? 'spin' : 'slam';
@@ -111,7 +118,7 @@ class Silenciador extends Enemy {
     this.ghosts = this.ghosts.filter((ghost) => ghost.age < Silenciador.GHOST_LIFE);
     this.ghostTimer -= dt;
     const frame = this.currentFrame();
-    if (this.state === 'attack' && Math.abs(this.vx) > 120 && frame && this.ghostTimer <= 0) {
+    if ((this.state === 'attack' || this.rushing) && Math.abs(this.vx) > 120 && frame && this.ghostTimer <= 0) {
       this.ghostTimer = 0.04;
       this.ghosts.push({ x: this.x, y: this.y, facing: this.facing, age: 0, frame });
     }
@@ -199,14 +206,14 @@ class Silenciador extends Enemy {
     const F = Silenciador.FRAMES2;
     const pick = (set, number, neutral = true) => {
       const image = Assets.image(`${set.key}${number}`);
-      const height = set.canvas * set.g * Silenciador.SIZE2;
+      const height = set.canvas * set.g * this.sizeScale;
       return image ? { image, height, anchorX: set.anchor, drop: (1 - set.feet) * height, neutral } : null;
     };
 
     switch (this.state) {
       case 'patrol':
       case 'chase':
-        return pick(F.walk, Math.abs(this.vx) > 5 ? 1 + (Math.floor(this.age * Silenciador.WALK_FPS) % F.walk.count) : 1);
+        return pick(F.walk, Math.abs(this.vx) > 5 ? 1 + (Math.floor(this.age * Silenciador.WALK_FPS * (this.rushing ? 1.7 : 1)) % F.walk.count) : 1);
       case 'attack': {
         const spin = this.attackKind === 'spin';
         const table = (spin ? Silenciador.SPIN_TRACK : Silenciador.SLAM_TRACK);
@@ -266,6 +273,8 @@ class Silenciador extends Enemy {
       jitter = (Math.random() - 0.5) * 7;
     } else if (this.isTelegraphing) {
       tint = { color: CONFIG.COLORS.RED, alpha: 0.05 + 0.13 * Math.abs(Math.sin(this.age * 18)) };
+    } else if (this.elite) {
+      tint = { color: '#ff2a55', alpha: 0.05 + 0.06 * Math.abs(Math.sin(this.age * 3)) }; // los élites brillan en rojo
     }
 
     Sprite.draw(ctx, image, {

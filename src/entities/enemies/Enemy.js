@@ -29,9 +29,20 @@ class Enemy extends Entity {
     this.groundedAfterDeath = false;
     this.attackKind = 'slam'; // 'slam' (golpe al frente) o 'spin' (giro que alcanza a ambos lados)
     this.windupScale = 1; // el segundo golpe de un combo carga más rápido
+    this.rushing = false; // entra corriendo y ataca en cuanto llega
+    this.rushTime = 0;
+    this.elite = false;
     this.chained = false;
     this.shock = 0; // segundos que le quedan de electrocución por un rayo
     this.world = null;
+  }
+
+  // Entra corriendo desde fuera de la pantalla y ataca nada más llegar junto a ECO
+  startRush() {
+    this.rushing = true;
+    this.rushTime = 0;
+    this.attackCooldown = 0;
+    this.state = 'chase';
   }
 
   get removable() { return !this.isAlive && this.deadTime >= Enemy.DEATH_FADE_TIME; }
@@ -125,8 +136,22 @@ class Enemy extends Entity {
     const dy = player.y - this.y;
     this.facing = Math.sign(dx) || this.facing;
 
-    this.y += Math.max(-1, Math.min(1, dy / 6)) * Enemy.LANE_SPEED * dt;
-    this.vx = Math.abs(dx) > this.stats.attackRange * 0.9 ? Math.sign(dx) * this.stats.speed : 0;
+    const rush = this.rushing;
+    this.y += Math.max(-1, Math.min(1, dy / 6)) * Enemy.LANE_SPEED * (rush ? 2.8 : 1) * dt;
+    this.vx = Math.abs(dx) > this.stats.attackRange * 0.9 ? Math.sign(dx) * this.stats.speed * (rush ? 2.5 : 1) : 0;
+
+    if (rush) {
+      // Al llegar a distancia de golpe, ataca de inmediato (con un aviso corto) sin esperar turno
+      this.rushTime += dt;
+      if (Math.abs(dx) <= this.stats.attackRange * 1.4 && Math.abs(dy) <= 28) {
+        this.rushing = false;
+        this.startAttack(world);
+        this.windupScale = 0.7;
+        return;
+      }
+      if (this.rushTime > 4.5) this.rushing = false;
+      return;
+    }
 
     const inRange = Math.abs(dx) <= this.stats.attackRange && Math.abs(dy) <= 18;
     if (inRange && this.attackCooldown <= 0 && world.requestAttackSlot(this)) this.startAttack(world);
@@ -242,7 +267,12 @@ class Enemy extends Entity {
 
   // Barra de vida sobre la cabeza (solo si está herido)
   renderHealthBar(ctx) {
-    if (!this.isAlive || this.hp >= this.maxHp) return;
-    Draw.bar(ctx, this.x - 24, this.screenTop - 14, 48, 8, this.hp / this.maxHp, CONFIG.COLORS.RED);
+    if (!this.isAlive || (this.hp >= this.maxHp && !this.elite)) return;
+    // Los élites llevan una barra más ancha, siempre visible, con su etiqueta
+    const width = this.elite ? 100 : 48;
+    Draw.bar(ctx, this.x - width / 2, this.screenTop - 14, width, this.elite ? 11 : 8, this.hp / this.maxHp, CONFIG.COLORS.RED);
+    if (this.elite) {
+      Draw.rock(ctx, 'ÉLITE', this.x, this.screenTop - 20, { size: 14, align: 'center', colors: ['#ffffff', '#ff5a8a', '#6a0030'], outlineWidth: 4, tracking: 2 });
+    }
   }
 }

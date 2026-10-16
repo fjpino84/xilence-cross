@@ -1,35 +1,81 @@
-// Nivel 01 — Anclaje Sur (Cementerio de naves)
+// Nivel 01 — Anclaje Sur (Cementerio de naves): 10 escenarios en fila.
+// El 1.º es siempre el de apertura, el 5.º es el del sub jefe y el 10.º el del jefe. Los demás se sortean en cada partida
+// (sin repetir el mismo escenario dos veces seguidas). Cada escenario, del 2.º al 10.º, tiene su propio encuentro.
 class Level01 extends Level {
+  static OPENING = 'bgLevel01a';
+  static REGULAR = ['bgLevel01a', 'bgLevel01b', 'bgLevel01c', 'bgLevel01d', 'bgLevel01e'];
+  static SUB_BOSS = 'bgLevel01s';
+  static BOSS = 'bgLevel01j';
+  static COUNT = 10;
+  static SUB_BOSS_POSITION = 5;
+  static BOSS_POSITION = 10;
+
+  // Encuentro de cada posición: enemigos normales y élites (uno en el sub jefe, dos en el jefe)
+  static ENCOUNTERS = {
+    2: { normal: 2 },
+    3: { normal: 2 },
+    4: { normal: 3 },
+    5: { normal: 2, elite: 1 },
+    6: { normal: 3 },
+    7: { normal: 3 },
+    8: { normal: 4 },
+    9: { normal: 4 },
+    10: { normal: 2, elite: 2 },
+  };
+
+  // Elige los escenarios de la partida. Prefiere los menos usados y evita repetir el vecino.
+  // El escenario "e" se parece al del sub jefe, así que no se coloca pegado a él.
+  static planScenarios() {
+    const used = new Map(Level01.REGULAR.map((key) => [key, 0]));
+    const keys = [];
+    for (let position = 1; position <= Level01.COUNT; position++) {
+      if (position === Level01.SUB_BOSS_POSITION) { keys.push(Level01.SUB_BOSS); continue; }
+      if (position === Level01.BOSS_POSITION) { keys.push(Level01.BOSS); continue; }
+      if (position === 1) {
+        keys.push(Level01.OPENING);
+        used.set(Level01.OPENING, 1);
+        continue;
+      }
+      const previous = keys[keys.length - 1];
+      const nextToSubBoss = Math.abs(position - Level01.SUB_BOSS_POSITION) === 1;
+      const candidates = Level01.REGULAR.filter((key) => key !== previous && !(nextToSubBoss && key === 'bgLevel01e'));
+      const least = Math.min(...candidates.map((key) => used.get(key)));
+      const pool = candidates.filter((key) => used.get(key) === least);
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      used.set(pick, used.get(pick) + 1);
+      keys.push(pick);
+    }
+    return keys.map((key, index) => {
+      const special = key === Level01.SUB_BOSS || key === Level01.BOSS;
+      return { key, flip: !special && index > 0 && Math.random() < 0.5 };
+    });
+  }
+
   constructor() {
+    const sequence = Level01.planScenarios();
+    const waves = Object.entries(Level01.ENCOUNTERS).map(([position, encounter]) => ({
+      // Se activa al entrar en la zona central del escenario
+      triggerX: (Number(position) - 1) * Level.TILE_STRIDE + 520,
+      spawns: [
+        ...Array.from({ length: encounter.normal }, () => ({})),
+        ...Array.from({ length: encounter.elite || 0 }, () => ({ elite: true })),
+      ],
+    }));
     super({
       name: 'Nivel 1 — Anclaje Sur',
-      width: 4000,
+      width: (Level01.COUNT - 1) * Level.TILE_STRIDE + Level.TILE_WIDTH,
       backgroundKey: 'bgLevel01',
-      // Tres ilustraciones encadenadas con fundido; la segunda mitad se recorre en espejo (C y B reflejadas).
-      // Como C se refleja sobre su propio borde, esa unión central queda perfecta.
-      backgroundSequence: [
-        { key: 'bgLevel01a' },
-        { key: 'bgLevel01b' },
-        { key: 'bgLevel01c' },
-        { key: 'bgLevel01c', flip: true },
-        { key: 'bgLevel01b', flip: true },
-      ],
+      backgroundSequence: sequence,
       ambient: 'rain',
       skyTop: CONFIG.COLORS.NAVY,
       skyBottom: '#0d0d3a',
       glowColor: 'rgba(124, 58, 255, 0.45)',
-      // Centinelas que patrullan el mapa antes de las oleadas
+      // Centinelas que patrullan el primer escenario
       patrols: [
+        { x: 620, y: 440 },
         { x: 1250, y: 470 },
-        { x: 2150, y: 440 },
       ],
-      // Cada oleada bloquea la cámara hasta que todos sus enemigos caen
-      waves: [
-        { triggerX: 800, spawns: [{ y: 420 }, { y: 470 }] },
-        { triggerX: 1700, spawns: [{ y: 410 }, { y: 460 }] },
-        { triggerX: 2600, spawns: [{ y: 400 }, { y: 440 }, { y: 480 }] },
-        { triggerX: 3400, spawns: [{ y: 410 }, { y: 440 }, { y: 465 }] },
-      ],
+      waves,
     });
   }
 }

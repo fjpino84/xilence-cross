@@ -114,24 +114,29 @@ class Level {
     return [x, y];
   }
 
-  // Activa oleadas al llegar a su punto. Cada enemigo entra en su momento, por un lado y a una altura distintos,
-  // y la oleada se da por limpia cuando ya salieron todos y cayeron todos.
+  // Activa cada encuentro al llegar a su punto. Cada enemigo entra en su momento, por un lado y a una altura distintos;
+  // la mayoría llega corriendo y atacando (rush). Los élites (sub jefe y jefe) entran un poco después, siempre atacando.
+  // El encuentro se da por limpio cuando ya salieron todos y cayeron todos.
   update(player, camera, spawn, dt = 0) {
     this.waves.forEach((wave) => {
       if (!wave.started && player.x >= wave.triggerX) {
         wave.started = true;
         camera.lockX = camera.x;
         wave.clock = 0;
-        // El número de enemigos varía un poco (la lista de la oleada marca el valor medio)
-        const count = Math.max(2, wave.spawns.length + (Math.random() < 0.15 ? 1 : 0) - (Math.random() < 0.15 ? 1 : 0));
-        wave.pending = Array.from({ length: count }, (_, index) => ({ delay: index === 0 ? 0 : 0.3 + Math.random() * 3 }))
-          .sort((first, second) => first.delay - second.delay);
+        const normals = wave.spawns.filter((entry) => !entry.elite).length;
+        const elites = wave.spawns.filter((entry) => entry.elite).length;
+        // El número de enemigos normales varía un poco entre partidas
+        const count = Math.max(1, normals + (Math.random() < 0.15 ? 1 : 0) - (Math.random() < 0.15 ? 1 : 0));
+        wave.pending = [
+          ...Array.from({ length: count }, (_, index) => ({ delay: index === 0 ? 0 : 0.3 + Math.random() * 2.6, rush: Math.random() < 0.6 })),
+          ...Array.from({ length: elites }, (_, index) => ({ delay: 1.8 + index * 1.6, rush: true, elite: true })),
+        ].sort((first, second) => first.delay - second.delay);
       }
       if (wave.started && !wave.cleared) {
         wave.clock += dt;
         while (wave.pending.length && wave.pending[0].delay <= wave.clock) {
-          wave.pending.shift();
-          wave.enemies.push(spawn(...this.spawnPoint(camera), true));
+          const entry = wave.pending.shift();
+          wave.enemies.push(spawn(...this.spawnPoint(camera), true, { rush: entry.rush, elite: entry.elite }));
         }
         if (!wave.pending.length && wave.enemies.every((enemy) => !enemy.isAlive)) {
           wave.cleared = true;

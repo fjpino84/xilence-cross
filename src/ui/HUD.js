@@ -375,13 +375,14 @@ class HUD {
     });
   }
 
-  // --- Progreso del nivel: un rombo por oleada (lleno = superada, parpadeo = en curso) ---
+  // --- Progreso del nivel: un rombo por encuentro (lleno = superado, parpadeo = en curso). Se ajusta al número de encuentros ---
   renderWaves(ctx, level) {
     const waves = level.waves;
     const right = CONFIG.WIDTH - 24;
     const top = 100;
-    const spacing = 26;
-    Draw.rock(ctx, 'OLEADAS', right - waves.length * spacing - 8, top + 12, {
+    const spacing = Math.min(26, 190 / waves.length);
+    const half = Math.min(10, spacing * 0.4);
+    Draw.rock(ctx, 'ESCENARIOS', right - waves.length * spacing - 8, top + 12, {
       size: 14, align: 'right', colors: ['#ffffff', '#c9a6ff', '#5a2ab0'], tracking: 2, outlineWidth: 4,
     });
     ctx.save();
@@ -390,19 +391,21 @@ class HUD {
       const cy = top + 6;
       const active = wave.started && !wave.cleared;
       const blink = active && Math.floor(this.time * 4) % 2 === 0;
+      const last = index === waves.length - 1; // el último encuentro es el del jefe
+      const size = last ? half * 1.25 : half;
       ctx.beginPath();
-      ctx.moveTo(cx, cy - 10);
-      ctx.lineTo(cx + 10, cy);
-      ctx.lineTo(cx, cy + 10);
-      ctx.lineTo(cx - 10, cy);
+      ctx.moveTo(cx, cy - size);
+      ctx.lineTo(cx + size, cy);
+      ctx.lineTo(cx, cy + size);
+      ctx.lineTo(cx - size, cy);
       ctx.closePath();
-      ctx.fillStyle = wave.cleared ? CONFIG.COLORS.YELLOW : (blink ? CONFIG.COLORS.RED : '#10141f');
+      ctx.fillStyle = wave.cleared ? CONFIG.COLORS.YELLOW : (blink ? CONFIG.COLORS.RED : (last ? '#3a1020' : '#10141f'));
       ctx.shadowColor = wave.cleared ? '#ffb000' : (active ? CONFIG.COLORS.RED : 'transparent');
       ctx.shadowBlur = wave.cleared || active ? 10 : 0;
       ctx.fill();
       ctx.shadowBlur = 0;
       ctx.lineWidth = 3;
-      ctx.strokeStyle = '#000';
+      ctx.strokeStyle = last ? '#ff5a8a' : '#000';
       ctx.stroke();
     });
     ctx.restore();

@@ -1,7 +1,7 @@
 // Escena de juego: orquesta jugador, enemigos, nivel, cámara, efectos y HUD.
 // También reparte los "servicios de impacto" (partículas, sonido, hit-stop, cámara lenta…) vía `world`.
 class GameScene {
-  static MAX_SIMULTANEOUS_ATTACKERS = 1; // los demás rodean y esperan su turno
+  static MAX_SIMULTANEOUS_ATTACKERS = 2; // los demás rodean y esperan su turno
   static VICTORY_DELAY = 1.2;
   static DEATH_DELAY = 1.4;
   // Orden de niveles jugables (los 3, 5 y 6 se añadirán cuando tengan arte)
@@ -30,6 +30,7 @@ class GameScene {
     this.projectiles = [];
     this.beams = [];
     this.pickups = [];
+    this.edgeWarnings = [];
     this.finale = null;
     this.callout = null;
     this.particles = new ParticleSystem();
@@ -92,9 +93,15 @@ class GameScene {
     };
   }
 
-  spawnEnemy(x, y, aggressive) {
+  spawnEnemy(x, y, aggressive, opts = {}) {
     const variant = GameScene.ENEMY_VARIANTS[Math.floor(Math.random() * GameScene.ENEMY_VARIANTS.length)];
-    const enemy = new Silenciador(x, y, aggressive, variant);
+    const enemy = new Silenciador(x, y, aggressive, variant, opts);
+    if (opts.rush) {
+      enemy.startRush();
+      // Aviso rojo en el borde por donde entra y gruñido
+      this.edgeWarnings.push({ side: x > this.camera.x + CONFIG.WIDTH / 2 ? 'right' : 'left', age: 0 });
+      this.game.audio.play(opts.elite ? 'voidRoar' : 'enemyWarn');
+    }
     this.enemies.push(enemy);
     return enemy;
   }
@@ -887,7 +894,9 @@ class GameScene {
     this.player.update(scaled, this.finale ? GameScene.NO_INPUT : input, this.world);
     const wasLocked = this.level.locked;
     const wasCompleted = this.level.completed;
-    this.level.update(this.player, this.camera, (x, y, aggressive) => this.spawnEnemy(x, y, aggressive), scaled);
+    this.level.update(this.player, this.camera, (x, y, aggressive, opts) => this.spawnEnemy(x, y, aggressive, opts), scaled);
+    for (const warning of this.edgeWarnings) warning.age += scaled;
+    this.edgeWarnings = this.edgeWarnings.filter((warning) => warning.age < 0.9);
     if ((wasLocked && !this.level.locked) || (!wasCompleted && this.level.completed)) this.waveClearedFx();
 
     for (const enemy of this.enemies) enemy.update(scaled, this.world);
@@ -1088,6 +1097,7 @@ class GameScene {
 
     this.ambient.render(ctx);
     this.renderVignette(ctx);
+    this.renderEdgeWarnings(ctx);
     this.renderBeamOverlay(ctx);
     this.renderCallout(ctx);
     this.hud.render(ctx, this.player, this.level, this.trino);
@@ -1099,6 +1109,21 @@ class GameScene {
       ctx.fillStyle = this.flashColor;
       ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
       ctx.restore();
+    }
+  }
+
+  // Destello rojo en el borde de la pantalla por donde entra un enemigo atacando
+  renderEdgeWarnings(ctx) {
+    for (const warning of this.edgeWarnings) {
+      const fade = Math.max(0, 1 - warning.age / 0.9);
+      const pulse = 0.65 + 0.35 * Math.sin(warning.age * 30);
+      const width = 150;
+      const x = warning.side === 'right' ? CONFIG.WIDTH - width : 0;
+      const gradient = ctx.createLinearGradient(warning.side === 'right' ? CONFIG.WIDTH : 0, 0, warning.side === 'right' ? CONFIG.WIDTH - width : width, 0);
+      gradient.addColorStop(0, 'rgba(255, 30, 70, ' + 0.55 * fade * pulse + ')');
+      gradient.addColorStop(1, 'rgba(255, 30, 70, 0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(x, 0, width, CONFIG.HEIGHT);
     }
   }
 
