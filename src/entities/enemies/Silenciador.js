@@ -8,9 +8,9 @@ class Silenciador extends Enemy {
   // feet = fracción de altura donde están los pies; anchor = fracción horizontal del centro del cuerpo.
   static FRAMES = {
     1: {
-      walk: { key: 'adv1Walk', count: 4, canvas: 598, g: 0.29, feet: 0.9941, anchor: 0.5432 },
-      slam: { key: 'adv1Slam', count: 5, canvas: 506, g: 0.34, feet: 0.9921, anchor: 0.4323 },
-      spin: { key: 'adv1Spin', count: 5, canvas: 684, g: 0.29, feet: 0.9942, anchor: 0.5236 },
+      walk: { key: 'adv1Walk', count: 4, canvas: 598, g: 0.295, feet: 0.9941, anchor: 0.5432 },
+      slam: { key: 'adv1Slam', count: 5, canvas: 506, g: 0.39, feet: 0.9921, anchor: 0.4323 },
+      spin: { key: 'adv1Spin', count: 5, canvas: 684, g: 0.335, feet: 0.9942, anchor: 0.5236 },
       hurt: { key: 'adv1Hurt', count: 4, canvas: 640, g: 0.29, feet: 0.9961, anchor: 0.5180 },
     },
     2: {
