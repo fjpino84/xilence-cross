@@ -9,6 +9,17 @@ class GameScene {
   // Variantes de enemigo que aparecen (1 Garra, 2 Martillo, 3 Disco). De momento solo el Martillo, que ya tiene todas sus animaciones.
   static ENEMY_VARIANTS = [2];
   static ELITE_VARIANT = 1;
+  // Diálogo de la llegada de Rex Vane (sub jefe)
+  static REX_DIALOGUE = [
+    { who: 'rex', name: 'REX VANE', scan: true, text: 'Frecuencia identificada. Archivo: ECO. Clasificación: perturbador de silencio. Nivel de amenaza... negligible.' },
+    { who: 'rex', name: 'REX VANE', scan: true, text: 'Llevas semanas cruzando jurisdicciones de La Quietud. Sembrando ruido. Creyendo que eso es resistencia.' },
+    { who: 'eco', name: 'ECO', text: '¿Y tú eres lo que mandan a silenciarme? ¿Una sombra con formulario?' },
+    { who: 'rex', name: 'REX VANE', text: 'No vengo a silenciarte. Vengo a documentar tu extinción.' },
+    { who: 'rex', name: 'REX VANE', text: 'Esa guitarra que empuñas... cada nota que tocas es una violación del Decreto de Frecuencia Cero. Y cada violación tiene consecuencias catalogadas. Yo soy la consecuencia.' },
+    { who: 'eco', name: 'ECO', text: 'Entonces ya sabes lo que sigue.' },
+    { who: 'rex', name: 'REX VANE', whisper: true, text: 'Sí. Página cuarenta y dos. Párrafo siete: «Ante resistencia armada con instrumento de frecuencia prohibida: supresión total. Sin advertencia adicional. Sin compasión registrada.»' },
+    { who: 'rex', name: 'REX VANE', whisper: true, text: 'Olvida tu música, ECO. Donde vas después del silencio... no hay frecuencia que alcance.' },
+  ];
   static AMBIENT_RATES = { rain: 110, embers: 28, fireflies: 7, motes: 10 };
 
   constructor(game) {
@@ -32,6 +43,7 @@ class GameScene {
     this.beams = [];
     this.pickups = [];
     this.edgeWarnings = [];
+    this.dialogue = null;
     this.finale = null;
     this.callout = null;
     this.particles = new ParticleSystem();
@@ -101,6 +113,7 @@ class GameScene {
   }
 
   spawnEnemy(x, y, aggressive, opts = {}) {
+    if (opts.boss) return this.spawnBoss();
     // Los élites son la Garra (variante 1); la tropa normal, el Martillo
     const variant = opts.elite ? GameScene.ELITE_VARIANT : GameScene.ENEMY_VARIANTS[Math.floor(Math.random() * GameScene.ENEMY_VARIANTS.length)];
     const enemy = new Silenciador(x, y, aggressive, variant, opts);
@@ -343,6 +356,16 @@ class GameScene {
   // Estrella de cómic en el punto de impacto (los destellos de los juegos de Marvel vs. Capcom)
   starburst(x, y, z, size = 1) {
     this.effects.push({ type: 'starburst', x, y, z, size, age: 0, duration: 0.26, rotation: Math.random() * Math.PI });
+  }
+
+  // Rex Vane cae desde el cielo al centro de la escena; la tormenta responde con un relámpago
+  spawnBoss() {
+    const boss = new RexVane(this.camera.x + CONFIG.WIDTH * 0.5 + 120, 440);
+    this.enemies.push(boss);
+    this.atmosphere.stormTimer = 0;
+    this.game.audio.play('rexArrive');
+    this.camera.shake(4, 0.5);
+    return boss;
   }
 
   // Cartel con el nombre del ataque que cruza la pantalla
@@ -886,6 +909,10 @@ class GameScene {
     const input = this.game.input;
     if (!this.finished && input.justPressed('pause')) this.togglePause();
     if (this.paused) return;
+    if (this.dialogue) {
+      this.updateDialogue(dt, input);
+      return;
+    }
 
     // Temblor, zoom y destellos usan tiempo real: siguen vivos durante el hit-stop
     this.updateFeedback(dt);
@@ -908,6 +935,7 @@ class GameScene {
     if ((wasLocked && !this.level.locked) || (!wasCompleted && this.level.completed)) this.waveClearedFx();
 
     for (const enemy of this.enemies) enemy.update(scaled, this.world);
+    this.checkBossIntro();
     this.separateEnemies();
     this.enemies.splice(0, this.enemies.length, ...this.enemies.filter((enemy) => !enemy.removable));
 
@@ -946,6 +974,75 @@ class GameScene {
   }
 
   // Oleada limpia: instante en cámara lenta
+  // Cuando el jefe termina de aparecer se abre el diálogo; al cerrarlo empieza el combate
+  checkBossIntro() {
+    const boss = this.enemies.find((enemy) => enemy.boss);
+    if (!boss || boss.talked || boss.state !== 'talk') return;
+    boss.talked = true;
+    this.player.facing = Math.sign(boss.x - this.player.x) || this.player.facing;
+    this.player.vx = 0;
+    this.dialogue = new Dialogue(GameScene.REX_DIALOGUE, () => {
+      boss.engage();
+      this.showCallout(boss.name, 2.2, { y: 84, colors: ['#ffffff', '#ff5a8a', '#6a0030'], glow: '#ff2a55', rim: '#1a0010' });
+      this.game.audio.play('rexBolt');
+      this.camera.shake(6, 0.3);
+    });
+  }
+
+  // Mientras dura el diálogo el combate está en pausa; el escenario sigue vivo (lluvia, humo, relámpagos)
+  updateDialogue(dt, input) {
+    this.updateFeedback(dt);
+    this.dialogue.update(dt, input, this.game.audio);
+    for (const enemy of this.enemies) if (enemy.boss) enemy.update(dt, this.world);
+    this.player.vx = 0;
+    this.updateEffects(dt);
+    this.particles.update(dt);
+    this.updateAmbient(dt);
+    this.atmosphere.update(dt, this.camera, this.atmosphereHooks);
+    this.hud.update(dt);
+    if (this.dialogue.done) this.dialogue = null;
+  }
+
+  // Escáner rojo de Rex Vane: un haz desde su visor hasta ECO y una banda que recorre su cuerpo de arriba abajo
+  renderScan(ctx) {
+    const boss = this.enemies.find((enemy) => enemy.boss);
+    if (!boss) return;
+    const player = this.player;
+    const head = boss.headPoint;
+    const top = player.y - 150;
+    const bottom = player.y;
+    const sweep = (this.dialogue.age * 0.9) % 1;
+    const bandY = top + (bottom - top) * sweep;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = 'rgba(255, 50, 90, 0.55)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(head.x, head.y);
+    ctx.lineTo(player.x, bandY);
+    ctx.stroke();
+    const band = ctx.createLinearGradient(0, bandY - 16, 0, bandY + 16);
+    band.addColorStop(0, 'rgba(255, 40, 80, 0)');
+    band.addColorStop(0.5, 'rgba(255, 90, 120, 0.75)');
+    band.addColorStop(1, 'rgba(255, 40, 80, 0)');
+    ctx.fillStyle = band;
+    ctx.fillRect(player.x - 56, bandY - 16, 112, 32);
+    // Marcas de objetivo alrededor de ECO
+    ctx.strokeStyle = 'rgba(255, 70, 100, 0.8)';
+    ctx.lineWidth = 3;
+    const corners = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+    for (const [cx, cy] of corners) {
+      const px = player.x + cx * 54;
+      const py = (top + bottom) / 2 + cy * 80;
+      ctx.beginPath();
+      ctx.moveTo(px, py - cy * 16);
+      ctx.lineTo(px, py);
+      ctx.lineTo(px - cx * 16, py);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   waveClearedFx() {
     this.healPlayer(32); // descanso entre oleadas
     this.slowTime = 0.9;
@@ -955,7 +1052,7 @@ class GameScene {
 
   // Evita que los enemigos se amontonen en el mismo punto
   separateEnemies() {
-    const living = this.enemies.filter((enemy) => enemy.isAlive && enemy.z === 0);
+    const living = this.enemies.filter((enemy) => enemy.isAlive && enemy.z === 0 && !enemy.boss);
     for (let i = 0; i < living.length; i++) {
       for (let j = i + 1; j < living.length; j++) {
         const a = living[i];
@@ -1094,6 +1191,7 @@ class GameScene {
     this.camera.apply(ctx);
     // Orden por profundidad: lo más cercano a la cámara se dibuja encima
     this.atmosphere.renderSmoke(ctx); // humo del escenario, bajo los personajes
+    for (const enemy of this.enemies) if (enemy.renderHazards) enemy.renderHazards(ctx); // rayos y avisos del jefe
     for (const effect of this.effects) if (effect.ground) this.renderEffect(ctx, effect); // grietas bajo los personajes
     const drawables = [this.player, this.trino, ...this.enemies, ...(this.finale && this.finale.voidhar ? [this.finale.voidhar] : [])].sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
     for (const entity of drawables) entity.render(ctx);
@@ -1101,6 +1199,7 @@ class GameScene {
     for (const bolt of this.projectiles) this.renderProjectile(ctx, bolt);
     for (const effect of this.effects) if (!effect.ground) this.renderEffect(ctx, effect);
     for (const beam of this.beams) this.renderBeam(ctx, beam);
+    if (this.dialogue && this.dialogue.line.scan) this.renderScan(ctx);
     this.particles.render(ctx);
     if (globalThis.DEBUG_PUDDLES) this.renderPuddleDebug(ctx);
     ctx.restore();
@@ -1111,7 +1210,9 @@ class GameScene {
     this.renderEdgeWarnings(ctx);
     this.renderBeamOverlay(ctx);
     this.renderCallout(ctx);
-    this.hud.render(ctx, this.player, this.level, this.trino);
+    this.hud.boss = this.dialogue ? null : (this.enemies.find((enemy) => enemy.boss && enemy.isAlive && enemy.vulnerable) || null);
+    if (this.dialogue) this.dialogue.render(ctx); // la escena de diálogo oculta el HUD
+    else this.hud.render(ctx, this.player, this.level, this.trino);
     this.renderFinaleOverlay(ctx);
 
     if (this.flashTime > 0) {

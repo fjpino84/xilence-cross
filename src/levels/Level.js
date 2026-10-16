@@ -123,20 +123,22 @@ class Level {
         wave.started = true;
         camera.lockX = camera.x;
         wave.clock = 0;
-        const normals = wave.spawns.filter((entry) => !entry.elite).length;
+        const normals = wave.spawns.filter((entry) => !entry.elite && !entry.boss).length;
         const elites = wave.spawns.filter((entry) => entry.elite).length;
+        const bosses = wave.spawns.filter((entry) => entry.boss).length;
         // El número de enemigos normales varía un poco entre partidas
-        const count = Math.max(1, normals + (Math.random() < 0.15 ? 1 : 0) - (Math.random() < 0.15 ? 1 : 0));
+        const count = normals ? Math.max(1, normals + (Math.random() < 0.15 ? 1 : 0) - (Math.random() < 0.15 ? 1 : 0)) : 0;
         wave.pending = [
           ...Array.from({ length: count }, (_, index) => ({ delay: index === 0 ? 0 : 0.3 + Math.random() * 2.6, rush: Math.random() < 0.6 })),
           ...Array.from({ length: elites }, (_, index) => ({ delay: 1.2 + index * 1.4, rush: true, elite: true })),
+          ...Array.from({ length: bosses }, () => ({ delay: 0.6, boss: true })),
         ].sort((first, second) => first.delay - second.delay);
       }
       if (wave.started && !wave.cleared) {
         wave.clock += dt;
         while (wave.pending.length && wave.pending[0].delay <= wave.clock) {
           const entry = wave.pending.shift();
-          wave.enemies.push(spawn(...this.spawnPoint(camera), true, { rush: entry.rush, elite: entry.elite }));
+          wave.enemies.push(spawn(...this.spawnPoint(camera), true, { rush: entry.rush, elite: entry.elite, boss: entry.boss }));
         }
         if (!wave.pending.length && wave.enemies.every((enemy) => !enemy.isAlive)) {
           wave.cleared = true;

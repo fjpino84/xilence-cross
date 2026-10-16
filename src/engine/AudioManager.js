@@ -592,6 +592,45 @@ AudioManager.SOUNDS = {
     a.noise({ type: 'lowpass', from: 700, to: 110, q: 0.8, duration: 2.6, volume: 0.42, attack: 0.3, wet: 0.5, shape: 'soft' });
     a.tone({ from: 70, to: 38, duration: 1.4, volume: 0.35, attack: 0.15 });
   },
+  // Rex Vane aparece: caída con estruendo grave, gruñido metálico y crepitar rojo
+  rexArrive: (a) => {
+    a.noise({ type: 'lowpass', from: 2400, to: 160, duration: 1.4, volume: 0.35, attack: 0.5, wet: 0.5, shape: 'soft' });
+    a.tone({ type: 'sawtooth', from: 120, to: 420, duration: 1.2, volume: 0.1, shape: 'soft', lowpass: 1600, attack: 0.6, wet: 0.4 });
+    a.crackle({ duration: 1.2, rate: 40, volume: 0.1 });
+  },
+  rexLand: (a) => {
+    a.tone({ from: 95, to: 32, duration: 0.6, volume: 0.6, attack: 0.002 });
+    a.noise({ type: 'lowpass', from: 1800, to: 120, duration: 0.5, volume: 0.45, attack: 0.002, wet: 0.35 });
+    a.growl({ from: 105, to: 58, duration: 0.8, volume: 0.4, rate: 18, wet: 0.3 });
+  },
+  // Carga de energía: un silbido que sube y chisporrotea
+  rexCharge: (a) => {
+    a.tone({ type: 'sawtooth', from: 160, to: 980, duration: 1.1, volume: 0.1, shape: 'soft', lowpass: 2800, attack: 0.2, wet: 0.25 });
+    a.tone({ type: 'sine', from: 700, to: 2400, duration: 1.0, volume: 0.05, attack: 0.3 });
+    a.crackle({ duration: 1.0, rate: 55, volume: 0.07 });
+  },
+  // Caen los rayos: chasquido, trueno y retumbar
+  rexBolt: (a) => {
+    a.noise({ type: 'highpass', from: 3000, to: 8500, duration: 0.09, volume: 0.5, attack: 0.001 });
+    a.noise({ type: 'lowpass', from: 3600, to: 200, duration: 0.7, volume: 0.5, attack: 0.002, wet: 0.35 });
+    a.tone({ from: 130, to: 38, duration: 0.55, volume: 0.55, attack: 0.002 });
+    a.crackle({ duration: 0.5, rate: 70, volume: 0.15 });
+  },
+  // Rayo horizontal: barrido eléctrico agudo con cola grave
+  rexRay: (a) => {
+    a.tone({ type: 'sawtooth', from: 2000, to: 260, duration: 0.5, volume: 0.2, shape: 'soft', lowpass: 4000, attack: 0.002, wet: 0.2 });
+    a.noise({ type: 'bandpass', from: 700, to: 4200, q: 1.2, duration: 0.55, volume: 0.38, attack: 0.01, wet: 0.2 });
+    a.tone({ from: 110, to: 45, duration: 0.5, volume: 0.45, attack: 0.002 });
+    a.crackle({ duration: 0.5, rate: 80, volume: 0.14 });
+  },
+  // Cada letra del diálogo: ECO suena cristalino y Rex Vane, grave y áspero
+  dialogBlip: (a, { who }) => {
+    if (who === 'rex') {
+      a.tone({ type: 'sawtooth', from: 96 + Math.random() * 14, to: 80, duration: 0.05, volume: 0.07, shape: 'soft', lowpass: 700, attack: 0.002 });
+    } else {
+      a.tone({ type: 'square', from: 520 + Math.random() * 90, to: 470, duration: 0.035, volume: 0.03, attack: 0.002 });
+    }
+  },
   // Chisporroteo de un foco que se cortocircuita
   zap: (a) => {
     a.crackle({ duration: 0.3, rate: 80, volume: 0.07 });

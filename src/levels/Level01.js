@@ -15,7 +15,7 @@ class Level01 extends Level {
     2: { normal: 2 },
     3: { normal: 2, elite: 1 },
     4: { normal: 2, elite: 1 },
-    5: { normal: 2, elite: 1 },
+    5: { boss: true }, // sub jefe: Rex Vane
     6: { normal: 2, elite: 1 },
     7: { normal: 3, elite: 1 },
     8: { normal: 2, elite: 2 },
@@ -57,8 +57,9 @@ class Level01 extends Level {
       // Se activa al entrar en la zona central del escenario
       triggerX: (Number(position) - 1) * Level.TILE_STRIDE + 520,
       spawns: [
-        ...Array.from({ length: encounter.normal }, () => ({})),
+        ...Array.from({ length: encounter.normal || 0 }, () => ({})),
         ...Array.from({ length: encounter.elite || 0 }, () => ({ elite: true })),
+        ...(encounter.boss ? [{ boss: true }] : []),
       ],
     }));
     super({

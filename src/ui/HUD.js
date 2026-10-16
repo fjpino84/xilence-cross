@@ -55,6 +55,7 @@ class HUD {
     this.renderTrino(ctx, trino);
     this.renderScore(ctx);
     this.renderWaves(ctx, level);
+    this.renderBoss(ctx);
     this.renderCombo(ctx, player);
     this.renderBanner(ctx);
     this.renderAdvance(ctx, level);
@@ -373,6 +374,24 @@ class HUD {
     Draw.rock(ctx, String(Math.round(this.shownScore)).padStart(6, '0'), right - 20, top + 56, {
       size: 40 * pop, align: 'right', colors: ['#ffffff', '#ffe600', '#c46a00'], glow: '#ffb000', glowBlur: 8 + this.scorePop * 60, rim: '#5a3400',
     });
+  }
+
+  // --- Barra de vida del jefe, abajo al centro, con su nombre ---
+  renderBoss(ctx) {
+    const boss = this.boss;
+    if (!boss) return;
+    const width = 520;
+    const x = (CONFIG.WIDTH - width) / 2;
+    const y = CONFIG.HEIGHT - 30;
+    // Se arrastra hacia el valor real para que se vea cuánto daño se acaba de hacer
+    this.bossGhost = Math.max(boss.hp, (this.bossGhost ?? boss.hp) - boss.maxHp * 0.18 * (1 / 60));
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.fillRect(x - 8, y - 34, width + 16, 52);
+    Draw.rock(ctx, `${boss.name}  ·  ${boss.title}`, x, y - 10, { size: 20, colors: ['#ffffff', '#ff5a8a', '#6a0030'], glow: '#ff2a55', glowBlur: 10, tracking: 2, outlineWidth: 4 });
+    Draw.bar(ctx, x, y, width, 14, this.bossGhost / boss.maxHp, '#ffe3e8', '#14060c');
+    Draw.bar(ctx, x, y, width, 14, boss.hp / boss.maxHp, boss.enraged ? '#ff6a00' : CONFIG.COLORS.RED, 'rgba(0, 0, 0, 0)');
+    ctx.restore();
   }
 
   // --- Progreso del nivel: un rombo por encuentro (lleno = superado, parpadeo = en curso). Se ajusta al número de encuentros ---
