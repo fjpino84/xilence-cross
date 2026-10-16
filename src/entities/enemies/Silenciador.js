@@ -8,8 +8,8 @@ class Silenciador extends Enemy {
   // feet = fracción de altura donde están los pies; anchor = fracción horizontal del centro del cuerpo.
   static FRAMES = {
     1: {
-      walk: { key: 'adv1Walk', count: 4, canvas: 598, g: 0.27, feet: 0.9941, anchor: 0.5432 },
-      slam: { key: 'adv1Slam', count: 5, canvas: 506, g: 0.29, feet: 0.9921, anchor: 0.4323 },
+      walk: { key: 'adv1Walk', count: 4, canvas: 598, g: 0.29, feet: 0.9941, anchor: 0.5432 },
+      slam: { key: 'adv1Slam', count: 5, canvas: 506, g: 0.34, feet: 0.9921, anchor: 0.4323 },
       spin: { key: 'adv1Spin', count: 5, canvas: 684, g: 0.29, feet: 0.9942, anchor: 0.5236 },
       hurt: { key: 'adv1Hurt', count: 4, canvas: 640, g: 0.29, feet: 0.9961, anchor: 0.5180 },
     },
@@ -22,7 +22,7 @@ class Silenciador extends Enemy {
   };
   static WALK_FPS = 9;
   // Tamaño de cada variante respecto a la calibración de las hojas; ECO mide ~140 px, el Martillo ~165 y la Garra élite ~210
-  static SIZES = { 1: 1.45, 2: 1.2 };
+  static SIZES = { 1: 1.35, 2: 1.2 };
   static GHOST_LIFE = 0.3;
 
   // Cuadro de cada ataque según la fase y su avance (0-1): [desde, nº de cuadro].
@@ -55,10 +55,10 @@ class Silenciador extends Enemy {
   };
 
   static VARIANTS = Object.freeze({
-    // 1 — Garra: el élite; pesado, de alcance largo y muy resistente
+    // 1 — Garra: el élite; rápido, de alcance largo, muy agresivo y resistente
     1: Object.freeze({
-      hp: 64, speed: 78, patrolSpeed: 36, patrolRange: 110, aggroRange: 620,
-      attackRange: 128, damage: 12, windup: 0.6, strike: 0.14, recovery: 0.5, cooldown: 1.2, scoreValue: 150,
+      hp: 64, speed: 92, patrolSpeed: 44, patrolRange: 110, aggroRange: 800,
+      attackRange: 135, damage: 12, windup: 0.5, strike: 0.14, recovery: 0.42, cooldown: 0.75, scoreValue: 150,
     }),
     // 2 — Martillo: pesado y agresivo; embiste al golpear y puede encadenar martillazo y giro
     2: Object.freeze({
@@ -78,7 +78,7 @@ class Silenciador extends Enemy {
     const scale = Silenciador.SIZES[variant] || 1;
     const base = Silenciador.VARIANTS[variant];
     const stats = elite
-      ? { ...base, hp: Math.round(base.hp * 2.4), damage: Math.round(base.damage * 1.25), scoreValue: base.scoreValue * 4, windup: base.windup * 0.92, cooldown: base.cooldown * 0.8 }
+      ? { ...base, hp: Math.round(base.hp * 1.6), damage: Math.round(base.damage * 1.25), scoreValue: base.scoreValue * 3, windup: base.windup * 0.92, cooldown: base.cooldown * 0.8 }
       : base;
     super({ x, y, w: 60 * scale, h: Silenciador.SPRITE_HEIGHT * scale, stats, aggressive });
     this.variant = variant;
@@ -122,7 +122,9 @@ class Silenciador extends Enemy {
     const dx = player.x - this.x;
     const dy = player.y - this.y;
     if (Math.abs(dx) > this.stats.attackRange + 90 || Math.abs(dy) > 26) return false;
-    if (Math.random() > (this.attackKind === 'slam' ? 0.36 : 0.22)) return false; // combos de dos golpes más frecuentes
+    // Combos de dos golpes: la Garra los encadena casi siempre
+    const [slamChance, spinChance] = this.variant === 1 ? [0.65, 0.5] : [0.36, 0.22];
+    if (Math.random() > (this.attackKind === 'slam' ? slamChance : spinChance)) return false;
 
     this.chained = true;
     this.attackKind = this.attackKind === 'slam' ? 'spin' : 'slam';

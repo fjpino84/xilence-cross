@@ -9,6 +9,7 @@ const ATMOSPHERE_DATA = {
     smoke: [{ x: 0.45, y: 0.60, w: 0.22, rate: 3 }, { x: 0.82, y: 0.62, w: 0.12, rate: 2 }],
   },
   bgLevel01b: {
+    searchlight: { x: 0.5, sweep: 0.3, speed: 0.5 },
     lamps: [
       { x: 0.26, y: 0.21, kind: 'red' }, { x: 0.57, y: 0.11, kind: 'red' }, { x: 0.11, y: 0.42, kind: 'red' },
       { x: 0.33, y: 0.50, kind: 'red' }, { x: 0.57, y: 0.49, kind: 'red' }, { x: 0.92, y: 0.43, kind: 'red' },
@@ -16,6 +17,7 @@ const ATMOSPHERE_DATA = {
     smoke: [{ x: 0.30, y: 0.62, w: 0.2, rate: 3 }, { x: 0.62, y: 0.58, w: 0.16, rate: 2 }],
   },
   bgLevel01c: {
+    searchlight: { x: 0.45, sweep: 0.32, speed: 0.42 },
     lamps: [
       { x: 0.11, y: 0.42, kind: 'red' }, { x: 0.33, y: 0.50, kind: 'red' }, { x: 0.58, y: 0.39, kind: 'red' },
       { x: 0.93, y: 0.43, kind: 'red' }, { x: 0.90, y: 0.24, kind: 'red' },
@@ -23,6 +25,7 @@ const ATMOSPHERE_DATA = {
     smoke: [{ x: 0.68, y: 0.50, w: 0.2, rate: 4 }, { x: 0.22, y: 0.62, w: 0.14, rate: 2 }],
   },
   bgLevel01d: {
+    searchlight: { x: 0.55, sweep: 0.3, speed: 0.46 },
     lamps: [
       { x: 0.68, y: 0.10, kind: 'red' }, { x: 0.90, y: 0.23, kind: 'red' }, { x: 0.33, y: 0.50, kind: 'red' },
       { x: 0.30, y: 0.11, kind: 'red' }, { x: 0.575, y: 0.40, kind: 'red' },
@@ -80,11 +83,19 @@ class Atmosphere {
     this.smoke = new ParticleSystem(); // humo en coordenadas del mundo (se dibuja bajo los personajes)
     this.lamps = [];
     this.sources = [];
+    this.searchlights = [];
     (level.config.backgroundSequence || []).forEach((tile, index) => {
       const data = ATMOSPHERE_DATA[tile.key];
       if (!data) return;
       const originX = index * Level.TILE_STRIDE;
       const worldX = (fraction) => originX + (tile.flip ? 1 - fraction : fraction) * Level.TILE_WIDTH;
+      if (data.searchlight) {
+        // Reflector que barre el suelo desde lo alto, como el de un helicóptero
+        this.searchlights.push({
+          cx: worldX(data.searchlight.x), sweep: data.searchlight.sweep * Level.TILE_WIDTH, speed: data.searchlight.speed,
+          phase: Math.random() * 6.28, spot: 0, reach: 150,
+        });
+      }
       for (const lamp of data.lamps) {
         this.lamps.push({
           x: worldX(lamp.x), y: lamp.y * CONFIG.HEIGHT, kind: lamp.kind,
@@ -255,6 +266,7 @@ class Atmosphere {
       ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
     }
     if (this.bolt) this.renderBolt(ctx);
+    for (const light of this.searchlights) this.renderSearchlight(ctx, light, camera);
 
     for (const lamp of this.lamps) {
       const x = lamp.x - camera.x;
@@ -262,6 +274,38 @@ class Atmosphere {
       this.renderLamp(ctx, lamp, x);
     }
     ctx.restore();
+  }
+
+  // Haz de luz desde arriba del escenario hasta una mancha elíptica en el suelo que se desplaza despacio
+  renderSearchlight(ctx, light, camera) {
+    const t = this.time * light.speed + light.phase;
+    const spotX = light.cx + Math.sin(t) * light.sweep - camera.x;
+    const spotY = 440 + Math.sin(t * 1.7) * 20;
+    const rx = light.reach;
+    if (spotX + rx < -60 || spotX - rx > CONFIG.WIDTH + 60) return;
+    const originX = spotX - 90 + Math.sin(t * 0.7 + 1) * 40;
+    const flicker = 0.94 + 0.06 * Math.sin(this.time * 38) + this.flash * 0.25; // el zumbido del rotor hace vibrar la luz
+
+    // Cono de luz: se abre desde fuera de la pantalla y se intensifica al llegar al suelo
+    const cone = ctx.createLinearGradient(0, -30, 0, spotY);
+    cone.addColorStop(0, `rgba(215, 232, 255, ${0.09 * flicker})`);
+    cone.addColorStop(1, `rgba(225, 238, 255, ${0.32 * flicker})`);
+    ctx.fillStyle = cone;
+    ctx.beginPath();
+    ctx.moveTo(originX - 16, -30);
+    ctx.lineTo(originX + 16, -30);
+    ctx.lineTo(spotX + rx, spotY);
+    ctx.lineTo(spotX - rx, spotY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Mancha de luz en el suelo (elipse achatada) con núcleo más brillante
+    ctx.globalAlpha = Math.min(1, 0.7 * flicker);
+    const sprite = Atmosphere.glowSprite('#bcd8ff');
+    ctx.drawImage(sprite, spotX - rx * 1.25, spotY - rx * 0.36, rx * 2.5, rx * 0.72);
+    ctx.globalAlpha = Math.min(1, 0.55 * flicker);
+    ctx.drawImage(sprite, spotX - rx * 0.6, spotY - rx * 0.17, rx * 1.2, rx * 0.34);
+    ctx.globalAlpha = 1;
   }
 
   renderBolt(ctx) {

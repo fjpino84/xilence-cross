@@ -129,7 +129,7 @@ class Level {
         const count = Math.max(1, normals + (Math.random() < 0.15 ? 1 : 0) - (Math.random() < 0.15 ? 1 : 0));
         wave.pending = [
           ...Array.from({ length: count }, (_, index) => ({ delay: index === 0 ? 0 : 0.3 + Math.random() * 2.6, rush: Math.random() < 0.6 })),
-          ...Array.from({ length: elites }, (_, index) => ({ delay: 1.8 + index * 1.6, rush: true, elite: true })),
+          ...Array.from({ length: elites }, (_, index) => ({ delay: 1.2 + index * 1.4, rush: true, elite: true })),
         ].sort((first, second) => first.delay - second.delay);
       }
       if (wave.started && !wave.cleared) {

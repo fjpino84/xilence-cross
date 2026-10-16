@@ -10,16 +10,16 @@ class Level01 extends Level {
   static SUB_BOSS_POSITION = 5;
   static BOSS_POSITION = 10;
 
-  // Encuentro de cada posición: enemigos normales y élites (uno en el sub jefe, dos en el jefe)
+  // Encuentro de cada posición: enemigos normales (Martillo) y élites (Garra). El sub jefe y el jefe se configuran aparte
   static ENCOUNTERS = {
     2: { normal: 2 },
-    3: { normal: 2 },
-    4: { normal: 3 },
+    3: { normal: 2, elite: 1 },
+    4: { normal: 2, elite: 1 },
     5: { normal: 2, elite: 1 },
-    6: { normal: 3 },
-    7: { normal: 3 },
-    8: { normal: 4 },
-    9: { normal: 4 },
+    6: { normal: 2, elite: 1 },
+    7: { normal: 3, elite: 1 },
+    8: { normal: 2, elite: 2 },
+    9: { normal: 3, elite: 2 },
     10: { normal: 2, elite: 2 },
   };
 
