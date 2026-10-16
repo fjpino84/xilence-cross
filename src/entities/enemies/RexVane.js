@@ -118,6 +118,7 @@ class RexVane extends Enemy {
     }
     this.y = Math.max(CONFIG.GROUND_TOP, Math.min(CONFIG.GROUND_BOTTOM, this.y));
     this.trailGhosts(dt);
+    this.scepterSparks(dt, world);
   }
 
   faceTo(player) {
@@ -387,6 +388,21 @@ class RexVane extends Enemy {
     this.alpha = Math.max(0, 1 - Math.max(0, this.deadTime - 0.6) / (RexVane.DEATH_TIME - 0.6));
   }
 
+  // Chispas eléctricas que saltan del cetro
+  scepterSparks(dt, world) {
+    if (this.state === 'dead' || this.state === 'arrive') return;
+    this.sparkTimer = (this.sparkTimer || 0) - dt;
+    if (this.sparkTimer > 0) return;
+    this.sparkTimer = 0.07 + Math.random() * 0.08;
+    const tip = this.scepterPoint;
+    const angle = Math.random() * Math.PI * 2;
+    world.particles.add({
+      type: 'spark', x: tip.x + (Math.random() - 0.5) * 30, y: tip.y + (Math.random() - 0.5) * 40,
+      vx: Math.cos(angle) * 220, vy: Math.sin(angle) * 220 - 40, life: 0.18, size: 2.2,
+      color: Math.random() < 0.5 ? '#ff4466' : '#ffd0da',
+    });
+  }
+
   // Imágenes residuales rojas mientras barre la escena o se lanza en picado
   trailGhosts(dt) {
     for (const ghost of this.ghosts) ghost.age += dt;
@@ -461,6 +477,32 @@ class RexVane extends Enemy {
       offsetX: shake, offsetY: frame.drop,
       tint: this.shock > 0 ? { color: CONFIG.COLORS.CYAN, alpha: 0.15 + 0.2 * Math.abs(Math.sin(this.age * 50)) } : null,
     });
+    this.renderScepterGlow(ctx, frame);
+  }
+
+  // Cetro: segunda pasada aditiva que hace brillar los rayos rosas (el cuerpo, oscuro, casi no cambia), un halo que late
+  // y chispas que saltan del cetro. Es más intensa mientras carga o dispara un ataque.
+  renderScepterGlow(ctx, frame) {
+    const attacking = (this.state === 'bolts' && (this.sub === 'charge' || this.sub === 'strike')) || (this.state === 'slam' && (this.sub === 'windup' || this.sub === 'strike'));
+    const flicker = 0.5 + 0.5 * Math.sin(this.age * 22) * Math.sin(this.age * 9.7);
+    const power = (attacking ? 0.75 : 0.4) + 0.25 * flicker;
+    Sprite.draw(ctx, frame.image, {
+      x: this.x, y: this.y - this.z, height: frame.height, anchorX: frame.anchorX, facing: this.facing,
+      offsetY: frame.drop, additive: true, alpha: power * this.alpha,
+    });
+    const tip = this.scepterPoint;
+    const size = (attacking ? 120 : 84) * (0.85 + 0.3 * flicker);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = (attacking ? 0.7 : 0.42) * this.alpha;
+    ctx.drawImage(Atmosphere.glowSprite('#ff2a55'), tip.x - size / 2, tip.y - size / 2, size, size);
+    ctx.restore();
+  }
+
+  // Punta aproximada del cetro (arriba y delante del cuerpo)
+  get scepterPoint() {
+    const standing = this.state === 'slam' && this.sub !== 'dive' && this.sub !== 'rise';
+    return { x: this.x + this.facing * (standing ? 100 : 78), y: this.y - this.z - (standing ? 70 : 205) };
   }
 
   // Sin barra sobre la cabeza: el HUD dibuja la barra del jefe arriba
