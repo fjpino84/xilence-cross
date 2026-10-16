@@ -45,7 +45,6 @@ const CONFIG = Object.freeze({
     ecoCaminar2: 'assets/sprites/eco/caminar_2.png',
     ecoCaminar3: 'assets/sprites/eco/caminar_3.png',
     ecoCaminar4: 'assets/sprites/eco/caminar_4.png',
-    ecoCaminar5: 'assets/sprites/eco/caminar_5.png',
     ecoCombo1: 'assets/sprites/eco/combo_1.png',
     ecoCombo2: 'assets/sprites/eco/combo_2.png',
     ecoCombo3: 'assets/sprites/eco/combo_3.png',

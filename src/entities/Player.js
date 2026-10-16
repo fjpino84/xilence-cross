@@ -21,7 +21,7 @@ class Player extends Entity {
   // Las alturas salen de normalizar el tamaño de la cabeza entre poses (cada una se dibujó a distinta escala).
   // Cuadros de animación (mismo tamaño de lienzo, alineados por el torso)
   static WALK_FPS = 10;
-  static WALK_FRAMES = 5;
+  static WALK_FRAMES = 4; // el 5.º cuadro de la hoja original tiene el mástil cortado por el borde de la imagen
   static FRAME_HEIGHT = 141;
   static FRAME_ANCHOR = { walk: 0.389, hit: 0.398 };
   // Secuencias con efectos: altura = alto del lienzo (px de imagen) × escala. La escala iguala el tamaño del personaje.
@@ -57,7 +57,7 @@ class Player extends Entity {
 
   static SPRITES = {
     idle: { key: 'spriteEco', height: 140, anchorX: 0.5 },
-    caminar: { key: 'ecoCaminar', height: 166, anchorX: 0.46 },
+    caminar: { key: 'ecoCaminar', height: 166, anchorX: 0.457 },
     golpe: { key: 'ecoGolpe', height: 140, anchorX: 0.55 },
     rayo: { key: 'ecoRayo', height: 144, anchorX: 0.33 },
     poder: { key: 'ecoPoder', height: 140, anchorX: 0.49 },
