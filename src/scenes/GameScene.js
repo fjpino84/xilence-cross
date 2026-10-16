@@ -8,6 +8,7 @@ class GameScene {
   static LEVELS = [Level01]; // por ahora la demo es un solo nivel (Level02, 04 y 07 siguen en el código)
   // Variantes de enemigo que aparecen (1 Garra, 2 Martillo, 3 Disco). De momento solo el Martillo, que ya tiene todas sus animaciones.
   static ENEMY_VARIANTS = [2];
+  static ELITE_VARIANT = 1;
   static AMBIENT_RATES = { rain: 110, embers: 28, fireflies: 7, motes: 10 };
 
   constructor(game) {
@@ -35,6 +36,12 @@ class GameScene {
     this.callout = null;
     this.particles = new ParticleSystem();
     this.ambient = new ParticleSystem();
+    this.atmosphere = new Atmosphere(this.level);
+    this.atmosphereHooks = {
+      thunder: () => this.game.audio.play('thunder'),
+      zap: () => this.game.audio.play('zap'),
+      shake: (power, duration) => this.camera.shake(power, duration),
+    };
     this.ambientBudget = 0;
     this.time = 0;
     this.flashTime = 0;
@@ -94,7 +101,8 @@ class GameScene {
   }
 
   spawnEnemy(x, y, aggressive, opts = {}) {
-    const variant = GameScene.ENEMY_VARIANTS[Math.floor(Math.random() * GameScene.ENEMY_VARIANTS.length)];
+    // Los élites son la Garra (variante 1); la tropa normal, el Martillo
+    const variant = opts.elite ? GameScene.ELITE_VARIANT : GameScene.ENEMY_VARIANTS[Math.floor(Math.random() * GameScene.ENEMY_VARIANTS.length)];
     const enemy = new Silenciador(x, y, aggressive, variant, opts);
     if (opts.rush) {
       enemy.startRush();
@@ -279,7 +287,7 @@ class GameScene {
   // Golpe de un enemigo: estela, polvo, sonido y, en el Martillo, grietas, escombros y ondas de choque
   enemyStrike(enemy) {
     const { PURPLE, CYAN } = CONFIG.COLORS;
-    if (enemy.variant !== 2) {
+    if (!enemy.framed) {
       this.effects.push({ type: 'arc', x: enemy.x, y: enemy.y, z: 70, facing: enemy.facing, age: 0, duration: 0.25, color: CONFIG.COLORS.RED, reach: 100 });
       this.game.audio.play('enemySwing');
       return;
@@ -916,6 +924,7 @@ class GameScene {
     this.updateSplashes(scaled);
     if (this.level.config.ambient === 'rain') this.rainRipples(scaled);
     this.updateAmbient(scaled);
+    this.atmosphere.update(scaled, this.camera, this.atmosphereHooks);
     this.hud.update(dt);
     if (this.finale) this.updateFinale(dt);
     else this.checkEndConditions(dt);
@@ -1075,6 +1084,7 @@ class GameScene {
     ctx.save();
     this.camera.applyZoom(ctx);
     this.level.renderBackground(ctx, this.camera);
+    this.atmosphere.renderBack(ctx, this.camera);
     if (this.darkness > 0.01) {
       ctx.fillStyle = `rgba(3, 3, 12, ${this.darkness})`;
       ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
@@ -1083,6 +1093,7 @@ class GameScene {
     ctx.save();
     this.camera.apply(ctx);
     // Orden por profundidad: lo más cercano a la cámara se dibuja encima
+    this.atmosphere.renderSmoke(ctx); // humo del escenario, bajo los personajes
     for (const effect of this.effects) if (effect.ground) this.renderEffect(ctx, effect); // grietas bajo los personajes
     const drawables = [this.player, this.trino, ...this.enemies, ...(this.finale && this.finale.voidhar ? [this.finale.voidhar] : [])].sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
     for (const entity of drawables) entity.render(ctx);

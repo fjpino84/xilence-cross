@@ -59,13 +59,34 @@ class ParticleSystem {
     this.items.length = write;
   }
 
+  // Nube suave (centro opaco que se difumina hacia el borde), pintada una vez por color: sirve para humo de escenario
+  static puffSprite(color) {
+    ParticleSystem.puffs = ParticleSystem.puffs || {};
+    if (ParticleSystem.puffs[color]) return ParticleSystem.puffs[color];
+    const size = 96;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const c = canvas.getContext('2d');
+    const gradient = c.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    gradient.addColorStop(0, color);
+    gradient.addColorStop(0.55, color);
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    c.globalAlpha = 0.9;
+    c.fillStyle = gradient;
+    c.fillRect(0, 0, size, size);
+    ParticleSystem.puffs[color] = canvas;
+    return canvas;
+  }
+
   render(ctx) {
     ctx.save();
     ctx.lineCap = 'round';
     for (const p of this.items) {
       const t = p.age / p.life;
       ctx.globalCompositeOperation = p.additive ? 'lighter' : 'source-over';
-      ctx.globalAlpha = Math.max(0, p.type === 'smoke' ? 0.4 * (1 - t) : 1 - t);
+      // El humo se desvanece al irse; la nube suave aparece y se apaga con una campana
+      ctx.globalAlpha = Math.max(0, p.type === 'smoke' ? 0.4 * (1 - t) : (p.type === 'puff' ? (p.alpha || 0.3) * Math.sin(Math.PI * t) : 1 - t));
       const size = p.size + (p.sizeEnd - p.size) * t;
 
       switch (p.type) {
@@ -107,6 +128,11 @@ class ParticleSystem {
           ctx.closePath();
           ctx.fill();
           ctx.restore();
+          break;
+        }
+        case 'puff': {
+          const half = Math.max(0.1, size);
+          ctx.drawImage(ParticleSystem.puffSprite(p.color), p.x - half, p.y - half, half * 2, half * 2);
           break;
         }
         default: // dot, smoke

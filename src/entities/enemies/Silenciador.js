@@ -3,36 +3,62 @@
 class Silenciador extends Enemy {
   static SPRITE_HEIGHT = 165;
 
-  // Animación por cuadros de la variante 2. g = px de juego por px del lienzo: cada hoja se dibujó a otra escala.
+  // Animación por cuadros de las variantes ilustradas: 1 = Garra (élite) y 2 = Martillo (tropa normal).
+  // g = px de juego por px del lienzo: cada hoja se dibujó a otra escala.
   // feet = fracción de altura donde están los pies; anchor = fracción horizontal del centro del cuerpo.
-  static FRAMES2 = {
-    walk: { key: 'adv2Walk', count: 4, canvas: 303, g: 0.50, feet: 0.9967, anchor: 0.5187 },
-    slam: { key: 'adv2Slam', count: 6, canvas: 352, g: 0.58, feet: 0.9710, anchor: 0.5190 },
-    spin: { key: 'adv2Spin', count: 8, canvas: 280, g: 0.42, feet: 0.9893, anchor: 0.4590 },
-    hurt: { key: 'adv2Hurt', count: 6, canvas: 306, g: 0.50, feet: 0.9908, anchor: 0.4959 },
+  static FRAMES = {
+    1: {
+      walk: { key: 'adv1Walk', count: 4, canvas: 598, g: 0.27, feet: 0.9941, anchor: 0.5432 },
+      slam: { key: 'adv1Slam', count: 5, canvas: 506, g: 0.29, feet: 0.9921, anchor: 0.4323 },
+      spin: { key: 'adv1Spin', count: 5, canvas: 684, g: 0.29, feet: 0.9942, anchor: 0.5236 },
+      hurt: { key: 'adv1Hurt', count: 4, canvas: 640, g: 0.29, feet: 0.9961, anchor: 0.5180 },
+    },
+    2: {
+      walk: { key: 'adv2Walk', count: 4, canvas: 303, g: 0.50, feet: 0.9967, anchor: 0.5187 },
+      slam: { key: 'adv2Slam', count: 6, canvas: 352, g: 0.58, feet: 0.9710, anchor: 0.5190 },
+      spin: { key: 'adv2Spin', count: 8, canvas: 280, g: 0.42, feet: 0.9893, anchor: 0.4590 },
+      hurt: { key: 'adv2Hurt', count: 6, canvas: 306, g: 0.50, feet: 0.9908, anchor: 0.4959 },
+    },
   };
   static WALK_FPS = 9;
-  static SIZE2 = 1.2; // tamaño del Martillo respecto a la calibración de las hojas; ECO mide ~140 px y el Martillo ~165
+  // Tamaño de cada variante respecto a la calibración de las hojas; ECO mide ~140 px, el Martillo ~165 y la Garra élite ~210
+  static SIZES = { 1: 1.45, 2: 1.2 };
   static GHOST_LIFE = 0.3;
 
   // Cuadro de cada ataque según la fase y su avance (0-1): [desde, nº de cuadro].
-  // El martillazo cae en el cuadro 5 justo al empezar la fase de golpe.
-  static SLAM_TRACK = {
-    windup: [[0, 1], [0.30, 2], [0.66, 3], [0.91, 4]],
-    strike: [[0, 5]],
-    recovery: [[0, 5], [0.30, 6]],
-  };
-  static SPIN_TRACK = {
-    windup: [[0, 1], [0.43, 3]],
-    strike: [[0, 4]],
-    recovery: [[0, 6], [0.27, 2], [0.52, 5], [0.77, 7], [0.90, 8]],
+  // El golpe cae justo al empezar la fase de golpe.
+  static TRACKS = {
+    1: {
+      slam: {
+        windup: [[0, 1], [0.5, 2]],
+        strike: [[0, 3]],
+        recovery: [[0, 4], [0.45, 5]],
+      },
+      spin: {
+        windup: [[0, 1], [0.5, 2]],
+        strike: [[0, 3]],
+        recovery: [[0, 4], [0.4, 5]],
+      },
+    },
+    2: {
+      slam: {
+        windup: [[0, 1], [0.30, 2], [0.66, 3], [0.91, 4]],
+        strike: [[0, 5]],
+        recovery: [[0, 5], [0.30, 6]],
+      },
+      spin: {
+        windup: [[0, 1], [0.43, 3]],
+        strike: [[0, 4]],
+        recovery: [[0, 6], [0.27, 2], [0.52, 5], [0.77, 7], [0.90, 8]],
+      },
+    },
   };
 
   static VARIANTS = Object.freeze({
-    // 1 — Garra: equilibrado
+    // 1 — Garra: el élite; pesado, de alcance largo y muy resistente
     1: Object.freeze({
-      hp: 45, speed: 85, patrolSpeed: 40, patrolRange: 120, aggroRange: 420,
-      attackRange: 90, damage: 10, windup: 0.5, strike: 0.12, recovery: 0.45, cooldown: 1.2, scoreValue: 100,
+      hp: 64, speed: 78, patrolSpeed: 36, patrolRange: 110, aggroRange: 620,
+      attackRange: 128, damage: 12, windup: 0.6, strike: 0.14, recovery: 0.5, cooldown: 1.2, scoreValue: 150,
     }),
     // 2 — Martillo: pesado y agresivo; embiste al golpear y puede encadenar martillazo y giro
     2: Object.freeze({
@@ -46,16 +72,17 @@ class Silenciador extends Enemy {
     }),
   });
 
-  // opts.elite: versión de sub jefe/jefe (más grande, con más vida y más daño)
-  constructor(x, y, aggressive = false, variant = 1, opts = {}) {
-    const elite = !!opts.elite && variant === 2;
-    const scale = variant === 2 ? Silenciador.SIZE2 * (elite ? 1.22 : 1) : 1;
+  // opts.elite: versión de sub jefe/jefe (más vida y más daño); se usa con la variante 1, la Garra
+  constructor(x, y, aggressive = false, variant = 2, opts = {}) {
+    const elite = !!opts.elite;
+    const scale = Silenciador.SIZES[variant] || 1;
     const base = Silenciador.VARIANTS[variant];
     const stats = elite
-      ? { ...base, hp: Math.round(base.hp * 2.8), damage: Math.round(base.damage * 1.35), scoreValue: base.scoreValue * 4, windup: base.windup * 0.92, cooldown: base.cooldown * 0.8 }
+      ? { ...base, hp: Math.round(base.hp * 2.4), damage: Math.round(base.damage * 1.25), scoreValue: base.scoreValue * 4, windup: base.windup * 0.92, cooldown: base.cooldown * 0.8 }
       : base;
     super({ x, y, w: 60 * scale, h: Silenciador.SPRITE_HEIGHT * scale, stats, aggressive });
     this.variant = variant;
+    this.framed = !!Silenciador.FRAMES[variant]; // tiene animación ilustrada por cuadros
     this.elite = elite;
     this.sizeScale = scale; // los efectos (aura, torbellino, chispas) se escalan con el personaje
     this.ghosts = [];
@@ -68,14 +95,14 @@ class Silenciador extends Enemy {
   // La variante 2 alterna martillazo y giro
   chooseAttackKind() {
     this.swingPlayed = false;
-    return this.variant === 2 && Assets.image('adv2Spin1') && Math.random() < 0.5 ? 'spin' : 'slam';
+    return this.framed && Assets.image(Silenciador.FRAMES[this.variant].spin.key + '1') && Math.random() < 0.5 ? 'spin' : 'slam';
   }
 
   // --- Dinamismo del ataque ---
 
   // Embestida: recula un poco al cargar y se lanza sobre ECO al soltar el golpe
   attackDrift(phase, progress) {
-    if (this.variant !== 2) return 0;
+    if (!this.framed) return 0;
     const dir = this.facing;
     if (this.attackKind === 'slam') {
       if (phase === 'windup') {
@@ -91,7 +118,7 @@ class Silenciador extends Enemy {
 
   // Encadena el otro ataque sin pausa si ECO sigue al alcance (el segundo golpe carga más rápido)
   nextAttack(player, world) {
-    if (this.variant !== 2 || this.chained || !player.isAlive) return false;
+    if (!this.framed || this.chained || !player.isAlive) return false;
     const dx = player.x - this.x;
     const dy = player.y - this.y;
     if (Math.abs(dx) > this.stats.attackRange + 90 || Math.abs(dy) > 26) return false;
@@ -111,7 +138,7 @@ class Silenciador extends Enemy {
 
   // --- Efectos por fotograma ---
   afterUpdate(dt, world) {
-    if (this.variant !== 2) return;
+    if (!this.framed) return;
 
     // Imágenes residuales mientras embiste
     for (const ghost of this.ghosts) ghost.age += dt;
@@ -199,11 +226,11 @@ class Silenciador extends Enemy {
     });
   }
 
-  // Cuadro ilustrado que toca ahora (solo variante 2): { image, height, anchorX, drop, neutral }.
+  // Cuadro ilustrado que toca ahora (variantes 1 y 2): { image, height, anchorX, drop, neutral }.
   // neutral = el dibujo ya trae la pose: no se aplican las deformaciones por código.
   currentFrame() {
-    if (this.variant !== 2) return null;
-    const F = Silenciador.FRAMES2;
+    if (!this.framed) return null;
+    const F = Silenciador.FRAMES[this.variant];
     const pick = (set, number, neutral = true) => {
       const image = Assets.image(`${set.key}${number}`);
       const height = set.canvas * set.g * this.sizeScale;
@@ -216,7 +243,7 @@ class Silenciador extends Enemy {
         return pick(F.walk, Math.abs(this.vx) > 5 ? 1 + (Math.floor(this.age * Silenciador.WALK_FPS * (this.rushing ? 1.7 : 1)) % F.walk.count) : 1);
       case 'attack': {
         const spin = this.attackKind === 'spin';
-        const table = (spin ? Silenciador.SPIN_TRACK : Silenciador.SLAM_TRACK);
+        const table = Silenciador.TRACKS[this.variant][spin ? 'spin' : 'slam'];
         const { phase, progress } = this.attackPhase();
         let number = table[phase][0][1];
         for (const [from, frame] of table[phase]) if (progress >= from) number = frame;
@@ -230,7 +257,7 @@ class Silenciador extends Enemy {
         // Tendido un momento; después se incorpora con los cuadros de recuperación
         if (this.stateTime < 0.26) return pick(F.walk, 1, false);
         const rise = Math.min(1, (this.stateTime - 0.26) / 0.34);
-        const frame = pick(F.hurt, 3 + Math.min(3, Math.floor(rise * 4)));
+        const frame = pick(F.hurt, Math.min(F.hurt.count, 3 + Math.min(3, Math.floor(rise * 4))));
         if (frame && this.stateTime < 0.36) frame.neutral = false; // gira desde el suelo en los primeros instantes
         return frame;
       }
@@ -312,7 +339,7 @@ class Silenciador extends Enemy {
 
   // Orbe de energía que crece sobre el martillo mientras carga el golpe
   renderChargeGlow(ctx) {
-    if (this.variant !== 2) return;
+    if (!this.framed) return;
     const { progress } = this.attackPhase();
     const spot = this.hammerSpot();
     const radius = 14 + 40 * progress;

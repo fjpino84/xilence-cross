@@ -10,3 +10,6 @@ Se ejecutan con `powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\<
 - **strip.ps1**: convierte una hoja de varias filas en una tira horizontal.
 - **puddles.ps1**: detecta charcos luminosos en un fondo (referencia; los charcos se fijaron a mano en src/levels/PuddleData.js).
 - **resize.ps1**, **cutout.ps1**: reducir fondos y recortar una sola figura.
+- **split.ps1**: para hojas cuyos dibujos se solapan (Adversario 1). Reparte los pixeles por columnas con cortes inclinados (`-Cuts`,
+  en fracciones) y deja un hueco blanco entre ellas; despues se pasa por extract.ps1.
+- **clean.ps1**: quita los fragmentos sueltos de figuras vecinas que quedan en el borde de un cuadro recortado.

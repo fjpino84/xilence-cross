@@ -585,6 +585,18 @@ AudioManager.SOUNDS = {
   },
 
   // --- Enemigos: bestiales ---
+  // Trueno lejano: estallido seco seguido de un retumbar largo que se apaga
+  thunder: (a) => {
+    a.noise({ type: 'lowpass', from: 2200, to: 260, duration: 0.5, volume: 0.45, attack: 0.004, wet: 0.3 });
+    a.crackle({ duration: 0.4, rate: 70, volume: 0.12, low: 900, high: 5000 });
+    a.noise({ type: 'lowpass', from: 700, to: 110, q: 0.8, duration: 2.6, volume: 0.42, attack: 0.3, wet: 0.5, shape: 'soft' });
+    a.tone({ from: 70, to: 38, duration: 1.4, volume: 0.35, attack: 0.15 });
+  },
+  // Chisporroteo de un foco que se cortocircuita
+  zap: (a) => {
+    a.crackle({ duration: 0.3, rate: 80, volume: 0.07 });
+    a.noise({ type: 'bandpass', from: 2500, to: 5200, q: 2, duration: 0.12, volume: 0.1, attack: 0.001 });
+  },
   // Gruñido al empezar a cargar el golpe (avisa de que viene algo grande)
   enemyWarn: (a) => {
     a.growl({ from: 125, to: 78, duration: 0.5, volume: 0.34, rate: 20, wet: 0.15 });
