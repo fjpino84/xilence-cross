@@ -3,7 +3,7 @@
 //  · Ataque 2 (descarga): baja a tierra, se agacha y lanza un rayo horizontal a ras de suelo. Se esquiva saltando.
 // No se aturde ni sale despedido: recibe el daño y sigue. Por debajo de la mitad de su vida ataca más rápido.
 class RexVane extends Enemy {
-  static HOVER = 54; // altura de vuelo: ECO lo alcanza con los golpes del suelo
+  static HOVER = 70; // altura de vuelo: ECO lo alcanza con los golpes del suelo
   static ARRIVE_TIME = 1.8;
   static FLY_FPS = 9;
   static DEATH_TIME = 2.4;
@@ -13,9 +13,9 @@ class RexVane extends Enemy {
 
   // g = px de juego por px del lienzo; scales corrige cuadros que en la hoja se dibujaron más pequeños (relativo al lienzo común)
   static FRAMES = {
-    fly: { key: 'rexFly', count: 6, canvas: 393, g: 0.6, feet: 0.984, anchor: 0.4734, scales: [1, 1, 1, 1.2, 1.2, 1.2] },
-    charge: { key: 'rexCharge', count: 6, canvas: 474, g: 0.55, feet: 0.9947, anchor: 0.4299, scales: [1, 1, 1, 1.15, 1.15, 1] },
-    land: { key: 'rexLand', count: 6, canvas: 419, g: 0.64, feet: 0.9857, anchor: 0.4896, scales: [1, 1, 1, 1, 1, 1] },
+    fly: { key: 'rexFly', count: 6, canvas: 393, g: 1.0, feet: 0.984, anchor: 0.4734, scales: [1, 1, 1, 1.2, 1.2, 1.2] },
+    charge: { key: 'rexCharge', count: 6, canvas: 474, g: 0.63, feet: 0.9947, anchor: 0.4299, scales: [1, 1, 1, 1.15, 1.15, 1] },
+    land: { key: 'rexLand', count: 6, canvas: 419, g: 0.8, feet: 0.9857, anchor: 0.4896, scales: [1, 1, 1, 1, 1, 1] },
   };
 
   constructor(x, y) {
@@ -23,7 +23,7 @@ class RexVane extends Enemy {
       hp: 320, speed: 170, patrolSpeed: 0, patrolRange: 0, aggroRange: 99999, attackRange: 0,
       damage: 18, windup: 1, strike: 0.4, recovery: 0.5, cooldown: 1, scoreValue: 3000,
     });
-    super({ x, y, w: 70, h: 150, stats, aggressive: true });
+    super({ x, y, w: 70, h: 190, stats, aggressive: true });
     this.boss = true;
     this.name = 'REX VANE';
     this.title = 'AUDITOR SONORO';
@@ -52,7 +52,7 @@ class RexVane extends Enemy {
   get removable() { return !this.isAlive && this.deadTime >= RexVane.DEATH_TIME; }
 
   // Cabeza del jefe en el mundo (para el escáner del diálogo)
-  get headPoint() { return { x: this.x + this.facing * 6, y: this.y - this.z - 128 }; }
+  get headPoint() { return { x: this.x + this.facing * 6, y: this.y - this.z - 165 }; }
 
   // Tras el diálogo empieza el combate
   engage() {
