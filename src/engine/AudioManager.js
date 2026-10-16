@@ -105,6 +105,13 @@ class AudioManager {
     }
   }
 
+  // Detiene la música de fondo (duelo musical) o la reanuda
+  pauseMusic(on) {
+    if (!this.music) return;
+    if (on) this.music.pause();
+    else if (this.musicState !== 'error') this.music.play().catch(() => {});
+  }
+
   // Baja el volumen de la música (pausa) o lo restaura
   duckMusic(on) {
     if (this.music) this.music.volume = on ? AudioManager.MUSIC_DUCKED : AudioManager.MUSIC_VOLUME;
@@ -630,6 +637,12 @@ AudioManager.SOUNDS = {
     } else {
       a.tone({ type: 'square', from: 520 + Math.random() * 90, to: 470, duration: 0.035, volume: 0.03, attack: 0.002 });
     }
+  },
+  // Se pierde el duelo: acorde que se hunde y se apaga
+  duelFail: (a) => {
+    a.tone({ type: 'sawtooth', from: 330, to: 48, duration: 1.1, volume: 0.22, shape: 'soft', lowpass: 1800, attack: 0.01, wet: 0.3 });
+    a.tone({ type: 'sawtooth', from: 247, to: 36, duration: 1.2, volume: 0.18, shape: 'soft', lowpass: 1400, attack: 0.01, detune: 12 });
+    a.noise({ type: 'lowpass', from: 2400, to: 120, duration: 0.9, volume: 0.3, attack: 0.002, wet: 0.4 });
   },
   // Latido de poca vida: dos golpes graves seguidos
   heartbeat: (a) => {

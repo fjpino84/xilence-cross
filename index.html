@@ -139,6 +139,29 @@
     .touch-button.touch-cyan { color: #aef9ff; }
     .touch-button.touch-white { border-color: #cfd6e6; color: #e8edf8; box-shadow: 0 0 1.4vh rgba(255, 255, 255, 0.3); font-size: 2.7vh; }
 
+    /* Duelo musical: cuatro pads grandes para tocar las notas */
+    .touch-duel { position: fixed; inset: 0; z-index: 10; pointer-events: none; display: none; }
+    .touch-pad {
+      position: absolute;
+      bottom: calc(3vh + env(safe-area-inset-bottom, 0px));
+      width: 18vh;
+      height: 18vh;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      border: 0.8vh solid currentColor;
+      background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.25), rgba(3, 3, 10, 0.6));
+      font-family: var(--font);
+      font-style: italic;
+      font-size: 5vh;
+      text-shadow: 0 0.3vh 0 #000, 0 0 1vh currentColor;
+      box-shadow: 0 0 2vh currentColor;
+      padding: 0;
+      opacity: 0.85;
+      pointer-events: auto;
+      touch-action: none;
+    }
+    .touch-pad.pressed { opacity: 1; background: currentColor; color: #000; }
+
     .touch-button.pressed {
       opacity: 1;
       transform: scale(0.92);
@@ -299,40 +322,42 @@
   </main>
 
   <!-- Orden de carga: configuración → motor → entidades → niveles → UI → escenas → arranque -->
-  <script src="src/config.js?v=35"></script>
-  <script src="src/engine/Draw.js?v=35"></script>
-  <script src="src/engine/Assets.js?v=35"></script>
-  <script src="src/engine/Sprite.js?v=35"></script>
-  <script src="src/engine/ParticleSystem.js?v=35"></script>
-  <script src="src/engine/AudioManager.js?v=35"></script>
-  <script src="src/engine/InputManager.js?v=35"></script>
-  <script src="src/engine/TouchControls.js?v=35"></script>
-  <script src="src/engine/Camera.js?v=35"></script>
-  <script src="src/engine/Collision.js?v=35"></script>
-  <script src="src/engine/Records.js?v=35"></script>
-  <script src="src/engine/SceneManager.js?v=35"></script>
-  <script src="src/engine/Game.js?v=35"></script>
-  <script src="src/entities/Entity.js?v=35"></script>
-  <script src="src/entities/Player.js?v=35"></script>
-  <script src="src/entities/Trino.js?v=35"></script>
-  <script src="src/entities/VoidharFinale.js?v=35"></script>
-  <script src="src/entities/enemies/Enemy.js?v=35"></script>
-  <script src="src/entities/enemies/Silenciador.js?v=35"></script>
-  <script src="src/entities/enemies/RexVane.js?v=35"></script>
-  <script src="src/levels/PuddleData.js?v=35"></script>
-  <script src="src/levels/Level.js?v=35"></script>
-  <script src="src/levels/Atmosphere.js?v=35"></script>
-  <script src="src/levels/Level01.js?v=35"></script>
-  <script src="src/levels/Level02.js?v=35"></script>
-  <script src="src/levels/Level04.js?v=35"></script>
-  <script src="src/levels/Level07.js?v=35"></script>
-  <script src="src/ui/HUD.js?v=35"></script>
-  <script src="src/ui/Modal.js?v=35"></script>
-  <script src="src/ui/Dialogue.js?v=35"></script>
-  <script src="src/scenes/TitleScene.js?v=35"></script>
-  <script src="src/scenes/GameScene.js?v=35"></script>
-  <script src="src/scenes/GameOverScene.js?v=35"></script>
-  <script src="src/scenes/EndingScene.js?v=35"></script>
-  <script src="src/main.js?v=35"></script>
+  <script src="src/config.js?v=36"></script>
+  <script src="src/engine/Draw.js?v=36"></script>
+  <script src="src/engine/Assets.js?v=36"></script>
+  <script src="src/engine/Sprite.js?v=36"></script>
+  <script src="src/engine/ParticleSystem.js?v=36"></script>
+  <script src="src/engine/AudioManager.js?v=36"></script>
+  <script src="src/engine/InputManager.js?v=36"></script>
+  <script src="src/engine/TouchControls.js?v=36"></script>
+  <script src="src/engine/Camera.js?v=36"></script>
+  <script src="src/engine/Collision.js?v=36"></script>
+  <script src="src/engine/Records.js?v=36"></script>
+  <script src="src/engine/DuelMusic.js?v=36"></script>
+  <script src="src/engine/SceneManager.js?v=36"></script>
+  <script src="src/engine/Game.js?v=36"></script>
+  <script src="src/entities/Entity.js?v=36"></script>
+  <script src="src/entities/Player.js?v=36"></script>
+  <script src="src/entities/Trino.js?v=36"></script>
+  <script src="src/entities/VoidharFinale.js?v=36"></script>
+  <script src="src/entities/enemies/Enemy.js?v=36"></script>
+  <script src="src/entities/enemies/Silenciador.js?v=36"></script>
+  <script src="src/entities/enemies/RexVane.js?v=36"></script>
+  <script src="src/levels/PuddleData.js?v=36"></script>
+  <script src="src/levels/Level.js?v=36"></script>
+  <script src="src/levels/Atmosphere.js?v=36"></script>
+  <script src="src/levels/Level01.js?v=36"></script>
+  <script src="src/levels/Level02.js?v=36"></script>
+  <script src="src/levels/Level04.js?v=36"></script>
+  <script src="src/levels/Level07.js?v=36"></script>
+  <script src="src/ui/HUD.js?v=36"></script>
+  <script src="src/ui/Modal.js?v=36"></script>
+  <script src="src/ui/Dialogue.js?v=36"></script>
+  <script src="src/ui/RhythmDuel.js?v=36"></script>
+  <script src="src/scenes/TitleScene.js?v=36"></script>
+  <script src="src/scenes/GameScene.js?v=36"></script>
+  <script src="src/scenes/GameOverScene.js?v=36"></script>
+  <script src="src/scenes/EndingScene.js?v=36"></script>
+  <script src="src/main.js?v=36"></script>
 </body>
 </html>

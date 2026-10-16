@@ -76,6 +76,7 @@ class Game {
     this.renderAudioStatus();
     const scene = this.scenes.current;
     this.touch.setVisible(!!(scene && scene.usesTouchControls && scene.usesTouchControls()) && !this.modal.isOpen);
+    this.touch.setDuel(!!(scene && scene.usesDuelPads && scene.usesDuelPads()) && !this.modal.isOpen);
     requestAnimationFrame((next) => this.loop(next));
   }
 }

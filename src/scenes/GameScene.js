@@ -44,6 +44,7 @@ class GameScene {
     this.pickups = [];
     this.edgeWarnings = [];
     this.dialogue = null;
+    this.duel = null;
     this.finale = null;
     this.callout = null;
     this.particles = new ParticleSystem();
@@ -71,6 +72,13 @@ class GameScene {
     this.world = this.buildWorld();
 
     this.level.spawnPatrols((x, y, aggressive) => this.spawnEnemy(x, y, aggressive));
+
+    // Atajo para probar el duelo musical sin jugar los 10 escenarios: añade ?duel=1 a la dirección
+    if (/[?&]duel=1/.test(window.location.search || '')) {
+      this.enemies.length = 0;
+      this.startFinale();
+      this.finale.time = GameScene.FINALE_FALL_AT;
+    }
   }
 
   // Los controles táctiles solo se muestran mientras se juega
@@ -78,7 +86,13 @@ class GameScene {
     return !this.finale && !this.finished;
   }
 
+  // Durante el duelo musical se ven los cuatro pads táctiles
+  usesDuelPads() {
+    return !!this.duel && this.duel.active;
+  }
+
   exit() {
+    if (this.duel) this.duel.dispose();
     this.game.modal.hide();
     this.game.audio.duckMusic(false); // por si se sale desde la pausa
   }
@@ -800,6 +814,7 @@ class GameScene {
   static FINALE_FALL_AT = 1.1;
   static FINALE_HOLD = 4.6; // tiempo que se queda Vóidhar tras aterrizar
   static FINALE_FADE = 1.1;
+  static DUEL_START = 3.2; // segundos tras aterrizar Vóidhar: empieza el duelo musical
 
   startFinale() {
     this.finished = true; // evita el fin de partida normal
@@ -847,9 +862,17 @@ class GameScene {
         this.particles.add({ type: 'ring', x: voidhar.x, y: voidhar.y - 120, size: 20, sizeEnd: 560, life: 0.8, color: '#a066ff', width: 14, flat: 0.8 });
         this.showCallout('VÓIDHAR', 2.6, { y: 84, colors: ['#ffffff', '#ff5a8a', '#6a0030'], glow: '#ff2a55', rim: '#1a0010' });
       }
-      // Fundido a negro tras mantener la imagen
-      if (voidhar.landedTime > GameScene.FINALE_HOLD) {
-        finale.fade = Math.min(1, (voidhar.landedTime - GameScene.FINALE_HOLD) / GameScene.FINALE_FADE);
+      // Tras el rugido empieza el duelo musical; al ganarlo, fundido a negro
+      if (!finale.duelStarted && voidhar.landedTime > GameScene.DUEL_START) {
+        finale.duelStarted = true;
+        this.duel = new RhythmDuel(this, voidhar, () => {
+          finale.duelDone = true;
+          finale.fadeFrom = voidhar.landedTime;
+          this.duel = null;
+        });
+      }
+      if (finale.duelDone) {
+        finale.fade = Math.min(1, (voidhar.landedTime - finale.fadeFrom) / GameScene.FINALE_FADE);
         if (finale.fade >= 1 && !finale.done) {
           finale.done = true;
           this.game.scenes.change('ending');
@@ -919,6 +942,7 @@ class GameScene {
     const input = this.game.input;
     if (!this.finished && input.justPressed('pause')) this.togglePause();
     if (this.paused) return;
+    if (this.duel) this.duel.update(dt, input);
     if (this.dialogue) {
       this.updateDialogue(dt, input);
       return;
@@ -1249,6 +1273,7 @@ class GameScene {
     this.hud.boss = this.dialogue ? null : (this.enemies.find((enemy) => enemy.boss && enemy.isAlive && enemy.vulnerable) || null);
     if (this.dialogue) this.dialogue.render(ctx); // la escena de diálogo oculta el HUD
     else this.hud.render(ctx, this.player, this.level, this.trino);
+    if (this.duel) this.duel.render(ctx);
     this.renderFinaleOverlay(ctx);
 
     if (this.flashTime > 0) {

@@ -57,6 +57,7 @@ class TouchControls {
     this.buildStick();
     for (const config of TouchControls.BUTTONS) this.buildButton(config);
     this.buildSystemButtons();
+    this.buildDuelPads();
 
     // Sin menú contextual ni selección al mantener el dedo
     this.layer.addEventListener('contextmenu', (event) => event.preventDefault());
@@ -173,6 +174,30 @@ class TouchControls {
     button.addEventListener('pointerup', release);
     button.addEventListener('pointercancel', release);
     button.addEventListener('lostpointercapture', release);
+  }
+
+  // --- Pads del duelo musical: cuatro círculos grandes bajo la pista, uno por carril ---
+  buildDuelPads() {
+    this.duelLayer = this.element('div', 'touch-duel', this.shell);
+    this.duelLayer.setAttribute('aria-hidden', 'true');
+    const colors = ['#00f5ff', '#ffe600', '#ff003c', '#9b6bff'];
+    const keys = ['D', 'F', 'J', 'K'];
+    for (let lane = 0; lane < 4; lane++) {
+      const pad = this.element('button', 'touch-pad', this.duelLayer);
+      pad.type = 'button';
+      pad.textContent = keys[lane];
+      pad.style.color = colors[lane];
+      pad.style.left = 'calc(50% + ' + (lane - 1.5) * 20 + 'vh)';
+      this.bindHold(pad, 'lane' + lane);
+    }
+    this.duelLayer.addEventListener('contextmenu', (event) => event.preventDefault());
+  }
+
+  setDuel(visible) {
+    if (!this.duelLayer || this.duelVisible === visible) return;
+    this.duelVisible = visible;
+    this.duelLayer.style.display = visible ? 'block' : 'none';
+    if (!visible) for (let lane = 0; lane < 4; lane++) this.input.virtualUp('lane' + lane);
   }
 
   // --- Pausa, silencio y pantalla completa ---
