@@ -114,6 +114,15 @@ class Level {
     return [x, y];
   }
 
+  // Cómo entra un enemigo normal: corriendo desde un lado (la mayoría), cayendo desde el cielo (más a menudo en los
+  // encuentros avanzados) o caminando hasta ECO.
+  static entryStyle(difficulty) {
+    const roll = Math.random();
+    const dropChance = 0.08 + 0.3 * difficulty;
+    if (roll < dropChance) return { drop: true };
+    return { rush: roll < dropChance + 0.55 };
+  }
+
   // Activa cada encuentro al llegar a su punto. Cada enemigo entra en su momento, por un lado y a una altura distintos;
   // la mayoría llega corriendo y atacando (rush). Los élites (sub jefe y jefe) entran un poco después, siempre atacando.
   // El encuentro se da por limpio cuando ya salieron todos y cayeron todos.
@@ -129,7 +138,7 @@ class Level {
         // El número de enemigos normales varía un poco entre partidas
         const count = normals ? Math.max(1, normals + (Math.random() < 0.15 ? 1 : 0) - (Math.random() < 0.15 ? 1 : 0)) : 0;
         wave.pending = [
-          ...Array.from({ length: count }, (_, index) => ({ delay: index === 0 ? 0 : 0.3 + Math.random() * 2.6, rush: Math.random() < 0.6 })),
+          ...Array.from({ length: count }, (_, index) => ({ delay: index === 0 ? 0 : 0.3 + Math.random() * 2.6, ...Level.entryStyle(wave.difficulty || 0) })),
           ...Array.from({ length: elites }, (_, index) => ({ delay: 1.2 + index * 1.4, rush: true, elite: true })),
           ...Array.from({ length: bosses }, () => ({ delay: 0.6, boss: true })),
         ].sort((first, second) => first.delay - second.delay);
@@ -138,7 +147,7 @@ class Level {
         wave.clock += dt;
         while (wave.pending.length && wave.pending[0].delay <= wave.clock) {
           const entry = wave.pending.shift();
-          wave.enemies.push(spawn(...this.spawnPoint(camera), true, { rush: entry.rush, elite: entry.elite, boss: entry.boss }));
+          wave.enemies.push(spawn(...this.spawnPoint(camera), true, { rush: entry.rush, drop: entry.drop, elite: entry.elite, boss: entry.boss, difficulty: wave.difficulty || 0 }));
         }
         if (!wave.pending.length && wave.enemies.every((enemy) => !enemy.isAlive)) {
           wave.cleared = true;

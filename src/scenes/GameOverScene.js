@@ -7,7 +7,7 @@ class GameOverScene {
   }
 
   // data: { victory, score, startScore, levelIndex, hasNextLevel }
-  enter({ victory = false, score = 0, startScore = 0, levelIndex = 0, hasNextLevel = false } = {}) {
+  enter({ victory = false, score = 0, startScore = 0, levelIndex = 0, hasNextLevel = false, record = null } = {}) {
     this.time = 0;
     this.victory = victory;
 
@@ -31,6 +31,13 @@ class GameOverScene {
     }
     buttons.push({ label: 'Menú principal', onClick: () => scenes.change('title') });
 
+    // Resumen de la partida y mejores marcas
+    if (record) {
+      const flags = [record.newScore ? 'PUNTUACIÓN' : '', record.newCombo ? 'COMBO' : ''].filter(Boolean);
+      const lines = [message, `Combo máximo: ${record.maxCombo}  ·  Tiempo: ${Records.formatTime(record.seconds)}`];
+      lines.push(flags.length ? `¡NUEVO RÉCORD DE ${flags.join(' Y ')}!` : `Mejor puntuación: ${record.best.score}  ·  Mejor combo: ${record.best.combo}`);
+      message = lines.join('\n');
+    }
     this.game.modal.show({ title, message, buttons });
   }
 

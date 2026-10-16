@@ -77,9 +77,14 @@ class Silenciador extends Enemy {
     const elite = !!opts.elite;
     const scale = Silenciador.SIZES[variant] || 1;
     const base = Silenciador.VARIANTS[variant];
-    const stats = elite
+    let stats = elite
       ? { ...base, hp: Math.round(base.hp * 1.6), damage: Math.round(base.damage * 1.25), scoreValue: base.scoreValue * 3, windup: base.windup * 0.92, cooldown: base.cooldown * 0.8 }
       : base;
+    // Curva de dificultad: los encuentros avanzados traen enemigos más resistentes, que golpean más fuerte y con menos pausa
+    const difficulty = opts.difficulty || 0;
+    if (difficulty > 0) {
+      stats = { ...stats, hp: Math.round(stats.hp * (1 + 0.5 * difficulty)), damage: Math.round(stats.damage * (1 + 0.25 * difficulty)), cooldown: stats.cooldown * (1 - 0.2 * difficulty) };
+    }
     super({ x, y, w: 60 * scale, h: Silenciador.SPRITE_HEIGHT * scale, stats, aggressive });
     this.variant = variant;
     this.framed = !!Silenciador.FRAMES[variant]; // tiene animación ilustrada por cuadros
@@ -254,6 +259,7 @@ class Silenciador extends Enemy {
       case 'stagger':
         return pick(F.hurt, this.stateTime < 0.12 ? 1 : (this.stateTime < 0.24 ? 2 : 3));
       case 'launched':
+      case 'drop':
         return pick(F.hurt, 1, false);
       case 'down': {
         // Tendido un momento; después se incorpora con los cuadros de recuperación
@@ -280,6 +286,7 @@ class Silenciador extends Enemy {
 
     const alpha = this.state === 'dead' ? Math.max(0, 1 - this.deadTime / Enemy.DEATH_FADE_TIME) : 1;
     this.drawShadow(ctx);
+    if (this.state === 'drop') this.renderDropMarker(ctx);
     if (this.isTelegraphing) this.renderDangerZone(ctx);
     this.renderGhosts(ctx);
 

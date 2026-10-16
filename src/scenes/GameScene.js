@@ -56,6 +56,8 @@ class GameScene {
     };
     this.ambientBudget = 0;
     this.time = 0;
+    this.maxCombo = 0;
+    this.heartbeatTimer = 0;
     this.flashTime = 0;
     this.flashColor = CONFIG.COLORS.CYAN;
     this.hitStopTime = 0;
@@ -116,7 +118,15 @@ class GameScene {
     if (opts.boss) return this.spawnBoss();
     // Los élites son la Garra (variante 1); la tropa normal, el Martillo
     const variant = opts.elite ? GameScene.ELITE_VARIANT : GameScene.ENEMY_VARIANTS[Math.floor(Math.random() * GameScene.ENEMY_VARIANTS.length)];
+    if (opts.drop) {
+      // Cae cerca de ECO, dentro de la pantalla
+      x = Math.max(this.camera.left + 70, Math.min(this.camera.right - 70, this.player.x + (Math.random() - 0.5) * 460));
+    }
     const enemy = new Silenciador(x, y, aggressive, variant, opts);
+    if (opts.drop) {
+      enemy.startDrop();
+      this.game.audio.play('dropWhoosh');
+    }
     if (opts.rush) {
       enemy.startRush();
       // Aviso rojo en el borde por donde entra y gruñido
@@ -953,6 +963,8 @@ class GameScene {
     if (this.level.config.ambient === 'rain') this.rainRipples(scaled);
     this.updateAmbient(scaled);
     this.atmosphere.update(scaled, this.camera, this.atmosphereHooks);
+    this.maxCombo = Math.max(this.maxCombo, this.player.comboHits);
+    this.updateHeartbeat(scaled);
     this.hud.update(dt);
     if (this.finale) this.updateFinale(dt);
     else this.checkEndConditions(dt);
@@ -1130,6 +1142,29 @@ class GameScene {
     }
   }
 
+  // Con poca vida suena un latido que se acelera cuanto menos queda
+  updateHeartbeat(dt) {
+    const health = this.player.hp / this.player.maxHp;
+    if (!this.player.isAlive || health >= 0.3) {
+      this.heartbeatTimer = 0;
+      return;
+    }
+    this.heartbeatTimer -= dt;
+    if (this.heartbeatTimer <= 0) {
+      this.heartbeatTimer = 0.55 + health * 2.2;
+      this.game.audio.play('heartbeat');
+    }
+  }
+
+  // Guarda la partida en las mejores marcas (una sola vez por partida)
+  saveRecord(victory) {
+    if (this.recordSaved) return this.recordSaved;
+    this.recordSaved = Records.submit({ score: this.player.score, combo: this.maxCombo, seconds: this.time, victory });
+    this.recordSaved.maxCombo = this.maxCombo;
+    this.recordSaved.seconds = Math.round(this.time);
+    return this.recordSaved;
+  }
+
   checkEndConditions(dt) {
     if (this.finished) return;
 
@@ -1142,7 +1177,7 @@ class GameScene {
 
     if (this.player.state === 'dead' && this.player.stateTime > GameScene.DEATH_DELAY) {
       this.finished = true;
-      this.game.scenes.change('gameover', { ...result, victory: false });
+      this.game.scenes.change('gameover', { ...result, victory: false, record: this.saveRecord(false) });
       return;
     }
     if (this.level.completed && this.player.isAlive) {
@@ -1150,8 +1185,9 @@ class GameScene {
       if (this.victoryTimer >= GameScene.VICTORY_DELAY) {
         if (result.hasNextLevel) {
           this.finished = true;
-          this.game.scenes.change('gameover', { ...result, victory: true });
+          this.game.scenes.change('gameover', { ...result, victory: true, record: this.saveRecord(true) });
         } else {
+          this.saveRecord(true);
           this.startFinale(); // último nivel: cierre con Vóidhar
         }
       }

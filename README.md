@@ -46,6 +46,7 @@ Se juega con controles táctiles: joystick flotante a la izquierda y botones a l
 - Nivel 1 de 10 escenarios: el 1.º es fijo, el 5.º es el del **sub jefe**, el 10.º el del **jefe** y los demás se sortean en cada partida. Los enemigos entran corriendo y atacando (aviso rojo en el borde de la pantalla) y los **élites** del sub jefe y el jefe llevan barra de vida propia.
 - Escenarios vivos: reflectores que barren el suelo desde el cielo (como un helicóptero), focos de aviso que laten y se cortocircuitan con descargas, tormenta eléctrica (relámpagos con réplicas y truenos), reflectores y humo/brasas en las zonas de chatarra. Los élites son la **Garra** (arte propio por cuadros); la tropa normal es el Martillo.
 - **Rex Vane (sub jefe, escenario 5):** llega flotando desde el cielo, con diálogo de escena con ECO. Barre la pantalla de lado a lado y ataca de dos formas: cuatro rayos verticales (se esquivan en los huecos) y una descarga horizontal a ras de suelo tras bajar a tierra (se esquiva saltando). Por debajo de la mitad de vida ataca más rápido.
+- Dificultad progresiva (enemigos más resistentes y rápidos en los encuentros avanzados), enemigos que caen del cielo con marca roja en el suelo, latido sonoro con poca vida y mejores marcas guardadas (puntuación, combo, tiempo). Prueba automática: `node tests/smoke.js`.
 
 ## Estructura
 

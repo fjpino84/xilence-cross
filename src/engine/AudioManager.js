@@ -631,6 +631,16 @@ AudioManager.SOUNDS = {
       a.tone({ type: 'square', from: 520 + Math.random() * 90, to: 470, duration: 0.035, volume: 0.03, attack: 0.002 });
     }
   },
+  // Latido de poca vida: dos golpes graves seguidos
+  heartbeat: (a) => {
+    a.tone({ from: 70, to: 40, duration: 0.14, volume: 0.5, attack: 0.004 });
+    a.tone({ from: 62, to: 36, duration: 0.16, volume: 0.38, attack: 0.004, delay: 0.17 });
+  },
+  // Un enemigo cae del cielo: silbido descendente
+  dropWhoosh: (a) => {
+    a.noise({ type: 'bandpass', from: 2600, to: 400, q: 1.2, duration: 0.55, volume: 0.22, attack: 0.05 });
+    a.tone({ type: 'sawtooth', from: 520, to: 110, duration: 0.5, volume: 0.05, shape: 'soft', lowpass: 1500, attack: 0.02 });
+  },
   // Chisporroteo de un foco que se cortocircuita
   zap: (a) => {
     a.crackle({ duration: 0.3, rate: 80, volume: 0.07 });

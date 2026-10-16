@@ -56,6 +56,7 @@ class Level01 extends Level {
     const waves = Object.entries(Level01.ENCOUNTERS).map(([position, encounter]) => ({
       // Se activa al entrar en la zona central del escenario
       triggerX: (Number(position) - 1) * Level.TILE_STRIDE + 520,
+      difficulty: (Number(position) - 2) / 8, // 0 en el primer encuentro, 1 en el último
       spawns: [
         ...Array.from({ length: encounter.normal || 0 }, () => ({})),
         ...Array.from({ length: encounter.elite || 0 }, () => ({ elite: true })),

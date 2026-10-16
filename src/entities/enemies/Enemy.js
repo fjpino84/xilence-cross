@@ -10,6 +10,7 @@ class Enemy extends Entity {
   static LAUNCH_VELOCITY = 380;
   static DOWN_TIME = 0.6;
   static SPIN_SPEED = 12;
+  static DROP_HEIGHT = 430;
 
   constructor({ x, y, w, h, stats, aggressive = false }) {
     super({ x, y, w, h, maxHp: stats.hp });
@@ -35,6 +36,30 @@ class Enemy extends Entity {
     this.chained = false;
     this.shock = 0; // segundos que le quedan de electrocución por un rayo
     this.world = null;
+  }
+
+  // Cae desde lo alto de la pantalla: una marca roja en el suelo avisa dónde aterriza y daña a quien esté debajo
+  startDrop() {
+    this.state = 'drop';
+    this.z = Enemy.DROP_HEIGHT;
+    this.vz = 0;
+    this.attackCooldown = 0.4;
+  }
+
+  renderDropMarker(ctx) {
+    const progress = 1 - this.z / Enemy.DROP_HEIGHT;
+    const radius = 46 + 26 * progress;
+    ctx.save();
+    ctx.globalAlpha = 0.55 + 0.4 * progress;
+    ctx.strokeStyle = CONFIG.COLORS.RED;
+    ctx.fillStyle = CONFIG.COLORS.RED;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(this.x, this.y, radius, radius * 0.3, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha *= 0.5;
+    ctx.fill();
+    ctx.restore();
   }
 
   // Entra corriendo desde fuera de la pantalla y ataca nada más llegar junto a ECO
@@ -67,6 +92,9 @@ class Enemy extends Entity {
         this.vx = 0;
         this.spinAngle += dt * Enemy.SPIN_SPEED;
         break;
+      case 'drop':
+        this.vx = 0; // cae en vertical sobre la marca roja del suelo
+        break;
       case 'down':
         this.vx = 0;
         if (this.stateTime >= Enemy.DOWN_TIME) {
@@ -98,6 +126,17 @@ class Enemy extends Entity {
   // Al tocar el suelo tras ser lanzado: polvo, golpe seco y a levantarse
   onLand() {
     if (!this.world) return;
+    if (this.state === 'drop') {
+      // Aterrizaje: temblor, polvo y daño si ECO está justo debajo
+      const player = this.world.player;
+      this.world.thud(this);
+      this.world.shake(8, 0.25);
+      if (player.isAlive && player.z < 30 && Math.abs(player.x - this.x) < 80 && Math.abs(player.y - this.y) < 40) {
+        player.takeDamage(Math.round(this.stats.damage * 0.8), this.x, this.world);
+      }
+      this.setState('chase');
+      return;
+    }
     if (this.state === 'launched') {
       this.setState('down');
       this.world.thud(this);
@@ -223,7 +262,7 @@ class Enemy extends Entity {
 
   // opts.launch lanza al enemigo por el aire. Devuelve { killed } para que ECO sume puntos.
   takeDamage(amount, knockback, opts = {}) {
-    if (!this.isAlive) return { killed: false };
+    if (!this.isAlive || this.state === 'drop') return { killed: false };
     this.hp -= amount;
     this.hitFlash = 0.12;
     this.hitSquash = 0.14;
