@@ -30,7 +30,10 @@ const CONFIG = Object.freeze({
     spriteVoidhar: 'assets/sprites/voidhar.png',
     spriteBatuk: 'assets/sprites/batuk/batuk.png',
     portraitBatuk: 'assets/sprites/batuk/retrato.png',
-    batukDefeated: 'assets/sprites/batuk/derrotado.jpg', // opcional: si existe, sustituye a la escena provisional de derrota
+    ...frameAssets('batukTocar', 'batuk', 'tocar', 5),
+    batukKneel: 'assets/sprites/batuk/derrotado_1.png',
+    batukPoder: 'assets/sprites/batuk/poder_1.png',
+    ...frameAssets('batukInst', 'batuk', 'inst', 6),
     bgLevel01: 'assets/backgrounds/nivel01-cementerio-naves.jpg',
     bgLevel01a: 'assets/backgrounds/nivel01-a.jpg',
     bgLevel01b: 'assets/backgrounds/nivel01-b.jpg',

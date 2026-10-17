@@ -8,7 +8,7 @@ class BatukBoss {
   static ORBIT_MAX = 8;
   static ORBIT_RX = 170;
   static ORBIT_RY = 66;
-  static KINDS = ['tom', 'conga', 'cymbal', 'tambourine', 'sticks', 'tom', 'cymbal'];
+  static KINDS = ['i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i2', 'i3']; // las seis ilustraciones: bombo, platillo, djembé, címbalos, tambor con pie y gong
   static WALK_SPEED = 230;
   static IN_TIME = 1.15; // vuelo de un instrumento hasta la órbita
 
@@ -35,6 +35,9 @@ class BatukBoss {
     this.spawnCount = 0;
     this.emberTimer = 0;
     this.defeatTime = 0;
+    this.drumming = false; // ya está tocando al ritmo (usa las poses de tocar)
+    this.frame = 0;
+    this.powerPose = 0;
     this.forward = 0;
     this.forwardTarget = 0;
   }
@@ -61,6 +64,7 @@ class BatukBoss {
     this.squash = Math.max(0, this.squash - dt);
     this.hurt = Math.max(0, this.hurt - dt * 4);
     this.lunge = Math.max(0, this.lunge - dt * 3);
+    this.powerPose = Math.max(0, this.powerPose - dt);
     this.forward += (this.forwardTarget - this.forward) * Math.min(1, dt * 1.6);
     let justLanded = false;
 
@@ -217,7 +221,9 @@ class BatukBoss {
   onBeat(beat, combo, world) {
     if (this.state !== 'idle') return;
     this.pulse = 1;
-    this.squash = Math.max(this.squash, 0.1);
+    this.drumming = true;
+    this.frame = beat; // una pose por tiempo: levanta las baquetas, golpea y vuelve
+    this.squash = Math.max(this.squash, beat % 5 === 2 ? 0.16 : 0.08);
     this.orbitSpeed = 1.1 + Math.min(1.3, combo / 35);
     if (beat % 2 === 0) {
       if ((this.orbiters || 0) >= BatukBoss.ORBIT_MAX) this.ejectInstrument(world);
@@ -234,10 +240,12 @@ class BatukBoss {
     if (kind === 'miss') {
       // Contraataque: embiste hacia ECO y lanza un instrumento contra él
       this.lunge = 1;
+      this.powerPose = 0.55; // pose de poder con tambores flotando
       this.ejectInstrument(world, true);
     } else if (kind === 'streak') {
       this.hurt = 1;
       this.squash = 0.25;
+      this.powerPose = 0.5;
     }
   }
 
@@ -274,8 +282,42 @@ class BatukBoss {
 
   // ---------------------------------------------------------------- dibujo
 
+  // Cada pose es una imagen distinta; g = px de juego por px de la imagen (calibrado para que el cuerpo mida lo mismo)
+  static SETS = {
+    stand: { key: 'spriteBatuk', canvas: 805, g: 0.3168, anchor: 0.5198, feet: 0.995 },
+    drum: { key: 'batukTocar', count: 5, canvas: 432, g: 0.6, anchor: 0.4872, feet: 0.9815 },
+    kneel: { key: 'batukKneel', canvas: 789, g: 0.27, anchor: 0.5198, feet: 0.9937 },
+    power: { key: 'batukPoder', canvas: 1182, g: 0.285, anchor: 0.501, feet: 0.9983 },
+  };
+  static FACING = -1; // mira hacia ECO (a su izquierda)
+
+  // Capas de pose que se dibujan ahora: [{ set, number, alpha }]
+  poseLayers() {
+    const S = BatukBoss.SETS;
+    if (this.state === 'down') return [{ set: S.kneel, alpha: 1 }];
+    if (this.state === 'rise') {
+      const p = Math.min(1, this.riseTime / 1.8);
+      const eased = p * p * (3 - 2 * p);
+      return [{ set: S.kneel, alpha: 1 - eased }, { set: S.stand, alpha: eased }];
+    }
+    if (this.powerPose > 0) return [{ set: S.power, alpha: 1 }];
+    if (this.state === 'idle' && this.drumming) return [{ set: S.drum, number: 1 + (this.frame % 5), alpha: 1 }];
+    return [{ set: S.stand, alpha: 1 }];
+  }
+
+  // Dibuja una capa de pose con las medidas de su imagen
+  drawLayer(ctx, layer, x, y, extra = {}) {
+    const { set } = layer;
+    const image = Assets.image(set.key + (layer.number || ''));
+    if (!image) return;
+    const height = set.canvas * set.g * (extra.scale || 1);
+    Sprite.draw(ctx, image, {
+      x, y, height, anchorX: set.anchor, facing: BatukBoss.FACING, offsetY: (1 - set.feet) * height,
+      ...extra, alpha: (extra.alpha ?? 1) * layer.alpha,
+    });
+  }
+
   render(ctx) {
-    const image = Assets.image('spriteBatuk');
     const height = BatukBoss.HEIGHT;
     const down = this.state === 'down';
     const rising = this.state === 'rise';
@@ -287,7 +329,7 @@ class BatukBoss {
     ctx.save();
     ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
     ctx.beginPath();
-    ctx.ellipse(this.x, this.y, down || rising ? 120 : 78, 15, 0, 0, Math.PI * 2);
+    ctx.ellipse(this.x, this.y, down || rising ? 100 : 78, 15, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
@@ -310,26 +352,23 @@ class BatukBoss {
 
     this.renderInstruments(ctx, -1); // los que pasan por detrás del cuerpo
 
-    if (image) {
-      const hop = walking ? Math.abs(Math.sin(this.age * 7.5)) * 7 : 0;
-      const sway = this.state === 'idle' ? Math.sin(this.age * 1.7) * 14 - this.lunge * 46 + this.forward : (this.state === 'calm' ? 0 : -this.lunge * 46);
-      const squash = this.squash / 0.3;
-      const bounce = 1 + 0.045 * pulse;
-      const fall = down ? Math.min(1, this.defeatTime / 1.1) : 0;
-      const riseP = rising ? Math.min(1, this.riseTime / 1.8) : (this.state === 'calm' ? 1 : 0);
-      const rotation = down ? 1.5 * (fall * fall * (3 - 2 * fall)) : (rising ? 1.5 * (1 - riseP * riseP * (3 - 2 * riseP)) : (this.lunge > 0 ? -0.08 * this.lunge : 0));
-      const common = {
-        x: this.x + sway, y: this.y - hop, height, anchorX: BatukBoss.ANCHOR_X, facing: 1,
-        scaleX: 1 + 0.12 * squash - 0.02 * pulse, scaleY: (1 - 0.1 * squash) * bounce, rotation,
-      };
+    const hop = walking ? Math.abs(Math.sin(this.age * 7.5)) * 7 : 0;
+    const sway = this.state === 'idle' ? Math.sin(this.age * 1.7) * 14 - this.lunge * 46 + this.forward : (this.state === 'calm' ? 0 : -this.lunge * 46);
+    const squash = this.squash / 0.3;
+    const bounce = 1 + 0.045 * pulse;
+    const knock = down ? Math.max(0, 0.3 - this.defeatTime) * 90 : 0; // el golpe lo hunde un instante al caer de rodillas
+    const common = {
+      scaleX: 1 + 0.12 * squash - 0.02 * pulse, scaleY: (1 - 0.1 * squash) * bounce, flash: this.hurt > 0.4,
+    };
+    const tint = down ? { color: '#2a1a08', alpha: 0.18 } : (this.lunge > 0.2 ? { color: '#ff2a55', alpha: 0.25 * this.lunge } : (fighting ? { color: '#ffb020', alpha: 0.04 + 0.1 * pulse } : null));
+    for (const layer of this.poseLayers()) {
+      const x = this.x + sway;
+      const y = this.y - hop + knock;
       if (fighting) {
         // Contorno dorado: silueta más grande y translúcida detrás del cuerpo
-        Sprite.draw(ctx, image, { ...common, height: height * 1.05, silhouetteColor: '#ffd23a', additive: true, alpha: 0.28 + 0.22 * pulse });
+        this.drawLayer(ctx, layer, x, y, { ...common, scale: 1.05, silhouetteColor: '#ffd23a', additive: true, alpha: 0.28 + 0.22 * pulse });
       }
-      Sprite.draw(ctx, image, {
-        ...common, flash: this.hurt > 0.4,
-        tint: down ? { color: '#2a1a08', alpha: 0.3 } : (rising ? { color: '#2a1a08', alpha: 0.3 * (1 - riseP) } : this.state === 'calm' ? null : (this.lunge > 0.2 ? { color: '#ff2a55', alpha: 0.25 * this.lunge } : { color: '#ffb020', alpha: 0.04 + 0.1 * pulse })),
-      });
+      this.drawLayer(ctx, layer, x, y, { ...common, tint });
     }
 
     this.renderInstruments(ctx, 1); // los que pasan por delante
@@ -359,6 +398,18 @@ class BatukBoss {
 
   // Instrumento de percusión dibujado con formas (cel-shading: contorno negro grueso). size = radio aproximado.
   static drawInstrument(ctx, kind, x, y, size, rot = 0) {
+    // Ilustraciones reales (i1..i6); si no cargaron se dibuja un tambor sencillo
+    const picture = /^i[1-6]$/.test(kind) ? Assets.image('batukInst' + kind.slice(1)) : null;
+    if (picture) {
+      const scale = (size * 2.3) / Math.max(picture.width, picture.height);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rot);
+      ctx.drawImage(picture, (-picture.width * scale) / 2, (-picture.height * scale) / 2, picture.width * scale, picture.height * scale);
+      ctx.restore();
+      return;
+    }
+    if (/^i[1-6]$/.test(kind)) kind = 'tom';
     const gold = '#e0a21c';
     const dark = '#8a4a14';
     const cream = '#f4e6b8';

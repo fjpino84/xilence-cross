@@ -1,5 +1,5 @@
-// Imagen de jefe derrotado, a pantalla completa. Si existe la ilustración (assets/sprites/batuk/derrotado.jpg) se muestra con un
-// zoom lento; si no, se compone una escena provisional con el sprite del jefe caído, sus instrumentos rotos y rayos dorados.
+// Imagen de jefe derrotado, a pantalla completa. Si hubiera una ilustración a pantalla completa ('art') se muestra con un zoom
+// lento; por defecto se compone la escena con la ilustración del jefe de rodillas, sus instrumentos y rayos dorados.
 const DefeatCard = {
   render(ctx, age, { title = 'BATUK DERROTADO', subtitle = 'Su ritmo se quebró... y una melodía vuelve a sonar.', art = 'batukDefeated' } = {}) {
     const { WIDTH, HEIGHT } = CONFIG;
@@ -29,7 +29,7 @@ const DefeatCard = {
     Draw.rock(ctx, title, WIDTH / 2, 92, { size: 56, align: 'center', colors: ['#ffffff', '#ffd23a', '#9a5a00'], glow: '#ffb000', glowBlur: 18, outlineWidth: 10, tracking: 3 });
     Draw.text(ctx, subtitle, WIDTH / 2, 138, { size: 24, align: 'center', color: '#ffe9b0', strokeWidth: 5 });
     if (age > 1.8 && Math.floor(age * 2.5) % 2 === 0) {
-      Draw.text(ctx, 'ENTER ▶', WIDTH / 2, 186, { size: 24, align: 'center', color: '#ffd23a', strokeWidth: 5 });
+      Draw.text(ctx, 'ENTER ▶', WIDTH / 2, HEIGHT - 22, { size: 24, align: 'center', color: '#ffd23a', strokeWidth: 5 });
     }
     ctx.restore();
   },
@@ -74,19 +74,18 @@ const DefeatCard = {
     ctx.ellipse(cx, floorY + 20, 330, 34, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Batuk tendido: el sprite girado casi 90°, con la cabeza hacia la derecha
-    const image = Assets.image('spriteBatuk');
+    // Batuk de rodillas, vencido, con sus baquetas rotas en el suelo
+    const image = Assets.image('batukKneel');
     if (image) {
       Sprite.draw(ctx, image, {
-        x: cx - 200, y: floorY - 14, height: 340, anchorX: BatukBoss.ANCHOR_X, facing: 1, rotation: 1.52,
-        tint: { color: '#1a0f04', alpha: 0.28 },
+        x: cx, y: floorY + 74, height: 360, anchorX: 0.5198, facing: BatukBoss.FACING, offsetY: (1 - 0.9937) * 360,
       });
     }
 
     // Instrumentos esparcidos y rotos
     const items = [
-      ['tom', cx - 330, floorY + 38, 52, 0.4], ['cymbal', cx + 40, floorY + 52, 54, 0.15], ['conga', cx + 290, floorY + 20, 46, 1.2],
-      ['tambourine', cx - 100, floorY + 66, 36, 0.8], ['sticks', cx + 160, floorY + 70, 40, 0.6], ['tom', cx + 400, floorY + 62, 40, -0.5],
+      ['i1', cx - 340, floorY + 44, 50, 0.4], ['i2', cx - 190, floorY + 80, 40, 0.15], ['i3', cx + 300, floorY + 28, 40, 1.2],
+      ['i4', cx + 190, floorY + 84, 34, 0.8], ['i5', cx + 420, floorY + 70, 46, -0.4], ['i6', cx - 450, floorY - 20, 46, 0.1],
     ];
     for (const [kind, x, y, size, rot] of items) BatukBoss.drawInstrument(ctx, kind, x, y, size, rot);
 
