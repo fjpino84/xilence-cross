@@ -2,7 +2,9 @@
 // tecla justo cuando llegan a la línea. Cada acierto empuja la onda de ECO contra el jefe; cada fallo la hace retroceder.
 // Si el medidor llega a cero gana el silencio y hay que reintentarlo; si la canción termina con ECO en pie, gana la música.
 class RhythmDuel {
-  static TRAVEL = 1.55; // segundos que tarda una nota en caer hasta la línea
+  // Segundos que tarda una nota en recorrer la pista. La velocidad es siempre la misma durante todo el duelo
+  // (movimiento lineal, sin aceleraciones); cada jefe puede usar otra para ser más fácil o más difícil.
+  static TRAVEL = 1.05;
   static PERFECT = 0.055;
   static GOOD = 0.115;
   static LATE = 0.14; // pasado este margen la nota se da por fallada
@@ -18,7 +20,8 @@ class RhythmDuel {
   static STREAK_EVERY = 10; // cada tantos aciertos seguidos, ECO dispara un rayo al jefe
 
   // scene: GameScene; boss: el jefe en pantalla (VoidharFinale); onWin: se llama al cerrar la pantalla de resultados
-  constructor(scene, boss, onWin) {
+  constructor(scene, boss, onWin, { travel = RhythmDuel.TRAVEL } = {}) {
+    this.travel = travel;
     this.scene = scene;
     this.game = scene.game;
     this.player = scene.player;
@@ -198,7 +201,7 @@ class RhythmDuel {
   hitEffects(lane, perfect) {
     const color = RhythmDuel.LANE_COLORS[lane];
     const camera = this.scene.camera;
-    const x = camera.x + RhythmDuel.CX + (lane - 1.5) * 98;
+    const x = camera.x + RhythmDuel.CX + (lane - 1.5) * 100;
     const y = RhythmDuel.HIT;
     this.scene.particles.burst({ x, y, count: perfect ? 14 : 8, speed: [140, 460], angle: [-Math.PI * 0.95, -Math.PI * 0.05], life: [0.15, 0.4], size: [2, 4.2], colors: [color, '#ffffff'], type: 'spark', drag: 2 });
     this.scene.particles.add({ type: 'ring', x, y, size: 8, sizeEnd: perfect ? 70 : 46, life: 0.3, color, width: 4 });
@@ -260,30 +263,40 @@ class RhythmDuel {
 
   // ---------------------------------------------------------------- dibujo
 
-  // Posición en pantalla de un carril a cierta profundidad (0 = arriba, 1 = línea de aciertos)
+  // Perspectiva lineal: la posición en pantalla depende del tiempo en línea recta, así que las notas cruzan la pista
+  // siempre a la misma velocidad (depth: 0 = arriba, 1 = línea de aciertos)
   lanePoint(lane, depth) {
     const { TOP, HIT, CX } = RhythmDuel;
-    const y = TOP + (HIT - TOP) * Math.pow(Math.max(0, depth), 1.5);
-    const progress = (y - TOP) / (HIT - TOP);
-    const width = 46 + 52 * progress;
-    return { x: CX + (lane - 1.5) * width, y, scale: width / 98, width };
+    const y = TOP + (HIT - TOP) * depth;
+    const width = 50 + 50 * depth;
+    return { x: CX + (lane - 1.5) * width, y, scale: width / 100, width };
+  }
+
+  // Pulso del compás: 1 justo en cada tiempo y cae rápido
+  get beatPulse() {
+    if (this.state !== 'play') return 0;
+    const phase = (this.songTime / DuelMusic.BEAT) % 1;
+    return phase < 0 ? 0 : Math.pow(1 - phase, 3);
   }
 
   render(ctx) {
     const open = this.state === 'intro' ? Math.min(1, this.stateTime / 0.8) : 1;
+    const pulse = this.beatPulse;
     ctx.save();
-    // La escena se oscurece para destacar la pista
-    ctx.fillStyle = `rgba(3, 3, 12, ${0.18 * open})`;
+    // La escena se oscurece para destacar la pista y late con la música
+    ctx.fillStyle = `rgba(3, 3, 12, ${(0.2 + 0.04 * pulse) * open})`;
     ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
     if (this.failFlash > 0) {
       ctx.fillStyle = `rgba(255, 30, 70, ${0.16 * this.failFlash})`;
       ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
     }
     ctx.globalAlpha = open;
-    this.renderHighway(ctx);
-    this.renderMeter(ctx);
+    this.renderLights(ctx, pulse);
+    this.renderHighway(ctx, pulse);
+    this.renderLaneBeams(ctx);
+    this.renderMeter(ctx, pulse);
     if (this.state === 'play' || this.state === 'won') this.renderNotes(ctx);
-    this.renderPads(ctx);
+    this.renderPads(ctx, pulse);
     this.renderSideInfo(ctx);
     this.renderPops(ctx);
     this.renderCountIn(ctx);
@@ -291,86 +304,207 @@ class RhythmDuel {
     ctx.restore();
   }
 
-  renderHighway(ctx) {
-    const { TOP, HIT } = RhythmDuel;
-    const left = this.lanePoint(0, 0);
-    const bottomLeft = this.lanePoint(0, 1);
-    ctx.beginPath();
-    ctx.moveTo(left.x - left.width / 2, TOP);
-    ctx.lineTo(CONFIG.WIDTH - (left.x - left.width / 2), TOP);
-    ctx.lineTo(CONFIG.WIDTH - (bottomLeft.x - bottomLeft.width / 2), HIT + 36);
-    ctx.lineTo(bottomLeft.x - bottomLeft.width / 2, HIT + 36);
-    ctx.closePath();
-    const fill = ctx.createLinearGradient(0, TOP, 0, HIT);
-    fill.addColorStop(0, 'rgba(6, 4, 22, 0.2)');
-    fill.addColorStop(1, 'rgba(6, 4, 22, 0.82)');
-    ctx.fillStyle = fill;
-    ctx.fill();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = 'rgba(0, 245, 255, 0.7)';
-    ctx.shadowColor = '#00f5ff';
-    ctx.shadowBlur = 12;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    // Líneas de carril y marcas de cada tiempo, que corren con la música
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = 'rgba(160, 200, 255, 0.28)';
-    for (let i = 0; i <= 4; i++) {
-      const a = this.lanePoint(i - 0.5, 0);
-      const b = this.lanePoint(i - 0.5, 1);
+  // Focos de escenario a los lados: conos de luz que se balancean y laten con el tiempo
+  renderLights(ctx, pulse) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const side of [-1, 1]) {
+      const sway = Math.sin(this.age * 0.8 + side * 1.3) * 70;
+      const x0 = side < 0 ? 70 : CONFIG.WIDTH - 70;
+      const x1 = x0 + sway + side * -60;
+      const cone = ctx.createLinearGradient(x0, 56, x1, 470);
+      const color = side < 0 ? '0, 200, 255' : '255, 40, 110';
+      cone.addColorStop(0, `rgba(${color}, ${0.2 + 0.18 * pulse})`);
+      cone.addColorStop(1, `rgba(${color}, 0)`);
+      ctx.fillStyle = cone;
       ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
+      ctx.moveTo(x0 - 12, 56);
+      ctx.lineTo(x0 + 12, 56);
+      ctx.lineTo(x1 + 110, 470);
+      ctx.lineTo(x1 - 110, 470);
+      ctx.closePath();
+      ctx.fill();
     }
-    const time = this.state === 'play' || this.state === 'won' ? this.songTime : 0;
-    const beat = DuelMusic.BEAT;
-    const first = Math.floor(time / beat);
-    for (let k = first; k < first + Math.ceil(RhythmDuel.TRAVEL / beat) + 1; k++) {
-      const depth = 1 - (k * beat - time) / RhythmDuel.TRAVEL;
-      if (depth < 0 || depth > 1.04) continue;
-      const a = this.lanePoint(-0.5, depth);
-      const b = this.lanePoint(3.5, depth);
-      ctx.strokeStyle = k % 4 === 0 ? 'rgba(255, 255, 255, 0.35)' : 'rgba(160, 200, 255, 0.14)';
-      ctx.lineWidth = k % 4 === 0 ? 2.5 : 1;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-    }
+    ctx.restore();
   }
 
-  // Medidor de fuerza: la onda de ECO (cian) contra el silencio (rojo)
-  renderMeter(ctx) {
+  renderHighway(ctx, pulse) {
+    const { TOP, HIT } = RhythmDuel;
+    const bottomDepth = (HIT + 36 - TOP) / (HIT - TOP);
+    const topL = this.lanePoint(-0.5, 0);
+    const topR = this.lanePoint(3.5, 0);
+    const botL = this.lanePoint(-0.5, bottomDepth);
+    const botR = this.lanePoint(3.5, bottomDepth);
+
+    // Cristal oscuro y, en cada carril, un tinte de su color que se intensifica hacia la línea de aciertos
+    ctx.beginPath();
+    ctx.moveTo(topL.x, TOP);
+    ctx.lineTo(topR.x, TOP);
+    ctx.lineTo(botR.x, HIT + 36);
+    ctx.lineTo(botL.x, HIT + 36);
+    ctx.closePath();
+    const glass = ctx.createLinearGradient(0, TOP, 0, HIT + 36);
+    glass.addColorStop(0, 'rgba(8, 6, 30, 0.35)');
+    glass.addColorStop(1, 'rgba(8, 6, 30, 0.88)');
+    ctx.fillStyle = glass;
+    ctx.fill();
+    for (let lane = 0; lane < 4; lane++) {
+      const a0 = this.lanePoint(lane - 0.5, 0);
+      const a1 = this.lanePoint(lane + 0.5, 0);
+      const b0 = this.lanePoint(lane - 0.5, bottomDepth);
+      const b1 = this.lanePoint(lane + 0.5, bottomDepth);
+      const tint = ctx.createLinearGradient(0, TOP, 0, HIT + 36);
+      tint.addColorStop(0, 'rgba(255, 255, 255, 0)');
+      tint.addColorStop(1, RhythmDuel.hexAlpha(RhythmDuel.LANE_COLORS[lane], 0.16 + 0.08 * pulse));
+      ctx.fillStyle = tint;
+      ctx.beginPath();
+      ctx.moveTo(a0.x, TOP);
+      ctx.lineTo(a1.x, TOP);
+      ctx.lineTo(b1.x, HIT + 36);
+      ctx.lineTo(b0.x, HIT + 36);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Líneas de tiempo que corren a velocidad constante, con los compases más marcados
+    const time = this.state === 'play' || this.state === 'won' ? this.songTime : 0;
+    const beat = DuelMusic.BEAT;
+    const first = Math.floor(time / beat) - 1;
+    for (let k = first; k < first + Math.ceil(this.travel / beat) + 3; k++) {
+      const depth = 1 - (k * beat - time) / this.travel;
+      if (depth < 0 || depth > bottomDepth) continue;
+      const a = this.lanePoint(-0.5, depth);
+      const b = this.lanePoint(3.5, depth);
+      const bar = k % 4 === 0;
+      ctx.strokeStyle = bar ? 'rgba(255, 255, 255, 0.5)' : 'rgba(170, 200, 255, 0.16)';
+      ctx.lineWidth = bar ? 3 : 1.2;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      if (!bar) continue;
+      // Flechas del color de cada carril al inicio de cada compás
+      for (let lane = 0; lane < 4; lane++) {
+        const p = this.lanePoint(lane, depth);
+        ctx.fillStyle = RhythmDuel.hexAlpha(RhythmDuel.LANE_COLORS[lane], 0.4);
+        const w = 16 * p.scale;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y - 7 * p.scale);
+        ctx.lineTo(p.x + w, p.y + 5 * p.scale);
+        ctx.lineTo(p.x, p.y + 1 * p.scale);
+        ctx.lineTo(p.x - w, p.y + 5 * p.scale);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    // Separadores de carril y bordes brillantes (laten con el compás)
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(160, 200, 255, 0.3)';
+    for (let i = 1; i < 4; i++) {
+      const a = this.lanePoint(i - 0.5, 0);
+      const b = this.lanePoint(i - 0.5, bottomDepth);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+    ctx.shadowColor = '#00f5ff';
+    ctx.shadowBlur = 10 + 12 * pulse;
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = `rgba(120, 250, 255, ${0.75 + 0.25 * pulse})`;
+    for (const [p, q] of [[topL, botL], [topR, botR]]) {
+      ctx.beginPath();
+      ctx.moveTo(p.x, TOP);
+      ctx.lineTo(q.x, HIT + 36);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+
+    // Línea de aciertos: barra de luz que destella en cada tiempo
+    const left = this.lanePoint(-0.5, 1);
+    const right = this.lanePoint(3.5, 1);
+    const bar = ctx.createLinearGradient(left.x, 0, right.x, 0);
+    bar.addColorStop(0, 'rgba(0, 245, 255, 0)');
+    bar.addColorStop(0.5, `rgba(255, 255, 255, ${0.55 + 0.4 * pulse})`);
+    bar.addColorStop(1, 'rgba(255, 0, 90, 0)');
+    ctx.fillStyle = bar;
+    ctx.fillRect(left.x, HIT - 2 - 2 * pulse, right.x - left.x, 4 + 4 * pulse);
+  }
+
+  // "#rrggbb" + opacidad → color rgba
+  static hexAlpha(hex, alpha) {
+    const value = parseInt(hex.slice(1), 16);
+    return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
+  }
+
+  // Haz de luz que sube por el carril mientras se mantiene la tecla (o por el acierto reciente)
+  renderLaneBeams(ctx) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let lane = 0; lane < 4; lane++) {
+      const strength = Math.max(this.held[lane] ? 0.55 : 0, this.padFlash[lane] * 0.9);
+      if (strength < 0.02) continue;
+      const bottom = this.lanePoint(lane, 1);
+      const top = this.lanePoint(lane, 0.15);
+      const beam = ctx.createLinearGradient(0, bottom.y, 0, top.y);
+      beam.addColorStop(0, RhythmDuel.hexAlpha(RhythmDuel.LANE_COLORS[lane], 0.55 * strength));
+      beam.addColorStop(1, RhythmDuel.hexAlpha(RhythmDuel.LANE_COLORS[lane], 0));
+      ctx.fillStyle = beam;
+      ctx.beginPath();
+      ctx.moveTo(bottom.x - bottom.width * 0.46, bottom.y);
+      ctx.lineTo(bottom.x + bottom.width * 0.46, bottom.y);
+      ctx.lineTo(top.x + top.width * 0.4, top.y);
+      ctx.lineTo(top.x - top.width * 0.4, top.y);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Medidor de fuerza: la onda de ECO (cian) contra el silencio (rojo), con un destello en el punto de choque
+  renderMeter(ctx, pulse) {
     const x = 250;
     const y = 20;
     const width = 460;
-    const height = 18;
-    ctx.fillStyle = '#240812';
+    const height = 20;
+    ctx.fillStyle = '#1a0610';
     ctx.fillRect(x, y, width, height);
     const split = width * this.shownMeter;
-    const eco = ctx.createLinearGradient(x, 0, x + width, 0);
-    eco.addColorStop(0, '#0097a8');
-    eco.addColorStop(1, '#00f5ff');
+    const eco = ctx.createLinearGradient(0, y, 0, y + height);
+    eco.addColorStop(0, '#7dfbff');
+    eco.addColorStop(0.5, '#00c8dc');
+    eco.addColorStop(1, '#00798a');
     ctx.fillStyle = eco;
     ctx.fillRect(x, y, split, height);
-    ctx.fillStyle = '#ff003c';
+    const silence = ctx.createLinearGradient(0, y, 0, y + height);
+    silence.addColorStop(0, '#ff6a8a');
+    silence.addColorStop(0.5, '#e0002f');
+    silence.addColorStop(1, '#7a0018');
+    ctx.fillStyle = silence;
     ctx.fillRect(x + split, y, width - split, height);
-    // Punta de la onda
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(x + split - 2, y - 4, 4, height + 8);
+    // Muescas
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    for (let i = 1; i < 20; i++) ctx.fillRect(x + (width / 20) * i - 1, y, 2, height);
     ctx.lineWidth = 4;
     ctx.strokeStyle = '#000';
     ctx.strokeRect(x, y, width, height);
-    Draw.rock(ctx, 'ECO', x - 12, y + 16, { size: 22, align: 'right', colors: ['#ffffff', '#00f5ff', '#005e8a'], glow: '#00f5ff', glowBlur: 10, outlineWidth: 4 });
-    Draw.rock(ctx, 'VÓIDHAR', x + width + 12, y + 16, { size: 22, align: 'left', colors: ['#ffffff', '#ff5a8a', '#6a0030'], glow: '#ff2a55', glowBlur: 10, outlineWidth: 4 });
+    // Choque de las dos ondas
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const size = 70 + 30 * pulse;
+    ctx.drawImage(Atmosphere.glowSprite('#ffffff'), x + split - size / 2, y + height / 2 - size / 2, size, size);
+    ctx.restore();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x + split - 2, y - 4, 4, height + 8);
+    Draw.rock(ctx, 'ECO', x - 12, y + 18, { size: 22, align: 'right', colors: ['#ffffff', '#00f5ff', '#005e8a'], glow: '#00f5ff', glowBlur: 10, outlineWidth: 4 });
+    Draw.rock(ctx, 'VÓIDHAR', x + width + 12, y + 18, { size: 22, align: 'left', colors: ['#ffffff', '#ff5a8a', '#6a0030'], glow: '#ff2a55', glowBlur: 10, outlineWidth: 4 });
     // Avance de la canción
     const progress = this.state === 'play' ? Math.max(0, Math.min(1, this.songTime / DuelMusic.endTime)) : (this.state === 'won' ? 1 : 0);
     ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
-    ctx.fillRect(x, y + height + 6, width, 3);
+    ctx.fillRect(x, y + height + 7, width, 3);
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(x, y + height + 6, width * progress, 3);
+    ctx.fillRect(x, y + height + 7, width * progress, 3);
   }
 
   renderNotes(ctx) {
@@ -379,54 +513,139 @@ class RhythmDuel {
     for (const note of this.notes) {
       if (note.hit) continue;
       const ahead = note.t - time;
-      if (ahead > RhythmDuel.TRAVEL + 0.05 || ahead < -0.35) continue;
+      if (ahead > this.travel + 0.05 || ahead < -0.35) continue;
       visible.push(note);
     }
     visible.sort((a, b) => b.t - a.t); // las más lejanas primero
+
+    // Barra que une las notas dobles (varias a la vez)
+    const byTime = new Map();
     for (const note of visible) {
-      const depth = 1 - (note.t - time) / RhythmDuel.TRAVEL;
+      const key = note.t.toFixed(3);
+      if (!byTime.has(key)) byTime.set(key, []);
+      byTime.get(key).push(note);
+    }
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (const group of byTime.values()) {
+      if (group.length < 2) continue;
+      const depth = 1 - (group[0].t - time) / this.travel;
+      const lanes = group.map((note) => note.lane);
+      const a = this.lanePoint(Math.min(...lanes), depth);
+      const b = this.lanePoint(Math.max(...lanes), depth);
+      ctx.globalAlpha = group[0].missed ? 0.2 : Math.min(0.9, depth * 3);
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 12 * a.scale;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 5 * a.scale;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+    ctx.restore();
+
+    for (const note of visible) {
+      const depth = 1 - (note.t - time) / this.travel;
       const point = this.lanePoint(note.lane, depth);
       const color = RhythmDuel.LANE_COLORS[note.lane];
-      const radius = 30 * point.scale;
+      const rx = 32 * point.scale;
+      const ry = rx * 0.62;
       ctx.save();
-      ctx.globalAlpha *= note.missed ? 0.35 : Math.min(1, depth * 4);
-      ctx.shadowColor = color;
-      ctx.shadowBlur = 14 * point.scale;
-      ctx.fillStyle = color;
+      ctx.globalAlpha *= note.missed ? 0.3 : Math.min(1, depth * 4);
+
+      // Estela detrás de la nota (hacia arriba), para que se note el movimiento
+      const trail = ctx.createLinearGradient(0, point.y - 70 * point.scale, 0, point.y);
+      trail.addColorStop(0, RhythmDuel.hexAlpha(color, 0));
+      trail.addColorStop(1, RhythmDuel.hexAlpha(color, 0.45));
+      ctx.fillStyle = trail;
+      ctx.fillRect(point.x - rx * 0.55, point.y - 70 * point.scale, rx * 1.1, 70 * point.scale);
+
+      // Halo
+      ctx.globalCompositeOperation = 'lighter';
+      const halo = rx * 2.6;
+      ctx.globalAlpha *= 0.5;
+      ctx.drawImage(Atmosphere.glowSprite(color), point.x - halo / 2, point.y - halo * 0.36, halo, halo * 0.72);
+      ctx.globalAlpha /= 0.5;
+      ctx.globalCompositeOperation = 'source-over';
+
+      // Gema: borde negro, cuerpo con degradado y brillo
+      ctx.fillStyle = '#000';
       ctx.beginPath();
-      ctx.ellipse(point.x, point.y, radius, radius * 0.62, 0, 0, Math.PI * 2);
+      ctx.ellipse(point.x, point.y + 2 * point.scale, rx + 4 * point.scale, ry + 4 * point.scale, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.lineWidth = Math.max(2, 4 * point.scale);
-      ctx.strokeStyle = '#000';
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      const body = ctx.createRadialGradient(point.x - rx * 0.25, point.y - ry * 0.35, 1, point.x, point.y, rx);
+      body.addColorStop(0, '#ffffff');
+      body.addColorStop(0.35, color);
+      body.addColorStop(1, RhythmDuel.hexAlpha(color, 0.55));
+      ctx.fillStyle = body;
       ctx.beginPath();
-      ctx.ellipse(point.x, point.y - radius * 0.05, radius * 0.45, radius * 0.26, 0, 0, Math.PI * 2);
+      ctx.ellipse(point.x, point.y, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.lineWidth = Math.max(1.5, 2.5 * point.scale);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.beginPath();
+      ctx.ellipse(point.x, point.y, rx * 0.62, ry * 0.62, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.beginPath();
+      ctx.ellipse(point.x - rx * 0.2, point.y - ry * 0.3, rx * 0.28, ry * 0.2, -0.3, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
   }
 
-  // Los cuatro pads de la línea de aciertos, con la tecla de cada uno
-  renderPads(ctx) {
+  // Los cuatro pads de la línea de aciertos, con la tecla de cada uno; con racha alta echan llamas
+  renderPads(ctx, pulse) {
     for (let lane = 0; lane < 4; lane++) {
       const point = this.lanePoint(lane, 1);
       const color = RhythmDuel.LANE_COLORS[lane];
       const pressed = this.held[lane] || this.padFlash[lane] > 0.4;
-      const radius = 33;
+      const rx = 36;
+      const ry = rx * 0.62;
       ctx.save();
+
+      // Llamas con racha de x3 o más
+      if (this.multiplier >= 3 && this.state === 'play') {
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 3; i++) {
+          const flick = 0.5 + 0.5 * Math.sin(this.age * (14 + i * 5) + lane * 2.1 + i);
+          const h = (34 + 26 * flick + (this.multiplier - 3) * 10) * (1 + 0.2 * pulse);
+          const size = 44 + 16 * flick;
+          ctx.globalAlpha = 0.5 + 0.25 * flick;
+          ctx.drawImage(Atmosphere.glowSprite(i === 0 ? '#ff7a00' : color), point.x - size / 2 + (i - 1) * 12, point.y - h - size * 0.3, size, size);
+        }
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'source-over';
+      }
+
+      // Base del pad
       ctx.shadowColor = color;
-      ctx.shadowBlur = pressed ? 24 : 8;
-      ctx.lineWidth = 5;
-      ctx.strokeStyle = color;
-      ctx.fillStyle = pressed ? color : 'rgba(0, 0, 0, 0.55)';
+      ctx.shadowBlur = pressed ? 28 : 10;
+      ctx.fillStyle = '#000';
       ctx.beginPath();
-      ctx.ellipse(point.x, point.y, radius, radius * 0.62, 0, 0, Math.PI * 2);
+      ctx.ellipse(point.x, point.y + 3, rx + 5, ry + 5, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.stroke();
+      const face = ctx.createRadialGradient(point.x - rx * 0.2, point.y - ry * 0.4, 2, point.x, point.y, rx);
+      face.addColorStop(0, pressed ? '#ffffff' : RhythmDuel.hexAlpha(color, 0.5));
+      face.addColorStop(1, pressed ? color : 'rgba(6, 6, 20, 0.9)');
+      ctx.fillStyle = face;
+      ctx.beginPath();
+      ctx.ellipse(point.x, point.y, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
       ctx.shadowBlur = 0;
-      Draw.text(ctx, RhythmDuel.LANE_KEYS[lane], point.x, point.y + 8, { size: 22, align: 'center', color: pressed ? '#000' : color, strokeWidth: pressed ? 0 : 4 });
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = color;
+      ctx.stroke();
+      // Onda al tocar
+      if (this.padFlash[lane] > 0) {
+        const wave = 1 - this.padFlash[lane];
+        ctx.globalAlpha = this.padFlash[lane] * 0.8;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(point.x, point.y, rx + wave * 38, ry + wave * 24, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      Draw.text(ctx, RhythmDuel.LANE_KEYS[lane], point.x, point.y + 8, { size: 22, align: 'center', color: pressed ? '#000' : '#ffffff', strokeWidth: pressed ? 0 : 4 });
       ctx.restore();
     }
   }
@@ -450,7 +669,7 @@ class RhythmDuel {
       const point = this.lanePoint(Math.min(3, Math.max(0, pop.lane)), 1);
       ctx.save();
       ctx.globalAlpha *= 1 - t * t;
-      Draw.text(ctx, pop.text, pop.lane === 1.5 ? RhythmDuel.CX : point.x, RhythmDuel.HIT - 52 - t * 36, {
+      Draw.text(ctx, pop.text, pop.lane === 1.5 ? RhythmDuel.CX : point.x, (pop.lane === 1.5 ? RhythmDuel.HIT - 170 : RhythmDuel.HIT - 52) - t * 36, {
         size: 24 + (1 - t) * 8, align: 'center', color: pop.color, strokeWidth: 5,
       });
       ctx.restore();

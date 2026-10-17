@@ -10,11 +10,22 @@ const { loadGame, createChecker } = require('./harness');
 
   // --- Partitura
   const chart = DuelMusic.buildChart();
-  ok(DuelMusic.SECTIONS.every((section) => section.bars.length === 8 && section.bars.every((bar) => bar.length === 8)), 'cada compás tiene 8 corcheas');
-  ok(chart.length > 150, `la partitura tiene notas suficientes (${chart.length})`);
+  ok(DuelMusic.SECTIONS.every((section) => section.bars.length === 6 && section.bars.every((bar) => bar.length === 8)), 'cada compás tiene 8 corcheas y cada sección 6 compases');
+  ok(chart.length > 120, `la partitura tiene notas suficientes (${chart.length})`);
   ok(chart.every((note, i) => i === 0 || note.t >= chart[i - 1].t), 'las notas están ordenadas en el tiempo');
   ok(chart.every((note) => note.lane >= 0 && note.lane <= 3), 'todos los carriles son válidos');
   ok(chart[0].t >= DuelMusic.COUNT_IN_BARS * 4 * DuelMusic.BEAT - 0.01, 'la primera nota llega tras la cuenta atrás');
+
+  // Velocidad constante: la posición de una nota crece en línea recta con el tiempo
+  {
+    const scene0 = (game.scenes.change('game', { levelIndex: 0 }), game.scenes.current);
+    scene0.enemies.length = 0; scene0.startFinale(); scene0.finale.time = scene0.constructor.FINALE_FALL_AT;
+    let g0 = 0; while (!scene0.duel && g0++ < 3000) step();
+    const d0 = scene0.duel; const ys = [0.2, 0.4, 0.6, 0.8, 1].map((depth) => d0.lanePoint(1, depth).y);
+    const gaps = ys.slice(1).map((y, i) => y - ys[i]);
+    ok(gaps.every((gap) => Math.abs(gap - gaps[0]) < 0.001), 'las notas avanzan a velocidad constante (sin acelerar)');
+    ok(d0.travel > 0.5 && d0.travel < 2, `tiempo de recorrido configurable (${d0.travel} s)`);
+  }
 
   // Arranca el cierre del nivel y avanza hasta que empieza el duelo
   const startDuel = () => {

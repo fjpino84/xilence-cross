@@ -2,9 +2,9 @@
 // La canción se programa por compases un poco antes de que suenen, usando el reloj del audio, así la música y las notas
 // que caen en pantalla quedan sincronizadas. Las notas de la melodía suenan cuando ECO las toca; si falla, se silencian.
 class DuelMusic {
-  static BPM = 132;
-  static BEAT = 60 / 132;
-  static COUNT_IN_BARS = 2;
+  static BPM = 152;
+  static BEAT = 60 / 152;
+  static COUNT_IN_BARS = 1;
   static LOOKAHEAD = 1.2; // segundos de música que se programan por adelantado
   static LEAD = [440, 523.25, 587.33, 659.25]; // La, Do, Re, Mi: pentatónica menor de La, una nota por carril
   static ROOTS = [110, 87.31, 130.81, 98]; // Am - F - C - G, un acorde por compás
@@ -12,19 +12,20 @@ class DuelMusic {
   // Partitura: cada compás son 8 corcheas. '.' silencio, '0'-'3' una nota en ese carril,
   // y dobles: a = 0+2, b = 1+3, c = 0+3, d = 1+2, e = 2+3.
   static SECTIONS = [
-    { name: 'estrofa', energy: 0, bars: ['0...0.1.', '1...1.2.', '2...2.1.', '3...1.0.', '0.0.1.2.', '1.1.2.3.', '2.1.0.1.', '3...3...'] },
-    { name: 'estribillo', energy: 1, bars: ['0.1.2.3.', '3.2.1.0.', '1.2.3.2.', '3.3.2.1.', 'a.1.b.3.', 'c.2.1.0.', '1.b.3.b.', '3.c...c.'] },
-    { name: 'solo', energy: 2, bars: ['01230123', '32103210', '01232123', '32101232', '0.1.2.3.', 'e.d.a.b.', '01230123', '3.2.1.0.'] },
-    { name: 'final', energy: 3, bars: ['a.b.a.b.', 'c.d.e.c.', '0123.3.3', '3210.0.0', 'a1b2c3d.', 'e.d.c.b.', '01230123', 'c.c.c.cc'] },
+    { name: 'estrofa', energy: 0, bars: ['0...0.1.', '1...1.2.', '2...2.1.', '3...1.0.', '0.0.1.2.', '3...3...'] },
+    { name: 'estribillo', energy: 1, bars: ['0.1.2.3.', '3.2.1.0.', '1.2.3.2.', 'a.1.b.3.', 'c.2.1.0.', '3.c...c.'] },
+    { name: 'solo', energy: 2, bars: ['01230123', '32103210', '01232123', '0.1.2.3.', 'e.d.a.b.', '3.2.1.0.'] },
+    { name: 'final', energy: 3, bars: ['a.b.a.b.', 'c.d.e.c.', '0123.3.3', 'a1b2c3d.', 'e.d.c.b.', 'c.c.c.cc'] },
   ];
   static DOUBLES = { a: [0, 2], b: [1, 3], c: [0, 3], d: [1, 2], e: [2, 3] };
 
   // Lista de notas { t (segundos desde el inicio), lane, pitch, bar }
   static buildChart() {
     const notes = [];
-    DuelMusic.SECTIONS.forEach((section, s) => {
+    let first = DuelMusic.COUNT_IN_BARS;
+    DuelMusic.SECTIONS.forEach((section) => {
       section.bars.forEach((pattern, i) => {
-        const bar = DuelMusic.COUNT_IN_BARS + s * 8 + i;
+        const bar = first + i;
         for (let slot = 0; slot < 8; slot++) {
           const symbol = pattern[slot];
           if (symbol === '.') continue;
@@ -32,11 +33,22 @@ class DuelMusic {
           for (const lane of lanes) notes.push({ t: (bar * 4 + slot * 0.5) * DuelMusic.BEAT, lane, pitch: DuelMusic.LEAD[lane], bar });
         }
       });
+      first += section.bars.length;
     });
     return notes;
   }
 
-  static get totalBars() { return DuelMusic.COUNT_IN_BARS + DuelMusic.SECTIONS.length * 8; }
+  // Sección y posición dentro de ella para un compás de la canción (sin contar la cuenta atrás)
+  static locate(index) {
+    let rest = index;
+    for (const section of DuelMusic.SECTIONS) {
+      if (rest < section.bars.length) return { section, inSection: rest };
+      rest -= section.bars.length;
+    }
+    return null;
+  }
+
+  static get totalBars() { return DuelMusic.COUNT_IN_BARS + DuelMusic.SECTIONS.reduce((sum, section) => sum + section.bars.length, 0); }
   static get endTime() { return DuelMusic.totalBars * 4 * DuelMusic.BEAT; } // el acorde final suena aquí
 
   constructor() {
@@ -114,11 +126,10 @@ class DuelMusic {
     }
 
     const index = bar - DuelMusic.COUNT_IN_BARS;
-    const section = DuelMusic.SECTIONS[Math.floor(index / 8)];
-    const inSection = index % 8;
+    const { section, inSection } = DuelMusic.locate(index);
     const energy = section.energy;
     const root = DuelMusic.ROOTS[inSection % 4];
-    const fill = inSection === 7;
+    const fill = inSection === section.bars.length - 1;
 
     // Batería
     const kicks = [[0, 4], [0, 3, 4, 7], [0, 3, 4, 6], [0, 2, 3, 4, 6, 7]][energy];
