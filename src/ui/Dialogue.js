@@ -6,6 +6,7 @@ class Dialogue {
   static STYLES = {
     eco: { color: '#00f5ff', dark: '#06323a', side: 'left', portrait: 'portraitEco' },
     rex: { color: '#ff2a55', dark: '#3a0614', side: 'right', portrait: 'portraitRex' },
+    batuk: { color: '#ffc02a', dark: '#3a2606', side: 'right', portrait: 'portraitBatuk' },
   };
 
   constructor(lines, onDone) {

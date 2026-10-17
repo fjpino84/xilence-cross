@@ -638,6 +638,34 @@ AudioManager.SOUNDS = {
       a.tone({ type: 'square', from: 520 + Math.random() * 90, to: 470, duration: 0.035, volume: 0.03, attack: 0.002 });
     }
   },
+  // Retumbar de tambores graves (entrada del jefe)
+  drumRumble: (a) => {
+    for (let i = 0; i < 6; i++) a.tone({ from: 62 - i * 3, to: 38, duration: 0.3, volume: 0.32, delay: i * 0.16, attack: 0.004 });
+    a.noise({ type: 'lowpass', from: 500, to: 90, q: 1, duration: 1.1, volume: 0.3, attack: 0.3, wet: 0.35, shape: 'soft' });
+  },
+  // Pisada de Batuk: golpe de tambor grande
+  drumStomp: (a) => {
+    a.tone({ from: 120, to: 44, duration: 0.28, volume: 0.6, attack: 0.002 });
+    a.noise({ type: 'bandpass', from: 700, to: 260, q: 1, duration: 0.14, volume: 0.26, attack: 0.001 });
+    a.tone({ type: 'triangle', from: 210, to: 90, duration: 0.14, volume: 0.2, attack: 0.001, wet: 0.2 });
+  },
+  // Golpe enorme: bombo, platillo y reverberación
+  drumBoom: (a) => {
+    a.tone({ from: 110, to: 30, duration: 0.8, volume: 0.7, attack: 0.002 });
+    a.noise({ type: 'lowpass', from: 2400, to: 140, duration: 0.7, volume: 0.45, attack: 0.002, wet: 0.45 });
+    a.noise({ type: 'highpass', from: 5000, to: 3000, duration: 1.2, volume: 0.2, attack: 0.002, wet: 0.35, delay: 0.02 });
+    a.clang({ base: 900, duration: 0.8, volume: 0.12, wet: 0.35 });
+  },
+  // Un instrumento sale volando hacia Batuk: silbido corto
+  instrumentIn: (a) => {
+    a.noise({ type: 'bandpass', from: 1200, to: 3200, q: 1.4, duration: 0.5, volume: 0.1, attack: 0.1, wet: 0.2 });
+  },
+  // El instrumento se engancha a la órbita: golpecito de percusión
+  instrumentHit: (a) => {
+    const f = 280 + Math.random() * 380;
+    a.tone({ type: 'triangle', from: f, to: f * 0.6, duration: 0.16, volume: 0.13, attack: 0.002, wet: 0.2 });
+    a.noise({ type: 'bandpass', from: 2500, to: 1800, q: 2, duration: 0.05, volume: 0.07, attack: 0.001 });
+  },
   // Se pierde el duelo: acorde que se hunde y se apaga
   duelFail: (a) => {
     a.tone({ type: 'sawtooth', from: 330, to: 48, duration: 1.1, volume: 0.22, shape: 'soft', lowpass: 1800, attack: 0.01, wet: 0.3 });

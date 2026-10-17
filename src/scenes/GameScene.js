@@ -83,6 +83,8 @@ class GameScene {
 
   // Los controles táctiles solo se muestran mientras se juega
   usesTouchControls() {
+    if (this.duel) return false;
+    if (this.dialogue || (this.finale && this.finale.phase === 'defeat')) return true; // el botón de golpe avanza
     return !this.finale && !this.finished;
   }
 
@@ -808,71 +810,78 @@ class GameScene {
     ctx.restore();
   }
 
-  // ---------------------------------------------------------------- cierre del nivel: aparece Vóidhar
+  // ---------------------------------------------------------------- cierre del nivel: el duelo con Batuk
 
-  // Línea de tiempo (segundos desde el fin del nivel): oscurece → cae Vóidhar → impacto → aura y cartel → fundido a negro
-  static FINALE_FALL_AT = 1.1;
-  static FINALE_HOLD = 4.6; // tiempo que se queda Vóidhar tras aterrizar
+  // Línea de tiempo (segundos desde el fin del nivel): oscurece → Batuk entra caminando → pisotón → diálogo → duelo
+  // musical → Batuk cae derrotado → imagen de derrota → fundido a negro y pantalla final
+  static FINALE_FALL_AT = 1.1; // instante en que Batuk empieza a entrar
   static FINALE_FADE = 1.1;
-  static DUEL_START = 3.2; // segundos tras aterrizar Vóidhar: empieza el duelo musical
+  static DEFEAT_TOPPLE = 2.6; // lo que tarda en caer antes de mostrar la imagen de derrota
+  static BATUK_DIALOGUE = [
+    { who: 'batuk', name: 'BATUK', text: 'Hueles a cuerdas, ECO. A cuerdas y a ruido. Hace mucho que nadie trae ese olor a mi templo.' },
+    { who: 'eco', name: 'ECO', text: 'Vengo por la melodía que te quitaron, Batuk.' },
+    { who: 'batuk', name: 'BATUK', text: 'Me la quitaron... y yo la entregué a cambio de silencio. Solo me dejaron el pulso. El tambor es lo último que no pudieron callar.' },
+    { who: 'batuk', name: 'BATUK', text: 'Si quieres mi melodía, sigue mi ritmo. Un compás fuera de tiempo y el silencio te traga.' },
+    { who: 'eco', name: 'ECO', text: 'Entonces toquemos.' },
+    { who: 'batuk', name: 'BATUK', whisper: true, text: 'Que hablen los tambores.' },
+  ];
 
   startFinale() {
     this.finished = true; // evita el fin de partida normal
     const player = this.player;
-    this.finale = { time: 0, voidhar: null, landedAt: -1, roars: 0, fade: 0, done: false };
+    this.finale = { time: 0, boss: null, phase: 'enter', fade: 0, done: false, defeatTime: 0, leaving: false };
     this.camera.lockX = this.camera.x; // la cámara se queda quieta
     player.facing = 1;
     player.energy = 0;
     this.game.audio.duckMusic(true);
-    this.game.audio.play('voidRumble');
+    this.game.audio.play('drumRumble');
     this.hud.finaleStart = this.hud.time;
   }
 
   // Control de ECO anulado durante el cierre
   static NO_INPUT = { isDown: () => false, justPressed: () => false, preserve() {}, endStep() {} };
 
-  updateFinale(dt) {
+  updateFinale(dt, input) {
     const finale = this.finale;
     finale.time += dt;
     const world = this.world;
 
-    // Retumbar creciente antes de la caída
+    // Retumbar creciente antes de que entre Batuk
     if (finale.time < GameScene.FINALE_FALL_AT) {
-      this.camera.shake(1 + 4 * (finale.time / GameScene.FINALE_FALL_AT), 0.1);
+      this.camera.shake(1 + 3 * (finale.time / GameScene.FINALE_FALL_AT), 0.1);
     }
 
-    // Vóidhar cae del cielo frente a ECO, siempre dentro de la pantalla
-    if (!finale.voidhar && finale.time >= GameScene.FINALE_FALL_AT) {
-      const x = Math.min(this.player.x + 330, this.camera.right - 150);
-      finale.voidhar = new VoidharFinale(x, this.player.y);
-      this.game.audio.play('voidFall');
+    // Batuk entra caminando por la derecha y se planta frente a ECO, siempre dentro de la pantalla
+    if (!finale.boss && finale.time >= GameScene.FINALE_FALL_AT) {
+      finale.boss = new BatukBoss(this.camera.right + 200, this.player.y);
+      finale.boss.targetX = Math.min(this.player.x + 330, this.camera.right - 150);
     }
 
-    const voidhar = finale.voidhar;
-    if (voidhar && voidhar.update(dt, world)) this.voidharLands(voidhar);
+    const boss = finale.boss;
+    if (boss && boss.update(dt, world)) this.batukArrives(boss);
 
-    if (voidhar && voidhar.landed) {
-      this.camera.shake(1.6, 0.1);
-      // Rugidos que hacen temblar la pantalla
-      if (finale.roars < 1 && voidhar.landedTime > 0.55) {
-        finale.roars++;
-        this.game.audio.play('voidRoar');
-        this.camera.shake(14, 0.8);
-        this.hitStopTime = Math.max(this.hitStopTime, 0.05);
-        this.particles.add({ type: 'ring', x: voidhar.x, y: voidhar.y - 120, size: 20, sizeEnd: 560, life: 0.8, color: '#a066ff', width: 14, flat: 0.8 });
-        this.showCallout('VÓIDHAR', 2.6, { y: 84, colors: ['#ffffff', '#ff5a8a', '#6a0030'], glow: '#ff2a55', rim: '#1a0010' });
-      }
-      // Tras el rugido empieza el duelo musical; al ganarlo, fundido a negro
-      if (!finale.duelStarted && voidhar.landedTime > GameScene.DUEL_START) {
-        finale.duelStarted = true;
-        this.duel = new RhythmDuel(this, voidhar, () => {
-          finale.duelDone = true;
-          finale.fadeFrom = voidhar.landedTime;
-          this.duel = null;
+    if (boss && boss.landed && finale.phase === 'enter') {
+      // Tras el pisotón: cartel con su nombre y diálogo; al cerrarlo empieza el duelo musical
+      if (!finale.dialogueShown && boss.landedTime > 1.4) {
+        finale.dialogueShown = true;
+        this.showCallout('BATUK', 2.4, { y: 84, colors: ['#ffffff', '#ffd23a', '#9a5a00'], glow: '#ffb000', rim: '#2a1600' });
+        this.dialogue = new Dialogue(GameScene.BATUK_DIALOGUE, () => {
+          finale.phase = 'duel';
+          this.duel = new RhythmDuel(this, boss, () => this.batukDefeated(boss));
         });
       }
-      if (finale.duelDone) {
-        finale.fade = Math.min(1, (voidhar.landedTime - finale.fadeFrom) / GameScene.FINALE_FADE);
+    }
+
+    if (finale.phase === 'defeat') {
+      finale.defeatTime += dt;
+      const cardAge = finale.defeatTime - GameScene.DEFEAT_TOPPLE;
+      const confirm = input && (input.justPressed('confirm') || input.justPressed('attack'));
+      if (cardAge > 1.8 && !finale.leaving && confirm) {
+        finale.leaving = true;
+        finale.leaveAt = finale.time;
+      }
+      if (finale.leaving) {
+        finale.fade = Math.min(1, (finale.time - finale.leaveAt) / GameScene.FINALE_FADE);
         if (finale.fade >= 1 && !finale.done) {
           finale.done = true;
           this.game.scenes.change('ending');
@@ -881,54 +890,62 @@ class GameScene {
     }
   }
 
-  // Impacto: ondas negras, grietas, escombros, sacudida enorme y ECO empujado hacia atrás
-  voidharLands(voidhar) {
-    const { PURPLE } = CONFIG.COLORS;
-    const x = voidhar.x;
-    const y = voidhar.y;
-    this.game.audio.play('voidImpact');
-    this.flashTime = 0.5;
-    this.flashColor = '#7a3cff';
-    this.camera.shake(26, 0.9);
-    this.camera.punch(0.07);
-    this.hitStopTime = Math.max(this.hitStopTime, 0.14);
-    this.landDust(x - 40, y, 14);
-    this.landDust(x + 40, y, 14);
-    this.particles.add({ type: 'ring', x, y, size: 20, sizeEnd: 620, life: 0.9, color: '#0a0512', width: 24, flat: 0.28, additive: false });
-    this.particles.add({ type: 'ring', x, y, size: 14, sizeEnd: 520, life: 0.8, color: PURPLE, width: 14, flat: 0.28 });
-    this.particles.add({ type: 'ring', x, y, size: 8, sizeEnd: 380, life: 0.6, color: '#ff2a55', width: 8, flat: 0.28 });
-    this.effects.push({ type: 'crack', ground: true, x, y, seed: 424242, age: 0, duration: 7 });
-    this.effects.push({ type: 'crack', ground: true, x: x - 90, y, seed: 777, age: 0, duration: 7 });
+  // Pisotón de Batuk al plantarse: onda dorada, grietas, escombros y sacudida
+  batukArrives(boss) {
+    const x = boss.x;
+    const y = boss.y;
+    this.game.audio.play('drumBoom');
+    this.flashTime = 0.4;
+    this.flashColor = '#ffb000';
+    this.camera.shake(20, 0.7);
+    this.camera.punch(0.05);
+    this.hitStopTime = Math.max(this.hitStopTime, 0.1);
+    this.landDust(x - 50, y, 12);
+    this.landDust(x + 50, y, 12);
+    this.particles.add({ type: 'ring', x, y, size: 20, sizeEnd: 560, life: 0.9, color: '#ffd23a', width: 16, flat: 0.28 });
+    this.particles.add({ type: 'ring', x, y, size: 10, sizeEnd: 400, life: 0.7, color: '#ff7a00', width: 9, flat: 0.28 });
+    this.effects.push({ type: 'crack', ground: true, x, y, seed: 31337, age: 0, duration: 8 });
+    this.effects.push({ type: 'crack', ground: true, x: x - 80, y, seed: 777, age: 0, duration: 8 });
     this.particles.burst({
       x, y: y - 8, count: 34, speed: [260, 760], angle: [-2.6, -0.54], life: [0.6, 1.2], size: [3, 7], sizeEnd: 2,
       colors: ['#6b6477', '#3d3846', '#8a8294'], type: 'dot', additive: false, gravity: 1200, drag: 0.3,
     });
     this.particles.burst({
       x, y: y - 10, count: 40, speed: [220, 700], angle: [-2.6, -0.54], life: [0.4, 0.9], size: [2.5, 5],
-      colors: [PURPLE, '#ff2a55', '#ffffff', '#c9a6ff'], type: 'spark', gravity: 500, drag: 1.4,
+      colors: ['#ffd23a', '#ff7a00', '#ffffff'], type: 'spark', gravity: 500, drag: 1.4,
     });
-    this.shards(x, y - 60, 20, ['#7c3aff', '#ff2a55', '#ffffff'], true);
-
     // ECO sale despedido hacia atrás (sin daño) y queda aturdido un instante
     const player = this.player;
     player.invulnerable = 99;
-    player.kx = -Math.sign(x - player.x || 1) * 640;
+    player.kx = -Math.sign(x - player.x || 1) * 520;
     player.setState('hurt');
     player.hitFlash = 0.15;
   }
 
-  // Fundido y oscurecimiento del cierre (se dibuja sobre todo)
+  // ECO gana el duelo: Batuk cae y, pasado un momento, aparece la imagen de derrota
+  batukDefeated(boss) {
+    this.duel = null;
+    this.finale.phase = 'defeat';
+    this.finale.defeatTime = 0;
+    boss.defeat(this.world);
+    this.player.score += 5000;
+  }
+
+  // Tinte, imagen de derrota y fundido del cierre (se dibuja sobre todo)
   renderFinaleOverlay(ctx) {
     const finale = this.finale;
     if (!finale) return;
-    if (finale.voidhar && finale.voidhar.landed) {
-      // Franja de tinte rojo-negro que respira
+    if (finale.boss && finale.boss.landed && !finale.boss.defeated) {
+      // Franja de tinte dorado-marrón que respira
       const pulse = 0.5 + 0.5 * Math.sin(finale.time * 4);
       const gradient = ctx.createRadialGradient(CONFIG.WIDTH / 2, CONFIG.HEIGHT / 2, CONFIG.HEIGHT * 0.35, CONFIG.WIDTH / 2, CONFIG.HEIGHT / 2, CONFIG.WIDTH * 0.62);
       gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      gradient.addColorStop(1, 'rgba(70, 0, 40, ' + (0.4 + 0.2 * pulse) + ')');
+      gradient.addColorStop(1, 'rgba(70, 36, 0, ' + (0.35 + 0.15 * pulse) + ')');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
+    }
+    if (finale.phase === 'defeat' && finale.defeatTime > GameScene.DEFEAT_TOPPLE) {
+      DefeatCard.render(ctx, finale.defeatTime - GameScene.DEFEAT_TOPPLE);
     }
     if (finale.fade > 0) {
       ctx.fillStyle = 'rgba(0, 0, 0, ' + finale.fade + ')';
@@ -990,7 +1007,7 @@ class GameScene {
     this.maxCombo = Math.max(this.maxCombo, this.player.comboHits);
     this.updateHeartbeat(scaled);
     this.hud.update(dt);
-    if (this.finale) this.updateFinale(dt);
+    if (this.finale) this.updateFinale(dt, input);
     else this.checkEndConditions(dt);
   }
 
@@ -1030,6 +1047,7 @@ class GameScene {
     this.updateFeedback(dt);
     this.dialogue.update(dt, input, this.game.audio);
     for (const enemy of this.enemies) if (enemy.boss) enemy.update(dt, this.world);
+    if (this.finale && this.finale.boss) this.finale.boss.update(dt, this.world);
     this.player.vx = 0;
     this.updateEffects(dt);
     this.particles.update(dt);
@@ -1253,7 +1271,7 @@ class GameScene {
     this.atmosphere.renderSmoke(ctx); // humo del escenario, bajo los personajes
     for (const enemy of this.enemies) if (enemy.renderHazards) enemy.renderHazards(ctx); // rayos y avisos del jefe
     for (const effect of this.effects) if (effect.ground) this.renderEffect(ctx, effect); // grietas bajo los personajes
-    const drawables = [this.player, this.trino, ...this.enemies, ...(this.finale && this.finale.voidhar ? [this.finale.voidhar] : [])].sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
+    const drawables = [this.player, this.trino, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : [])].sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
     for (const entity of drawables) entity.render(ctx);
     for (const pickup of this.pickups) this.renderPickup(ctx, pickup);
     for (const bolt of this.projectiles) this.renderProjectile(ctx, bolt);

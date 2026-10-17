@@ -37,6 +37,7 @@ class RhythmDuel {
     this.padFlash = [0, 0, 0, 0];
     this.pops = [];
     this.fromX = { player: this.player.x, boss: boss.x };
+    this.lastBeat = -1;
     this.reset();
     this.game.audio.pauseMusic(true); // la música del juego calla: ahora suena la del duelo
   }
@@ -119,13 +120,14 @@ class RhythmDuel {
     const eased = 1 - Math.pow(1 - t, 3);
     const camera = this.scene.camera;
     this.player.x = this.fromX.player + (camera.x + 150 - this.fromX.player) * eased;
-    this.boss.x = this.fromX.boss + (camera.x + 810 - this.fromX.boss) * eased;
+    this.boss.x = this.fromX.boss + (camera.x + 765 - this.fromX.boss) * eased;
     this.player.facing = 1;
     if (t >= 1) this.begin();
   }
 
   begin() {
     this.reset();
+    this.lastBeat = -1;
     this.music.start(this.game.audio);
     this.setState('play');
   }
@@ -133,6 +135,12 @@ class RhythmDuel {
   updatePlay(dt, input) {
     this.music.advance(dt);
     const time = this.songTime;
+    // Cada tiempo de la canción, el jefe late con la música (y puede traer instrumentos)
+    const beat = Math.floor(time / DuelMusic.BEAT);
+    if (time >= 0 && beat > this.lastBeat) {
+      this.lastBeat = beat;
+      if (this.boss.onBeat) this.boss.onBeat(beat, this.combo, this.scene.world);
+    }
 
     for (let lane = 0; lane < 4; lane++) if (input.justPressed(`lane${lane}`)) this.press(lane, time);
 
@@ -185,6 +193,7 @@ class RhythmDuel {
     this.meter = Math.max(0, this.meter - RhythmDuel.MISS_PENALTY);
     this.music.playMiss(true);
     this.addPop('FALLO', '#ff3355', note.lane);
+    if (this.boss.react) this.boss.react('miss', this.scene.world);
     // El jefe responde con una onda de silencio que sacude la escena
     this.failFlash = 1;
     const world = this.scene.world;
@@ -215,6 +224,7 @@ class RhythmDuel {
     world.audio.play('rayFire');
     world.shake(7, 0.25);
     this.boss.squash = 0.22;
+    if (this.boss.react) this.boss.react('streak', world);
     this.scene.particles.burst({ x: this.boss.x - 30, y: this.boss.y - 130, count: 18, speed: [160, 520], life: [0.2, 0.5], size: [2.4, 5], colors: ['#ffffff', '#00f5ff', '#a066ff'], type: 'spark', drag: 2 });
     this.addPop(`¡RACHA ${this.combo}!`, '#00f5ff', 1.5);
   }
@@ -498,7 +508,7 @@ class RhythmDuel {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(x + split - 2, y - 4, 4, height + 8);
     Draw.rock(ctx, 'ECO', x - 12, y + 18, { size: 22, align: 'right', colors: ['#ffffff', '#00f5ff', '#005e8a'], glow: '#00f5ff', glowBlur: 10, outlineWidth: 4 });
-    Draw.rock(ctx, 'VÓIDHAR', x + width + 12, y + 18, { size: 22, align: 'left', colors: ['#ffffff', '#ff5a8a', '#6a0030'], glow: '#ff2a55', glowBlur: 10, outlineWidth: 4 });
+    Draw.rock(ctx, this.boss.name || 'VÓIDHAR', x + width + 12, y + 18, { size: 22, align: 'left', colors: ['#ffffff', '#ff5a8a', '#6a0030'], glow: '#ff2a55', glowBlur: 10, outlineWidth: 4 });
     // Avance de la canción
     const progress = this.state === 'play' ? Math.max(0, Math.min(1, this.songTime / DuelMusic.endTime)) : (this.state === 'won' ? 1 : 0);
     ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';

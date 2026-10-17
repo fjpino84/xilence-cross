@@ -28,6 +28,9 @@ const CONFIG = Object.freeze({
     bgTitle: 'assets/backgrounds/titulo-eco.jpg',
     bgFinal: 'assets/backgrounds/final-batalla.jpg',
     spriteVoidhar: 'assets/sprites/voidhar.png',
+    spriteBatuk: 'assets/sprites/batuk/batuk.png',
+    portraitBatuk: 'assets/sprites/batuk/retrato.png',
+    batukDefeated: 'assets/sprites/batuk/derrotado.jpg', // opcional: si existe, sustituye a la escena provisional de derrota
     bgLevel01: 'assets/backgrounds/nivel01-cementerio-naves.jpg',
     bgLevel01a: 'assets/backgrounds/nivel01-a.jpg',
     bgLevel01b: 'assets/backgrounds/nivel01-b.jpg',

@@ -20,7 +20,7 @@ const { loadGame, createChecker } = require('./harness');
   {
     const scene0 = (game.scenes.change('game', { levelIndex: 0 }), game.scenes.current);
     scene0.enemies.length = 0; scene0.startFinale(); scene0.finale.time = scene0.constructor.FINALE_FALL_AT;
-    let g0 = 0; while (!scene0.duel && g0++ < 3000) step();
+    let g0 = 0; while (!scene0.duel && g0++ < 3000) { if (scene0.dialogue && g0 % 15 === 0) { press('Enter', true); step(); press('Enter', false); } else step(); }
     const d0 = scene0.duel; const ys = [0.2, 0.4, 0.6, 0.8, 1].map((depth) => d0.lanePoint(1, depth).y);
     const gaps = ys.slice(1).map((y, i) => y - ys[i]);
     ok(gaps.every((gap) => Math.abs(gap - gaps[0]) < 0.001), 'las notas avanzan a velocidad constante (sin acelerar)');
@@ -35,13 +35,17 @@ const { loadGame, createChecker } = require('./harness');
     scene.startFinale();
     scene.finale.time = scene.constructor.FINALE_FALL_AT;
     let guard = 0;
-    while (!(scene.duel && scene.duel.state === 'play') && guard++ < 60 * 30) step();
+    while (!(scene.duel && scene.duel.state === 'play') && guard++ < 60 * 40) {
+      if (scene.dialogue && guard % 15 === 0) { press('Enter', true); step(); press('Enter', false); } else step();
+    }
     return scene;
   };
 
   // --- Bot perfecto
   let scene = startDuel();
-  ok(!!scene.duel, 'tras el rugido de Vóidhar empieza el duelo');
+  ok(!!scene.duel, 'Batuk entra, habla con ECO y empieza el duelo');
+  ok(scene.finale.boss && scene.finale.boss.name === 'BATUK', 'el jefe del nivel es Batuk');
+  ok(scene.finale.boss.instruments.length >= 4, `instrumentos girando alrededor de Batuk (${scene.finale.boss.instruments.length})`);
   ok(scene.usesDuelPads(), 'se activan los pads táctiles del duelo');
   let duel = scene.duel;
   let guard = 0;
@@ -66,9 +70,15 @@ const { loadGame, createChecker } = require('./harness');
     if (guard % 8 === 0) render();
   }
   ok(duel.done && !scene.duel, 'tras los resultados se cierra el duelo');
-  ok(scene.finale.duelDone, 'el cierre del nivel continúa');
+  ok(scene.finale.phase === 'defeat' && scene.finale.boss.defeated, 'Batuk cae derrotado');
   guard = 0;
-  while (game.scenes.current === scene && guard++ < 60 * 12) step();
+  let cardSeen = false;
+  while (game.scenes.current === scene && guard++ < 60 * 25) {
+    if (scene.finale.defeatTime > 4.6) cardSeen = true;
+    if (guard % 20 === 0) { press('Enter', true); step(); press('Enter', false); } else step();
+    if (guard % 10 === 0) render();
+  }
+  ok(cardSeen, 'se muestra la imagen de Batuk derrotado');
   ok(game.scenes.current !== scene, 'pasa a la escena final');
 
   // --- Bot que no toca nada
