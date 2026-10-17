@@ -7,11 +7,15 @@ class Dialogue {
     eco: { color: '#00f5ff', dark: '#06323a', side: 'left', portrait: 'portraitEco' },
     rex: { color: '#ff2a55', dark: '#3a0614', side: 'right', portrait: 'portraitRex' },
     batuk: { color: '#ffc02a', dark: '#3a2606', side: 'right', portrait: 'portraitBatuk' },
+    // Acotación de escena: sin retrato ni nombre, en gris
+    stage: { color: '#8da2bd', dark: '#10192a', side: 'left', portrait: null },
   };
 
-  constructor(lines, onDone) {
+  // onLine(índice, línea) se llama al empezar cada línea (para eventos de escena: un paso, levantarse...)
+  constructor(lines, onDone, onLine = null) {
     this.lines = lines;
     this.onDone = onDone;
+    this.onLine = onLine;
     this.index = 0;
     this.shown = 0;
     this.age = 0;
@@ -20,6 +24,8 @@ class Dialogue {
     this.closing = false;
     this.done = false;
     this.wrapCache = new Map();
+    const notify = this.onLine;
+    if (notify) notify(0, this.lines[0]);
   }
 
   get line() { return this.lines[this.index]; }
@@ -43,7 +49,7 @@ class Dialogue {
     if (!this.finishedTyping) {
       const before = Math.floor(this.shown);
       this.shown = Math.min(this.line.text.length, this.shown + (this.line.whisper ? Dialogue.WHISPER_SPEED : Dialogue.TYPE_SPEED) * dt);
-      if (Math.floor(this.shown) !== before && Math.floor(this.shown) % 2 === 0) audio.play('dialogBlip', { who: this.line.who });
+      if (Math.floor(this.shown) !== before && Math.floor(this.shown) % 2 === 0 && this.line.who !== 'stage') audio.play('dialogBlip', { who: this.line.who });
       if (advance && this.lineAge > 0.25) this.shown = this.line.text.length; // completa la línea
       return;
     }
@@ -52,6 +58,8 @@ class Dialogue {
         this.index += 1;
         this.shown = 0;
         this.lineAge = 0;
+        const notify = this.onLine;
+        if (notify) notify(this.index, this.line);
       } else {
         this.closing = true;
       }
@@ -108,14 +116,17 @@ class Dialogue {
     ctx.strokeRect(panelX + 5, panelY + 5, panelW - 10, panelH - 10);
     ctx.shadowBlur = 0;
 
-    // Retrato del que habla, en su lado
-    const box = 126;
+    // Retrato del que habla, en su lado (las acotaciones no llevan)
+    const hasPortrait = !!style.portrait;
+    const box = hasPortrait ? 126 : 0;
     const left = style.side === 'left';
     const boxX = left ? panelX + 16 : panelX + panelW - 16 - box;
     const boxY = panelY + 12;
-    ctx.fillStyle = style.dark;
-    ctx.fillRect(boxX, boxY, box, box);
-    const image = Assets.image(style.portrait);
+    if (hasPortrait) {
+      ctx.fillStyle = style.dark;
+      ctx.fillRect(boxX, boxY, box, box);
+    }
+    const image = hasPortrait ? Assets.image(style.portrait) : null;
     if (image) {
       ctx.save();
       ctx.beginPath();
@@ -125,20 +136,24 @@ class Dialogue {
       ctx.drawImage(image, boxX + (box - image.width * scale) / 2, boxY + (box - image.height * scale) / 2 + 6, image.width * scale, image.height * scale);
       ctx.restore();
     }
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = '#000';
-    ctx.strokeRect(boxX, boxY, box, box);
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = style.color;
-    ctx.strokeRect(boxX + 3, boxY + 3, box - 6, box - 6);
+    if (hasPortrait) {
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#000';
+      ctx.strokeRect(boxX, boxY, box, box);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = style.color;
+      ctx.strokeRect(boxX + 3, boxY + 3, box - 6, box - 6);
+    }
 
     // Nombre
-    const textX = left ? boxX + box + 22 : panelX + 26;
-    const textW = panelW - box - 16 - 48;
-    Draw.rock(ctx, this.line.name, textX, panelY + 38, {
-      size: 26, colors: ['#ffffff', style.color, '#10202a'], glow: style.color, glowBlur: 12, tracking: 2, outlineWidth: 5,
-    });
-    if (this.line.whisper) {
+    const textX = hasPortrait ? (left ? boxX + box + 22 : panelX + 26) : panelX + 34;
+    const textW = hasPortrait ? panelW - box - 16 - 48 : panelW - 68;
+    if (hasPortrait) {
+      Draw.rock(ctx, this.line.name, textX, panelY + 38, {
+        size: 26, colors: ['#ffffff', style.color, '#10202a'], glow: style.color, glowBlur: 12, tracking: 2, outlineWidth: 5,
+      });
+    }
+    if (this.line.whisper && hasPortrait) {
       Draw.text(ctx, '(voz baja)', textX + 4 + (this.line.name.length * 15), panelY + 36, { size: 15, color: '#b88a98', strokeWidth: 3 });
     }
 
@@ -150,8 +165,8 @@ class Dialogue {
       const part = text.slice(0, Math.max(0, remaining));
       remaining -= text.length + 1;
       if (!part) return;
-      Draw.text(ctx, part, textX, panelY + 70 + i * (size + 7), {
-        size, color: this.line.whisper ? '#ffc2d2' : '#ffffff', strokeWidth: 4,
+      Draw.text(ctx, part, textX, panelY + (hasPortrait ? 70 : 62) + i * (size + 7), {
+        size, color: !hasPortrait ? '#b9c8dc' : (this.line.whisper ? '#ffc2d2' : '#ffffff'), strokeWidth: 4,
       });
     });
 

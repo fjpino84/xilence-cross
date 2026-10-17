@@ -71,14 +71,18 @@ const { loadGame, createChecker } = require('./harness');
   }
   ok(duel.done && !scene.duel, 'tras los resultados se cierra el duelo');
   ok(scene.finale.phase === 'defeat' && scene.finale.boss.defeated, 'Batuk cae derrotado');
+  ok(scene.finale.phase === 'defeat' || scene.finale.phase === 'epilogue', 'empieza la secuencia de derrota');
   guard = 0;
-  let cardSeen = false;
-  while (game.scenes.current === scene && guard++ < 60 * 25) {
+  let cardSeen = false; let epilogue = 0; let stood = false;
+  while (game.scenes.current === scene && guard++ < 60 * 90) {
     if (scene.finale.defeatTime > 4.6) cardSeen = true;
+    if (scene.finale.phase === 'epilogue' && scene.dialogue) { epilogue = Math.max(epilogue, scene.dialogue.index + 1); if (scene.finale.boss.state === 'rise' || scene.finale.boss.state === 'calm') stood = true; }
     if (guard % 20 === 0) { press('Enter', true); step(); press('Enter', false); } else step();
     if (guard % 10 === 0) render();
   }
   ok(cardSeen, 'se muestra la imagen de Batuk derrotado');
+  ok(epilogue >= 25, `se recorre el diálogo posterior al combate (${epilogue} líneas)`);
+  ok(stood, 'Batuk se pone de pie durante el diálogo');
   ok(game.scenes.current !== scene, 'pasa a la escena final');
 
   // --- Bot que no toca nada

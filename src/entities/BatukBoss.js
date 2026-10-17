@@ -3,7 +3,7 @@
 // llegan instrumentos nuevos volando desde distintos lugares (arriba, los lados, el fondo, el suelo) y los más
 // antiguos salen despedidos. Si ECO gana, cae derrotado y sus instrumentos se esparcen.
 class BatukBoss {
-  static HEIGHT = 290; // los enemigos miden ~165 y ECO ~140
+  static HEIGHT = 255; // los enemigos miden ~165 y ECO ~140; su cabeza queda justo bajo el cuadro de diálogo
   static ANCHOR_X = 0.5198;
   static ORBIT_MAX = 8;
   static ORBIT_RX = 170;
@@ -35,10 +35,24 @@ class BatukBoss {
     this.spawnCount = 0;
     this.emberTimer = 0;
     this.defeatTime = 0;
+    this.forward = 0;
+    this.forwardTarget = 0;
   }
 
   get landed() { return this.landedTime >= 0; }
   get defeated() { return this.state === 'down'; }
+
+  // Un paso lento hacia ECO (se usa en el diálogo previo)
+  stepForward() {
+    this.forwardTarget = -42; // se queda un paso más cerca de ECO
+  }
+
+  // Tras ser derrotado se incorpora despacio, sin instrumentos ni aura
+  standUp() {
+    if (this.state !== 'down') return;
+    this.state = 'rise';
+    this.riseTime = 0;
+  }
 
   // Devuelve true en el instante en que termina de entrar y planta los pies
   update(dt, world) {
@@ -47,6 +61,7 @@ class BatukBoss {
     this.squash = Math.max(0, this.squash - dt);
     this.hurt = Math.max(0, this.hurt - dt * 4);
     this.lunge = Math.max(0, this.lunge - dt * 3);
+    this.forward += (this.forwardTarget - this.forward) * Math.min(1, dt * 1.6);
     let justLanded = false;
 
     if (this.state === 'walk') {
@@ -74,7 +89,10 @@ class BatukBoss {
         this.initialSpawned++;
         this.spawnInstrument(world);
       }
-    } else {
+    } else if (this.state === 'rise') {
+      this.riseTime += dt;
+      if (this.riseTime >= 2) this.state = 'calm';
+    } else if (this.state === 'down') {
       this.defeatTime += dt;
     }
 
@@ -260,6 +278,8 @@ class BatukBoss {
     const image = Assets.image('spriteBatuk');
     const height = BatukBoss.HEIGHT;
     const down = this.state === 'down';
+    const rising = this.state === 'rise';
+    const fighting = this.state === 'idle' || this.state === 'walk';
     const pulse = this.pulse;
     const walking = this.state === 'walk';
 
@@ -267,12 +287,12 @@ class BatukBoss {
     ctx.save();
     ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
     ctx.beginPath();
-    ctx.ellipse(this.x, this.y, down ? 130 : 78, 15, 0, 0, Math.PI * 2);
+    ctx.ellipse(this.x, this.y, down || rising ? 120 : 78, 15, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
-    // Aura dorada que late con la música
-    if (!down) {
+    // Aura dorada que late con la música (solo mientras combate)
+    if (fighting) {
       const cy = this.y - height * 0.5;
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
@@ -292,22 +312,23 @@ class BatukBoss {
 
     if (image) {
       const hop = walking ? Math.abs(Math.sin(this.age * 7.5)) * 7 : 0;
-      const sway = this.state === 'idle' ? Math.sin(this.age * 1.7) * 14 - this.lunge * 46 : 0;
+      const sway = this.state === 'idle' ? Math.sin(this.age * 1.7) * 14 - this.lunge * 46 + this.forward : (this.state === 'calm' ? 0 : -this.lunge * 46);
       const squash = this.squash / 0.3;
       const bounce = 1 + 0.045 * pulse;
       const fall = down ? Math.min(1, this.defeatTime / 1.1) : 0;
-      const rotation = down ? 1.5 * (fall * fall * (3 - 2 * fall)) : (this.lunge > 0 ? -0.08 * this.lunge : 0);
+      const riseP = rising ? Math.min(1, this.riseTime / 1.8) : (this.state === 'calm' ? 1 : 0);
+      const rotation = down ? 1.5 * (fall * fall * (3 - 2 * fall)) : (rising ? 1.5 * (1 - riseP * riseP * (3 - 2 * riseP)) : (this.lunge > 0 ? -0.08 * this.lunge : 0));
       const common = {
         x: this.x + sway, y: this.y - hop, height, anchorX: BatukBoss.ANCHOR_X, facing: 1,
         scaleX: 1 + 0.12 * squash - 0.02 * pulse, scaleY: (1 - 0.1 * squash) * bounce, rotation,
       };
-      if (!down) {
+      if (fighting) {
         // Contorno dorado: silueta más grande y translúcida detrás del cuerpo
         Sprite.draw(ctx, image, { ...common, height: height * 1.05, silhouetteColor: '#ffd23a', additive: true, alpha: 0.28 + 0.22 * pulse });
       }
       Sprite.draw(ctx, image, {
         ...common, flash: this.hurt > 0.4,
-        tint: down ? { color: '#2a1a08', alpha: 0.3 } : (this.lunge > 0.2 ? { color: '#ff2a55', alpha: 0.25 * this.lunge } : { color: '#ffb020', alpha: 0.04 + 0.1 * pulse }),
+        tint: down ? { color: '#2a1a08', alpha: 0.3 } : (rising ? { color: '#2a1a08', alpha: 0.3 * (1 - riseP) } : this.state === 'calm' ? null : (this.lunge > 0.2 ? { color: '#ff2a55', alpha: 0.25 * this.lunge } : { color: '#ffb020', alpha: 0.04 + 0.1 * pulse })),
       });
     }
 

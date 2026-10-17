@@ -818,12 +818,62 @@ class GameScene {
   static FINALE_FADE = 1.1;
   static DEFEAT_TOPPLE = 2.6; // lo que tarda en caer antes de mostrar la imagen de derrota
   static BATUK_DIALOGUE = [
-    { who: 'batuk', name: 'BATUK', text: 'Hueles a cuerdas, ECO. A cuerdas y a ruido. Hace mucho que nadie trae ese olor a mi templo.' },
-    { who: 'eco', name: 'ECO', text: 'Vengo por la melodía que te quitaron, Batuk.' },
-    { who: 'batuk', name: 'BATUK', text: 'Me la quitaron... y yo la entregué a cambio de silencio. Solo me dejaron el pulso. El tambor es lo último que no pudieron callar.' },
-    { who: 'batuk', name: 'BATUK', text: 'Si quieres mi melodía, sigue mi ritmo. Un compás fuera de tiempo y el silencio te traga.' },
-    { who: 'eco', name: 'ECO', text: 'Entonces toquemos.' },
-    { who: 'batuk', name: 'BATUK', whisper: true, text: 'Que hablen los tambores.' },
+    { who: 'eco', name: 'ECO', text: 'Estoy buscando algo. Gente que lleva música adentro aunque nunca haya tocado una nota.' },
+    { who: 'eco', name: 'ECO', text: 'Monjes, les decían antes — los que podían cambiar el mundo solo con vibrar diferente.' },
+    { who: 'stage', text: '(Batuk no se mueve. La lluvia golpea su armadura sin que él lo registre.)' },
+    { who: 'batuk', name: 'BATUK', text: 'No sé de qué hablas.' },
+    { who: 'eco', name: 'ECO', text: 'Yo tampoco lo entendía al principio. Pero hay una frecuencia que no se puede silenciar — ni con decretos, ni con fuerza. La llevo aquí.' },
+    { who: 'stage', text: '(ECO pone la mano sobre La Réquiem.)' },
+    { who: 'eco', name: 'ECO', text: 'Y tú también la llevas. Ahí.' },
+    { who: 'stage', text: '(Señala el pecho de Batuk.)' },
+    { who: 'eco', name: 'ECO', text: 'Te escucho desde que entré al distrito. Algo en ti vibra distinto a todo lo que me han mandado. Eres uno de ellos.' },
+    { who: 'stage', text: '(Pausa larga.)' },
+    { who: 'batuk', name: 'BATUK', text: '...' },
+    { who: 'stage', text: '(Algo cruza su cara — demasiado rápido para leerlo — y luego se cierra como una puerta.)' },
+    { who: 'batuk', name: 'BATUK', text: 'Ya nadie es especial.' },
+    { who: 'stage', text: '(Voz plana, sin rabia. Peor que la rabia.)' },
+    { who: 'batuk', name: 'BATUK', text: 'Eso que escuchas... es lo que queda cuando alguien creyó que sí lo era. Y se equivocó.' },
+    { who: 'eco', name: 'ECO', text: '¿Qué te hicieron?' },
+    { who: 'batuk', name: 'BATUK', text: 'Nada que no me haya hecho yo solo.' },
+    { who: 'stage', text: '(Por primera vez se mueve: un paso adelante, lento, definitivo.)', event: 'step' },
+    { who: 'batuk', name: 'BATUK', text: 'Hazte a un lado.' },
+    { who: 'eco', name: 'ECO', text: 'No puedo.' },
+    { who: 'batuk', name: 'BATUK', text: 'Entonces tampoco tú eres especial. Solo eres el siguiente.' },
+  ];
+  // Después del combate: Batuk, caído, se levanta y habla de la Orden del Silencio
+  static BATUK_EPILOGUE = [
+    { who: 'stage', text: '(Batuk yace entre sus instrumentos rotos. No mira a ECO.)' },
+    { who: 'batuk', name: 'BATUK', whisper: true, text: 'Me habías dicho que escuchabas algo en mí.' },
+    { who: 'stage', text: '(Pausa.)' },
+    { who: 'batuk', name: 'BATUK', whisper: true, text: 'Tenías razón. Lo apagué hace años. Pensé que era lo correcto.' },
+    { who: 'eco', name: 'ECO', text: '¿Por qué?' },
+    { who: 'batuk', name: 'BATUK', text: 'Porque nos lo pidieron. Nos dijeron que si seguíamos vibrando... algo en el universo se desestabilizaría.' },
+    { who: 'batuk', name: 'BATUK', text: 'Que éramos demasiado para este tiempo.' },
+    { who: 'stage', text: '(Se pone de pie, despacio, con el peso de alguien que carga una decisión vieja.)', event: 'stand' },
+    { who: 'batuk', name: 'BATUK', text: 'Somos — éramos — una orden. La Orden del Silencio. No el silencio de ellos, no el de La Quietud. El nuestro. Elegido.' },
+    { who: 'batuk', name: 'BATUK', text: 'Éramos doce, cada uno con una frecuencia distinta. Decidimos callar para proteger lo que amábamos.' },
+    { who: 'eco', name: 'ECO', text: '¿Y funcionó?' },
+    { who: 'stage', text: '(Batuk mira el distrito destruido a su alrededor.)' },
+    { who: 'batuk', name: 'BATUK', text: 'Mira dónde estamos.' },
+    { who: 'stage', text: '(Pausa larga.)' },
+    { who: 'batuk', name: 'BATUK', text: 'Ahora que volviste a despertar algo en mí... sé que nos equivocamos. El universo no necesitaba nuestro silencio. Nos necesitaba a nosotros.' },
+    { who: 'stage', text: '(Por primera vez, algo parecido a una sonrisa. Apenas.)' },
+    { who: 'batuk', name: 'BATUK', text: 'Gracias. Por no dejarme quieto.' },
+    { who: 'eco', name: 'ECO', text: '¿Dónde están los otros?' },
+    { who: 'stage', text: '(Batuk duda un momento.)' },
+    { who: 'batuk', name: 'BATUK', text: 'Dispersos. Algunos cedieron como yo. Otros... no sé. Pero hace poco, antes de que me pusieran aquí de guardia...' },
+    { who: 'stage', text: '(Baja la voz, como si La Quietud pudiera escucharlo.)' },
+    { who: 'batuk', name: 'BATUK', whisper: true, text: 'Vi a alguien. En las estaciones de tren del Sector Meridian — las viejas, las que ya no usa nadie.' },
+    { who: 'batuk', name: 'BATUK', whisper: true, text: 'Una figura que se movía entre los andenes vacíos como si estuviera esperando algo. O a alguien.' },
+    { who: 'batuk', name: 'BATUK', text: 'No vi su cara. Pero la frecuencia...' },
+    { who: 'stage', text: '(Se toca el pecho.)' },
+    { who: 'batuk', name: 'BATUK', text: 'Era de los nuestros.' },
+    { who: 'eco', name: 'ECO', text: '¿Me estás diciendo que hay más?' },
+    { who: 'batuk', name: 'BATUK', text: 'Te estoy diciendo que no estás tan solo como crees.' },
+    { who: 'stage', text: '(Se endereza, ya sin la rigidez de antes.)' },
+    { who: 'batuk', name: 'BATUK', text: 'Ve a Meridian. Y cuando encuentres a quien sea que espera ahí... dile que Batuk recuerda la nota que le correspondía.' },
+    { who: 'stage', text: '(Pausa, casi para sí mismo.)' },
+    { who: 'batuk', name: 'BATUK', text: 'A ver si ella también recuerda la suya.' },
   ];
 
   startFinale() {
@@ -853,7 +903,7 @@ class GameScene {
 
     // Batuk entra caminando por la derecha y se planta frente a ECO, siempre dentro de la pantalla
     if (!finale.boss && finale.time >= GameScene.FINALE_FALL_AT) {
-      finale.boss = new BatukBoss(this.camera.right + 200, this.player.y);
+      finale.boss = new BatukBoss(this.camera.right + 200, 462);
       finale.boss.targetX = Math.min(this.player.x + 330, this.camera.right - 150);
     }
 
@@ -868,7 +918,7 @@ class GameScene {
         this.dialogue = new Dialogue(GameScene.BATUK_DIALOGUE, () => {
           finale.phase = 'duel';
           this.duel = new RhythmDuel(this, boss, () => this.batukDefeated(boss));
-        });
+        }, (index, line) => { if (line.event === 'step') boss.stepForward(); });
       }
     }
 
@@ -876,10 +926,15 @@ class GameScene {
       finale.defeatTime += dt;
       const cardAge = finale.defeatTime - GameScene.DEFEAT_TOPPLE;
       const confirm = input && (input.justPressed('confirm') || input.justPressed('attack'));
-      if (cardAge > 1.8 && !finale.leaving && confirm) {
-        finale.leaving = true;
-        finale.leaveAt = finale.time;
+      if (cardAge > 1.8 && confirm) {
+        finale.phase = 'epilogue';
+        this.dialogue = new Dialogue(GameScene.BATUK_EPILOGUE, () => {
+          finale.leaving = true;
+          finale.leaveAt = finale.time;
+        }, (index, line) => { if (line.event === 'stand') boss.standUp(); });
       }
+    }
+    if (finale.phase === 'epilogue') {
       if (finale.leaving) {
         finale.fade = Math.min(1, (finale.time - finale.leaveAt) / GameScene.FINALE_FADE);
         if (finale.fade >= 1 && !finale.done) {
@@ -916,7 +971,7 @@ class GameScene {
     });
     // ECO sale despedido hacia atrás (sin daño) y queda aturdido un instante
     const player = this.player;
-    player.invulnerable = 99;
+    player.invulnerable = 0; // sin parpadeo: no quedan enemigos que lo dañen
     player.kx = -Math.sign(x - player.x || 1) * 520;
     player.setState('hurt');
     player.hitFlash = 0.15;

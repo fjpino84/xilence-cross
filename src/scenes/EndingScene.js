@@ -26,7 +26,7 @@ class EndingScene {
       this.game.modal.show({
         variant: 'card',
         title: 'PRÓXIMAMENTE...',
-        message: 'La batalla final te espera.',
+        message: 'El Sector Meridian te espera.',
         buttons: [{ label: 'Volver a empezar', onClick: () => this.game.scenes.change('title') }],
       });
     }
