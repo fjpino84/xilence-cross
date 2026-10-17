@@ -49,10 +49,10 @@ const { loadGame, createChecker } = require('./harness');
     const time = duel.songTime;
     for (let lane = 0; lane < 4; lane++) {
       const due = duel.notes.some((note) => note.lane === lane && !note.hit && !note.missed && Math.abs(note.t - time) < 0.012);
-      if (due) { press(['KeyD', 'KeyF', 'KeyJ', 'KeyK'][lane], true); }
+      if (due) { press(['KeyZ', 'KeyX', 'KeyC', 'KeyV'][lane], true); }
     }
     step();
-    for (const code of ['KeyD', 'KeyF', 'KeyJ', 'KeyK']) press(code, false);
+    for (const code of ['KeyZ', 'KeyX', 'KeyC', 'KeyV']) press(code, false);
     if (guard % 5 === 0) render();
   }
   ok(duel.state === 'won', `un bot perfecto gana el duelo (estado: ${duel.state})`);
@@ -87,9 +87,9 @@ const { loadGame, createChecker } = require('./harness');
   duel = scene.duel;
   guard = 0;
   while (duel.state === 'play' && guard++ < 60 * 90) {
-    for (const code of ['KeyD', 'KeyF', 'KeyJ', 'KeyK']) press(code, true);
+    for (const code of ['KeyZ', 'KeyX', 'KeyC', 'KeyV']) press(code, true);
     step();
-    for (const code of ['KeyD', 'KeyF', 'KeyJ', 'KeyK']) press(code, false);
+    for (const code of ['KeyZ', 'KeyX', 'KeyC', 'KeyV']) press(code, false);
   }
   ok(duel.state === 'lost' || duel.accuracy < 0.95, 'aporrear todas las teclas no da una victoria perfecta');
 

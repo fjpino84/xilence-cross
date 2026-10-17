@@ -181,7 +181,7 @@ class TouchControls {
     this.duelLayer = this.element('div', 'touch-duel', this.shell);
     this.duelLayer.setAttribute('aria-hidden', 'true');
     const colors = ['#00f5ff', '#ffe600', '#ff003c', '#9b6bff'];
-    const keys = ['D', 'F', 'J', 'K'];
+    const keys = ['Z', 'X', 'C', 'V'];
     for (let lane = 0; lane < 4; lane++) {
       const pad = this.element('button', 'touch-pad', this.duelLayer);
       pad.type = 'button';

@@ -14,10 +14,10 @@ class InputManager {
     confirm: ['Enter', 'Space'],
     mute: ['KeyM'],
     // Duelo musical: un carril por tecla (también con las flechas)
-    lane0: ['KeyD', 'ArrowLeft'],
-    lane1: ['KeyF', 'ArrowDown'],
-    lane2: ['KeyJ', 'ArrowUp'],
-    lane3: ['KeyK', 'ArrowRight'],
+    lane0: ['KeyZ', 'ArrowLeft'],
+    lane1: ['KeyX', 'ArrowDown'],
+    lane2: ['KeyC', 'ArrowUp'],
+    lane3: ['KeyV', 'ArrowRight'],
   };
 
   constructor() {

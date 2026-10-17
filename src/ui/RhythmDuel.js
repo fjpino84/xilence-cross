@@ -9,7 +9,7 @@ class RhythmDuel {
   static GOOD = 0.115;
   static LATE = 0.14; // pasado este margen la nota se da por fallada
   static LANE_COLORS = ['#00f5ff', '#ffe600', '#ff003c', '#9b6bff'];
-  static LANE_KEYS = ['D', 'F', 'J', 'K'];
+  static LANE_KEYS = ['Z', 'X', 'C', 'V'];
   static CX = 480;
   static TOP = 76;
   static HIT = 452;
@@ -687,7 +687,7 @@ class RhythmDuel {
     const countIn = DuelMusic.COUNT_IN_BARS * 4 * DuelMusic.BEAT;
     if (time < countIn - 0.2) {
       Draw.rock(ctx, 'TOCA AL RITMO', CONFIG.WIDTH / 2, 232, { size: 34, align: 'center', colors: ['#ffffff', '#ffe600', '#c46a00'], outlineWidth: 7, tracking: 3 });
-      Draw.text(ctx, 'D  F  J  K   o   ←  ↓  ↑  →', CONFIG.WIDTH / 2, 270, { size: 20, align: 'center', color: '#cfe', strokeWidth: 4 });
+      Draw.text(ctx, 'Z  X  C  V   o   ←  ↓  ↑  →', CONFIG.WIDTH / 2, 270, { size: 20, align: 'center', color: '#cfe', strokeWidth: 4 });
       if (time >= 0) {
         const beat = Math.floor(time / DuelMusic.BEAT) % 4;
         Draw.text(ctx, String(4 - beat), CONFIG.WIDTH / 2, 340, { size: 60, align: 'center', color: '#ffffff', strokeWidth: 8 });
