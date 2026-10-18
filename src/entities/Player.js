@@ -130,6 +130,10 @@ class Player extends Entity {
     this.lastX = this.x;
     this.lastY = this.y;
     this.walkTime = this.state === 'walk' ? this.walkTime + dt * Math.max(0.6, Math.min(1.3, moved / Player.SPEED)) : 0;
+    // Giro: al cambiar de dirección el personaje se estrecha un instante en vez de voltearse de golpe
+    if (this.lastFacing !== undefined && this.lastFacing !== this.facing && this.state !== 'attack') this.turnTime = 0.14;
+    this.lastFacing = this.facing;
+    this.turnTime = Math.max(0, (this.turnTime || 0) - dt);
     // Inclinación y rebote suavizados: arranca y frena con inercia en vez de cambiar de golpe
     const walking = this.state === 'walk' ? 1 : 0;
     this.walkEase = (this.walkEase || 0) + (walking - (this.walkEase || 0)) * Math.min(1, dt * 11);
@@ -665,11 +669,15 @@ class Player extends Entity {
           pose.scaleX = 1 + Math.sin(t * 12) * 0.03;
         }
         break;
-      case 'jump':
-        pose.scaleX = 0.97;
-        pose.scaleY = 1.05;
-        pose.rotation = 0.06;
+      case 'jump': {
+        // Se estira al subir, se acorta al llegar arriba y vuelve a estirarse un poco al caer; un instante de compresión al despegar
+        const stretch = Math.max(-0.4, Math.min(1, this.vz / 650));
+        const crouch = this.stateTime < 0.07 ? (1 - this.stateTime / 0.07) : 0;
+        pose.scaleY = 1 + 0.07 * Math.abs(stretch) - 0.09 * crouch;
+        pose.scaleX = 1 - 0.04 * Math.abs(stretch) + 0.07 * crouch;
+        pose.rotation = 0.06 + 0.03 * stretch;
         break;
+      }
       case 'block':
         pose.scaleY = 0.93;
         pose.rotation = -0.06;
@@ -712,6 +720,11 @@ class Player extends Entity {
         break;
     }
 
+    // Giro: estrechamiento breve a mitad del cambio de dirección
+    if (this.turnTime > 0) {
+      const turn = 1 - this.turnTime / 0.14;
+      pose.scaleX *= 1 - 0.22 * Math.sin(turn * Math.PI);
+    }
     // Aplastamiento al aterrizar y brillo con la energía llena
     if (this.landSquash > 0) {
       const s = this.landSquash / 0.16;
