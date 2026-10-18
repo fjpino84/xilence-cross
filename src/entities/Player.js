@@ -49,6 +49,10 @@ class Player extends Entity {
   // extensión, patada sostenida y recogida. Cada pista: [segundo desde el que se muestra, cuadro].
   static KICK_ANCHOR = 0.371;
   static KICK_TRACK = [[0, 2], [0.07, 3], [0.13, 4], [0.26, 5], [0.34, 6]];
+  // Puño (golpes 1 y 3): cuadros ecoPuno1-6 = guardia, preparación, giro, extensión, puño sostenido y recogida. Los tiempos se
+  // reparten según la duración de cada golpe.
+  static PUNCH_ANCHOR = 0.414;
+  static PUNCH_TRACK = [[0, 2], [0.18, 3], [0.34, 4], [0.58, 5], [0.78, 6]]; // fracción de la duración del golpe
   static AIR_KICK_TRACK = [[0, 3], [0.07, 4], [0.30, 5], [0.38, 6]];
   static AIR_KICK = { duration: 0.46, hitStart: 0.07, hitEnd: 0.32, multiplier: 1.4, range: 124, knock: 210, power: 2, reachZ: 170 }; // alcanza a enemigos en el suelo desde lo alto del salto
   // Rayo mejorado (K): 9 cuadros → carga, esfera de energía, disparo, rayo completo, avance y recuperación
@@ -76,9 +80,9 @@ class Player extends Entity {
   // Combo de 5 golpes: el multiplicador de daño crece con cada eslabón.
   // power: intensidad del efecto (1 ligero, 2 fuerte, 3 final). launch: lanza al enemigo por el aire.
   static ATTACKS = [
-    { duration: 0.30, hitStart: 0.08, hitEnd: 0.18, multiplier: 1.0, range: 100, knock: 120, power: 1 },
+    { duration: 0.32, hitStart: 0.10, hitEnd: 0.20, multiplier: 1.0, range: 112, knock: 120, power: 1 }, // puño
     { duration: 0.32, hitStart: 0.09, hitEnd: 0.20, multiplier: 1.0, range: 100, knock: 120, power: 1 },
-    { duration: 0.34, hitStart: 0.10, hitEnd: 0.20, multiplier: 1.25, range: 106, knock: 150, power: 2 },
+    { duration: 0.36, hitStart: 0.11, hitEnd: 0.22, multiplier: 1.25, range: 114, knock: 150, power: 2 }, // puño cruzado
     { duration: 0.44, hitStart: 0.13, hitEnd: 0.27, multiplier: 1.5, range: 122, knock: 190, power: 2 }, // patada alta
     { duration: 0.52, hitStart: 0.18, hitEnd: 0.30, multiplier: 2.5, range: 300, knock: 380, power: 3, launch: true },
   ];
@@ -596,6 +600,17 @@ class Player extends Entity {
 
   // Cuadro de la secuencia mejorada del combo según el golpe y el tiempo transcurrido
   // Cuadro de la patada alta (golpe 4) o de la patada voladora; null si no toca o las imágenes no cargaron
+  // Cuadro del puño (golpes 1 y 3)
+  punchFrame() {
+    if (this.airKick || (this.attackStep !== 1 && this.attackStep !== 3)) return null;
+    const attack = Player.ATTACKS[this.attackStep - 1];
+    const progress = this.stateTime / attack.duration;
+    let number = Player.PUNCH_TRACK[0][1];
+    for (const [from, frame] of Player.PUNCH_TRACK) if (progress >= from) number = frame;
+    const image = Assets.image('ecoPuno' + number);
+    return image ? { image, height: image.height * Player.COMBO_SCALE, anchorX: Player.PUNCH_ANCHOR } : null;
+  }
+
   kickFrame() {
     if (!this.airKick && this.attackStep !== 4) return null;
     const track = this.airKick ? Player.AIR_KICK_TRACK : Player.KICK_TRACK;
@@ -634,7 +649,7 @@ class Player extends Entity {
         return { image: walkImage, height: Player.WALK_HEIGHT, anchorX: Player.WALK_ANCHOR, blendImage: next, blend };
       }
     } else if (this.state === 'attack') {
-      const kick = this.kickFrame();
+      const kick = this.kickFrame() || this.punchFrame();
       if (kick) return kick;
       const attack = Player.ATTACKS[this.attackStep - 1];
       const finisher = this.attackStep >= Player.ATTACKS.length;

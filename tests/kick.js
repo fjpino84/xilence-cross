@@ -46,11 +46,23 @@ const { loadGame, createChecker } = require('./harness');
       if (i % 12 === 0) tap('KeyJ'); else step();
       if (p.state === 'attack' && p.attackStep === 4) {
         reached = true;
+        if (p.kickFrame()) usedKick = true;
         for (let k = 0; k < 30; k++) { step(); const f = p.kickFrame(); if (f) usedKick = true; }
       }
     }
     ok(reached, 'el combo llega al golpe 4');
     ok(usedKick, 'el golpe 4 usa los cuadros de la patada alta');
+  }
+  // --- Puños (golpes 1 y 3)
+  {
+    const { scene, p } = setup();
+    const enemy = scene.spawnEnemy(p.x + 85, p.y, false);
+    enemy.state = 'patrol'; enemy.stats = { ...enemy.stats, aggroRange: 0 }; enemy.hp = enemy.maxHp = 9999;
+    let punchFrames = 0; const hp = enemy.hp;
+    tap('KeyJ');
+    for (let i = 0; i < 30; i++) { step(); if (p.state === 'attack' && p.attackStep === 1 && p.punchFrame()) punchFrames++; }
+    ok(punchFrames > 5, `el golpe 1 usa los cuadros del puño (${punchFrames} cuadros)`);
+    ok(enemy.hp < hp, 'el puño golpea al enemigo');
   }
   console.log(checker.failures ? `\n${checker.failures} comprobaciones fallaron` : '\nTodo correcto');
   process.exit(checker.failures ? 1 : 0);
