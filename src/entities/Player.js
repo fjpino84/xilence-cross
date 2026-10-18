@@ -51,6 +51,12 @@ class Player extends Entity {
   static KICK_TRACK = [[0, 2], [0.07, 3], [0.13, 4], [0.26, 5], [0.34, 6]];
   // Puño (golpes 1 y 3): cuadros ecoPuno1-6 = guardia, preparación, giro, extensión, puño sostenido y recogida. Los tiempos se
   // reparten según la duración de cada golpe.
+  // Reposo: 3 cuadros en ida y vuelta (1-2-3-2) con fundido suave: ECO respira y se balancea sobre la guitarra
+  static IDLE_SEQUENCE = [1, 2, 3, 2];
+  static IDLE_STEP = 0.32; // segundos por cuadro
+  static IDLE_HEIGHT = 144;
+  static IDLE_ANCHOR = 0.407;
+  static IDLE_FEET = 0.9718; // fracción de la imagen donde están los pies
   static PUNCH_ANCHOR = 0.414;
   static PUNCH_TRACK = [[0, 2], [0.18, 3], [0.34, 4], [0.58, 5], [0.78, 6]]; // fracción de la duración del golpe
   static AIR_KICK_TRACK = [[0, 3], [0.07, 4], [0.30, 5], [0.38, 6]];
@@ -600,6 +606,20 @@ class Player extends Entity {
 
   // Cuadro de la secuencia mejorada del combo según el golpe y el tiempo transcurrido
   // Cuadro de la patada alta (golpe 4) o de la patada voladora; null si no toca o las imágenes no cargaron
+  // Reposo en ida y vuelta, con fundido completo entre cuadros contiguos (son poses muy parecidas, no se nota doble imagen)
+  idleFrame() {
+    const sequence = Player.IDLE_SEQUENCE;
+    const position = this.age / Player.IDLE_STEP;
+    const index = Math.floor(position) % sequence.length;
+    const current = Assets.image('ecoIdle' + sequence[index]);
+    const next = Assets.image('ecoIdle' + sequence[(index + 1) % sequence.length]);
+    if (!current) return null;
+    const fraction = position - Math.floor(position);
+    const eased = fraction * fraction * (3 - 2 * fraction);
+    const height = current.height * (Player.IDLE_HEIGHT / current.height);
+    return { image: current, height: Player.IDLE_HEIGHT, anchorX: Player.IDLE_ANCHOR, blendImage: next, blend: next ? eased : 0, drop: (1 - Player.IDLE_FEET) * Player.IDLE_HEIGHT };
+  }
+
   // Cuadro del puño (golpes 1 y 3)
   punchFrame() {
     if (this.airKick || (this.attackStep !== 1 && this.attackStep !== 3)) return null;
@@ -648,6 +668,9 @@ class Player extends Entity {
         const blend = next && fraction > 0.55 ? Player.WALK_BLEND * (fraction - 0.55) / 0.45 : 0;
         return { image: walkImage, height: Player.WALK_HEIGHT, anchorX: Player.WALK_ANCHOR, blendImage: next, blend };
       }
+    } else if (this.state === 'idle') {
+      const idle = this.idleFrame();
+      if (idle) return idle;
     } else if (this.state === 'attack') {
       const kick = this.kickFrame() || this.punchFrame();
       if (kick) return kick;
@@ -692,7 +715,7 @@ class Player extends Entity {
 
     switch (this.state) {
       case 'idle':
-        pose.scaleY = 1 + Math.sin(t * 3) * 0.012;
+        if (!Assets.image('ecoIdle1')) pose.scaleY = 1 + Math.sin(t * 3) * 0.012;
         break;
       case 'walk':
         // Con el ciclo ilustrado: rebote en cada paso e inclinación hacia delante, suavizados al arrancar y frenar
@@ -831,11 +854,12 @@ class Player extends Entity {
       flash: this.hitFlash > 0,
       ...pose,
       offsetX: pose.offsetX * this.facing,
+      offsetY: pose.offsetY + (sprite.drop || 0),
     });
     if (sprite.blend > 0.01) {
       Sprite.draw(ctx, sprite.blendImage, {
         x: this.x, y: this.y - this.z, height: sprite.height, anchorX: sprite.anchorX, facing: this.facing,
-        ...pose, offsetX: pose.offsetX * this.facing, alpha: sprite.blend,
+        ...pose, offsetX: pose.offsetX * this.facing, offsetY: pose.offsetY + (sprite.drop || 0), alpha: sprite.blend,
       });
     }
 

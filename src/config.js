@@ -92,6 +92,7 @@ const CONFIG = Object.freeze({
     ...frameAssets('ecoRayoB', 'eco', 'rayo2', 9),
     ...frameAssets('ecoPatada', 'eco', 'patada', 6),
     ...frameAssets('ecoPuno', 'eco', 'puno', 6),
+    ...frameAssets('ecoIdle', 'eco', 'idle', 3),
     ecoGolpe: 'assets/sprites/eco/golpe.png',
     ecoRayo: 'assets/sprites/eco/rayo.png',
     ecoPoder: 'assets/sprites/eco/poder.png',
