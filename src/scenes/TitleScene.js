@@ -356,7 +356,7 @@ class TitleScene {
   // Frase en lila bajo la línea
   renderTagline(ctx) {
     ctx.save();
-    ctx.font = `600 22px ${CONFIG.PLAIN_FONT}`;
+    ctx.font = `600 19px ${CONFIG.PLAIN_FONT}`;
     ctx.textBaseline = 'alphabetic';
     const gradient = ctx.createLinearGradient(0, 372, 0, 396);
     gradient.addColorStop(0, '#fff3d0');
@@ -364,7 +364,7 @@ class TitleScene {
     ctx.shadowColor = '#7c3aff';
     ctx.shadowBlur = 10;
     ctx.fillStyle = gradient;
-    TitleScene.drawSpaced(ctx, 'MUSIC, THE GREAT COMMUNICATOR', TitleScene.TEXT_X, 392, 2.5, 'fillText');
+    TitleScene.drawSpaced(ctx, 'AND THE QUEST FOR THE FINAL MELODY', TitleScene.TEXT_X, 392, 1.2, 'fillText');
     ctx.restore();
   }
 
