@@ -90,6 +90,7 @@ const CONFIG = Object.freeze({
     trinoVuelo4: 'assets/sprites/trino/vuelo_4.png',
     trinoVuelo5: 'assets/sprites/trino/vuelo_5.png',
     ...frameAssets('ecoRayoB', 'eco', 'rayo2', 9),
+    ...frameAssets('ecoPatada', 'eco', 'patada', 6),
     ecoGolpe: 'assets/sprites/eco/golpe.png',
     ecoRayo: 'assets/sprites/eco/rayo.png',
     ecoPoder: 'assets/sprites/eco/poder.png',

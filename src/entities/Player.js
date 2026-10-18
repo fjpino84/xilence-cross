@@ -45,6 +45,12 @@ class Player extends Entity {
     [[0, 7], [0.12, 8]],            // 4: patada alta con estela
     [[0, 9], [0.09, 10]],           // 5: carga agachado antes del rayo
   ];
+  // Patada alta (golpe 4 del combo) y patada voladora (golpe en el aire): cuadros ecoPatada1-6 = guardia, agachado, rodilla arriba,
+  // extensión, patada sostenida y recogida. Cada pista: [segundo desde el que se muestra, cuadro].
+  static KICK_ANCHOR = 0.371;
+  static KICK_TRACK = [[0, 2], [0.07, 3], [0.13, 4], [0.26, 5], [0.34, 6]];
+  static AIR_KICK_TRACK = [[0, 3], [0.07, 4], [0.30, 5], [0.38, 6]];
+  static AIR_KICK = { duration: 0.46, hitStart: 0.07, hitEnd: 0.32, multiplier: 1.4, range: 124, knock: 210, power: 2, reachZ: 170 }; // alcanza a enemigos en el suelo desde lo alto del salto
   // Rayo mejorado (K): 9 cuadros → carga, esfera de energía, disparo, rayo completo, avance y recuperación
   static RAYO2_TIMES = [0.07, 0.15, 0.29, 0.36, 0.43, 0.60, 0.70, 0.78];
   static RAYO2_SCALE = 0.60;
@@ -73,7 +79,7 @@ class Player extends Entity {
     { duration: 0.30, hitStart: 0.08, hitEnd: 0.18, multiplier: 1.0, range: 100, knock: 120, power: 1 },
     { duration: 0.32, hitStart: 0.09, hitEnd: 0.20, multiplier: 1.0, range: 100, knock: 120, power: 1 },
     { duration: 0.34, hitStart: 0.10, hitEnd: 0.20, multiplier: 1.25, range: 106, knock: 150, power: 2 },
-    { duration: 0.40, hitStart: 0.12, hitEnd: 0.24, multiplier: 1.5, range: 110, knock: 180, power: 2 },
+    { duration: 0.44, hitStart: 0.13, hitEnd: 0.27, multiplier: 1.5, range: 122, knock: 190, power: 2 }, // patada alta
     { duration: 0.52, hitStart: 0.18, hitEnd: 0.30, multiplier: 2.5, range: 300, knock: 380, power: 3, launch: true },
   ];
 
@@ -206,7 +212,9 @@ class Player extends Entity {
       }
     }
 
-    if (input.justPressed('attack')) {
+    if (input.justPressed('attack') && !this.onGround) {
+      this.startAttack(4, true); // en el aire: patada voladora
+    } else if (input.justPressed('attack')) {
       this.startAttack(this.chainTimer > 0 ? this.chainStep : 1);
     } else if (input.justPressed('special') && this.specialCooldown <= 0 && this.onGround) {
       this.startSpecial(world);
@@ -224,7 +232,9 @@ class Player extends Entity {
   }
 
   // --- Ataque básico (combo) ---
-  startAttack(step) {
+  startAttack(step, air = false) {
+    this.airKick = air;
+    if (air) this.vx = this.facing * Player.SPEED * 1.1; // se lanza hacia delante
     this.attackStep = step;
     this.attackQueued = false;
     this.alreadyHit = new Set();
@@ -236,17 +246,17 @@ class Player extends Entity {
   }
 
   updateAttack(input, world) {
-    const attack = Player.ATTACKS[this.attackStep - 1];
+    const attack = this.airKick ? Player.AIR_KICK : Player.ATTACKS[this.attackStep - 1];
     if (this.onGround) this.vx = 0;
 
-    if (input.justPressed('attack') && this.stateTime > attack.duration * 0.35 && this.attackStep < Player.ATTACKS.length) {
+    if (!this.airKick && input.justPressed('attack') && this.stateTime > attack.duration * 0.35 && this.attackStep < Player.ATTACKS.length) {
       this.attackQueued = true;
     }
     if (this.stateTime >= attack.hitStart && this.stateTime <= attack.hitEnd) {
       this.strike(attack, world);
     }
     // Golpe final: el rayo sale de la guitarra con efectos de haz
-    if (this.attackStep >= Player.ATTACKS.length && !this.finisherBeam && this.stateTime >= attack.hitStart) {
+    if (!this.airKick && this.attackStep >= Player.ATTACKS.length && !this.finisherBeam && this.stateTime >= attack.hitStart) {
       this.finisherBeam = true;
       world.beam({ facing: this.facing, owner: this, dx: 90, dy: -98, length: 300, duration: 0.42, power: 1 });
       world.audio.play('rayMini');
@@ -256,8 +266,9 @@ class Player extends Entity {
         this.startAttack(this.attackStep + 1);
       } else {
         const isFinisher = this.attackStep >= Player.ATTACKS.length;
-        this.chainStep = isFinisher ? 1 : this.attackStep + 1;
-        this.chainTimer = isFinisher ? 0 : Player.CHAIN_WINDOW;
+        this.chainStep = isFinisher || this.airKick ? 1 : this.attackStep + 1;
+        this.chainTimer = isFinisher || this.airKick ? 0 : Player.CHAIN_WINDOW;
+        this.airKick = false;
         this.attackStep = 0;
         this.setState(this.onGround ? 'idle' : 'jump');
       }
@@ -269,7 +280,7 @@ class Player extends Entity {
     const damage = Math.round(Player.BASE_DAMAGE * attack.multiplier);
     for (const enemy of world.enemies) {
       if (!enemy.isAlive || this.alreadyHit.has(enemy)) continue;
-      if (!Collision.hitTest(box, enemy)) continue;
+      if (!Collision.hitTest(box, enemy, 48, attack.reachZ || 70)) continue;
       this.alreadyHit.add(enemy);
       this.landHit(enemy, damage, attack.knock, 12, world, { power: attack.power, launch: attack.launch });
     }
@@ -584,6 +595,16 @@ class Player extends Entity {
   }
 
   // Cuadro de la secuencia mejorada del combo según el golpe y el tiempo transcurrido
+  // Cuadro de la patada alta (golpe 4) o de la patada voladora; null si no toca o las imágenes no cargaron
+  kickFrame() {
+    if (!this.airKick && this.attackStep !== 4) return null;
+    const track = this.airKick ? Player.AIR_KICK_TRACK : Player.KICK_TRACK;
+    let number = track[0][1];
+    for (const [from, frame] of track) if (this.stateTime >= from) number = frame;
+    const image = Assets.image('ecoPatada' + number);
+    return image ? { image, height: image.height * Player.COMBO_SCALE, anchorX: Player.KICK_ANCHOR } : null;
+  }
+
   comboFrame() {
     const track = Player.COMBO_ANIM[this.attackStep - 1];
     let number = track[0][1];
@@ -613,6 +634,8 @@ class Player extends Entity {
         return { image: walkImage, height: Player.WALK_HEIGHT, anchorX: Player.WALK_ANCHOR, blendImage: next, blend };
       }
     } else if (this.state === 'attack') {
+      const kick = this.kickFrame();
+      if (kick) return kick;
       const attack = Player.ATTACKS[this.attackStep - 1];
       const finisher = this.attackStep >= Player.ATTACKS.length;
       // El golpe final se carga agachado y luego dispara el rayo con la pose suelta
@@ -737,7 +760,7 @@ class Player extends Entity {
 
   // Retroceso antes del golpe, embestida durante el impacto y recuperación
   poseAttack(pose) {
-    const attack = Player.ATTACKS[this.attackStep - 1];
+    const attack = this.airKick ? Player.AIR_KICK : Player.ATTACKS[this.attackStep - 1];
     const time = this.stateTime;
     if (time < attack.hitStart) {
       pose.rotation = -0.14 * (time / attack.hitStart);
