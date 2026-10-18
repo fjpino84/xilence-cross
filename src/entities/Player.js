@@ -25,6 +25,7 @@ class Player extends Entity {
   static WALK_FRAMES = 4;
   static WALK_HEIGHT = 147;
   static WALK_ANCHOR = 0.387;
+  static WALK_BLEND = 0.3; // opacidad máxima del cuadro siguiente al fundirse (0 = sin fundido)
   static FRAME_HEIGHT = 141;
   static FRAME_ANCHOR = { walk: 0.389, hit: 0.398 };
   // Secuencias con efectos: altura = alto del lienzo (px de imagen) × escala. La escala iguala el tamaño del personaje.
@@ -124,7 +125,14 @@ class Player extends Entity {
     this.specialCooldown = Math.max(0, this.specialCooldown - dt);
     this.landSquash = Math.max(0, this.landSquash - dt);
     this.updateShield(dt, world);
-    this.walkTime = this.state === 'walk' ? this.walkTime + dt : 0;
+    // El ciclo de caminar avanza según lo que ECO se desplaza de verdad (sin patinar): más lento en diagonal o al arrancar
+    const moved = Math.hypot(this.x - (this.lastX ?? this.x), this.y - (this.lastY ?? this.y)) / Math.max(dt, 1e-4);
+    this.lastX = this.x;
+    this.lastY = this.y;
+    this.walkTime = this.state === 'walk' ? this.walkTime + dt * Math.max(0.6, Math.min(1.3, moved / Player.SPEED)) : 0;
+    // Inclinación y rebote suavizados: arranca y frena con inercia en vez de cambiar de golpe
+    const walking = this.state === 'walk' ? 1 : 0;
+    this.walkEase = (this.walkEase || 0) + (walking - (this.walkEase || 0)) * Math.min(1, dt * 11);
     if (this.comboTimer > 0) {
       this.comboTimer -= dt;
       if (this.comboTimer <= 0) this.comboHits = 0;
@@ -589,9 +597,17 @@ class Player extends Entity {
     let key = null;
     let anchorX = Player.FRAME_ANCHOR.walk;
     if (this.state === 'walk') {
-      key = `ecoCaminar${1 + (Math.floor(this.walkTime * Player.WALK_FPS) % Player.WALK_FRAMES)}`;
+      const position = this.walkTime * Player.WALK_FPS;
+      const index = Math.floor(position) % Player.WALK_FRAMES;
+      key = `ecoCaminar${1 + index}`;
       const walkImage = Assets.image(key);
-      if (walkImage) return { image: walkImage, height: Player.WALK_HEIGHT, anchorX: Player.WALK_ANCHOR };
+      if (walkImage) {
+        // Fundido con el cuadro siguiente en el último tramo de cada cuadro: suaviza el salto entre poses (a 10 cuadros por segundo)
+        const fraction = position - Math.floor(position);
+        const next = Assets.image(`ecoCaminar${1 + ((index + 1) % Player.WALK_FRAMES)}`);
+        const blend = next && fraction > 0.55 ? Player.WALK_BLEND * (fraction - 0.55) / 0.45 : 0;
+        return { image: walkImage, height: Player.WALK_HEIGHT, anchorX: Player.WALK_ANCHOR, blendImage: next, blend };
+      }
     } else if (this.state === 'attack') {
       const attack = Player.ATTACKS[this.attackStep - 1];
       const finisher = this.attackStep >= Player.ATTACKS.length;
@@ -637,8 +653,13 @@ class Player extends Entity {
         pose.scaleY = 1 + Math.sin(t * 3) * 0.012;
         break;
       case 'walk':
-        // Una sola ilustración de zancada: rebote, balanceo y compresión simulan el ciclo
-        if (!Assets.image('ecoCaminar1')) {
+        // Con el ciclo ilustrado: rebote en cada paso e inclinación hacia delante, suavizados al arrancar y frenar
+        if (Assets.image('ecoCaminar1')) {
+          const phase = this.walkTime * Player.WALK_FPS / Player.WALK_FRAMES;
+          pose.offsetY = -Math.abs(Math.sin(phase * Math.PI * 2)) * 2.4 * this.walkEase;
+          pose.rotation = 0.035 * this.walkEase;
+        } else {
+          // Una sola ilustración de zancada: rebote, balanceo y compresión simulan el ciclo
           pose.offsetY = -Math.abs(Math.sin(t * 12)) * 5;
           pose.rotation = 0.03 + Math.sin(t * 6) * 0.03;
           pose.scaleX = 1 + Math.sin(t * 12) * 0.03;
@@ -760,6 +781,12 @@ class Player extends Entity {
       ...pose,
       offsetX: pose.offsetX * this.facing,
     });
+    if (sprite.blend > 0.01) {
+      Sprite.draw(ctx, sprite.blendImage, {
+        x: this.x, y: this.y - this.z, height: sprite.height, anchorX: sprite.anchorX, facing: this.facing,
+        ...pose, offsetX: pose.offsetX * this.facing, alpha: sprite.blend,
+      });
+    }
 
     if (this.state === 'attack') {
       const finisher = this.attackStep >= Player.ATTACKS.length;

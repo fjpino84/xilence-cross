@@ -145,6 +145,8 @@ class Silenciador extends Enemy {
 
   // --- Efectos por fotograma ---
   afterUpdate(dt, world) {
+    // El ciclo de caminar avanza según la velocidad real (los pasos acompañan al desplazamiento, sin patinar)
+    this.walkClock = (this.walkClock || 0) + dt * (Math.abs(this.vx) > 5 ? Math.min(1.9, Math.abs(this.vx) / this.stats.speed) : 0);
     if (!this.framed) return;
 
     // Imágenes residuales mientras embiste
@@ -169,7 +171,7 @@ class Silenciador extends Enemy {
 
     // Pasos pesados: polvo, temblor leve y golpe sordo cuando apoya el pie
     if ((this.state === 'chase' || this.state === 'patrol') && Math.abs(this.vx) > 5) {
-      const index = Math.floor(this.age * Silenciador.WALK_FPS) % 4;
+      const index = Math.floor(this.walkClock * Silenciador.WALK_FPS) % 4;
       if (index !== this.lastStepIndex) {
         this.lastStepIndex = index;
         if (index === 0 || index === 2) world.enemyStep(this);
@@ -247,7 +249,7 @@ class Silenciador extends Enemy {
     switch (this.state) {
       case 'patrol':
       case 'chase':
-        return pick(F.walk, Math.abs(this.vx) > 5 ? 1 + (Math.floor(this.age * Silenciador.WALK_FPS * (this.rushing ? 1.7 : 1)) % F.walk.count) : 1);
+        return pick(F.walk, Math.abs(this.vx) > 5 ? 1 + (Math.floor(this.walkClock * Silenciador.WALK_FPS) % F.walk.count) : 1);
       case 'attack': {
         const spin = this.attackKind === 'spin';
         const table = Silenciador.TRACKS[this.variant][spin ? 'spin' : 'slam'];
