@@ -23,6 +23,7 @@ class AudioManager {
     this.musicPlayingSince = 0;
     this.triedBlobFallback = false;
     this.sfxFilter = null;
+    this.musicHeld = false;
     this.boss = null;
     this.bossError = false;
   }
@@ -31,6 +32,7 @@ class AudioManager {
 
   // Música de fondo en bucle: un elemento <audio> normal (funciona también abriendo index.html desde el disco)
   startMusic() {
+    if (this.musicHeld) return;
     if (typeof Audio === 'undefined') {
       this.musicState = 'error';
       this.musicDetail = 'este navegador no soporta audio';
@@ -109,7 +111,9 @@ class AudioManager {
   }
 
   // Detiene la música de fondo (duelo musical) o la reanuda
+  // Mientras está retenida (jefe con su propia canción), ningún gesto del usuario puede reanudarla
   pauseMusic(on) {
+    this.musicHeld = on;
     if (!this.music) return;
     if (on) this.music.pause();
     else if (this.musicState !== 'error') this.music.play().catch(() => {});
