@@ -73,8 +73,12 @@ class GameScene {
 
     this.level.spawnPatrols((x, y, aggressive) => this.spawnEnemy(x, y, aggressive));
 
-    // Atajo para probar el duelo musical sin jugar los 10 escenarios: añade ?duel=1 a la dirección
-    if (/[?&]duel=1/.test(window.location.search || '')) {
+    // Atajos para probar el duelo sin jugar los 10 escenarios (se añaden a la dirección):
+    //   ?duel=1     Batuk entra, hay diálogo y empieza el duelo
+    //   ?duel=skip  salta el diálogo: directo al momento previo a la batalla (música desde el 0:43)
+    const shortcut = /[?&]duel=(\w+)/.exec(window.location.search || '');
+    this.skipBatukDialogue = !!shortcut && (shortcut[1] === 'skip' || shortcut[1] === '2');
+    if (shortcut) {
       this.enemies.length = 0;
       this.startFinale();
       this.finale.time = GameScene.FINALE_FALL_AT;
@@ -914,13 +918,18 @@ class GameScene {
 
     if (boss && boss.landed && finale.phase === 'enter') {
       // Tras el pisotón: cartel con su nombre y diálogo; al cerrarlo empieza el duelo musical
-      if (!finale.dialogueShown && boss.landedTime > 1.4) {
+      if (!finale.dialogueShown && boss.landedTime > (this.skipBatukDialogue ? 0.4 : 1.4)) {
         finale.dialogueShown = true;
-        this.showCallout('BATUK', 2.4, { y: 84, colors: ['#ffffff', '#ffd23a', '#9a5a00'], glow: '#ffb000', rim: '#2a1600' });
-        this.dialogue = new Dialogue(GameScene.BATUK_DIALOGUE, () => {
+        const startDuel = () => {
           finale.phase = 'duel';
           this.duel = new RhythmDuel(this, boss, () => this.batukDefeated(boss));
-        }, (index, line) => { if (line.event === 'step') boss.stepForward(); });
+        };
+        if (this.skipBatukDialogue) {
+          startDuel();
+        } else {
+          this.showCallout('BATUK', 2.4, { y: 84, colors: ['#ffffff', '#ffd23a', '#9a5a00'], glow: '#ffb000', rim: '#2a1600' });
+          this.dialogue = new Dialogue(GameScene.BATUK_DIALOGUE, startDuel, (index, line) => { if (line.event === 'step') boss.stepForward(); });
+        }
       }
     }
 
