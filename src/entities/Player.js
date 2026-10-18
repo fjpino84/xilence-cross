@@ -20,8 +20,12 @@ class Player extends Entity {
   // Poses ilustradas. height = altura en pantalla (px), anchorX = posición del torso en la imagen (0-1).
   // Las alturas salen de normalizar el tamaño de la cabeza entre poses (cada una se dibujó a distinta escala).
   // Cuadros de animación (mismo tamaño de lienzo, alineados por el torso)
-  static WALK_FPS = 10;
-  static WALK_FRAMES = 4; // el 5.º cuadro de la hoja original tiene el mástil cortado por el borde de la imagen
+  // Ciclo de caminar de 5 cuadros, como en un ciclo de animación clásico: zancada → agachado (squash) → paso (el cuerpo sube) →
+  // estirado (stretch) → zancada. Se dibuja con su propia escala porque esta hoja trae los personajes más pequeños.
+  static WALK_FPS = 11;
+  static WALK_FRAMES = 5;
+  static WALK_HEIGHT = 147;
+  static WALK_ANCHOR = 0.387;
   static FRAME_HEIGHT = 141;
   static FRAME_ANCHOR = { walk: 0.389, hit: 0.398 };
   // Secuencias con efectos: altura = alto del lienzo (px de imagen) × escala. La escala iguala el tamaño del personaje.
@@ -587,6 +591,8 @@ class Player extends Entity {
     let anchorX = Player.FRAME_ANCHOR.walk;
     if (this.state === 'walk') {
       key = `ecoCaminar${1 + (Math.floor(this.walkTime * Player.WALK_FPS) % Player.WALK_FRAMES)}`;
+      const walkImage = Assets.image(key);
+      if (walkImage) return { image: walkImage, height: Player.WALK_HEIGHT, anchorX: Player.WALK_ANCHOR };
     } else if (this.state === 'attack') {
       const attack = Player.ATTACKS[this.attackStep - 1];
       const finisher = this.attackStep >= Player.ATTACKS.length;
