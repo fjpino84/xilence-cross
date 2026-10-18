@@ -25,6 +25,7 @@ class TitleScene {
     this.time = 0;
     this.embers = Array.from({ length: 34 }, () => this.newEmber(true));
     this.titleArt = null; // se compone al entrar (necesita la fuente ya cargada)
+    this.tagArt = null;
     this.game.canvas.addEventListener('click', this.onCanvasClick);
   }
 
@@ -131,6 +132,13 @@ class TitleScene {
 
   // Dibuja un texto carácter a carácter con separación extra (el lienzo no siempre admite letterSpacing)
   static drawSpaced(ctx, text, x, y, spacing, mode = 'fillText') {
+    // Con letterSpacing nativo el navegador compone la frase entera (kerning y anchos correctos)
+    if ('letterSpacing' in ctx) {
+      ctx.letterSpacing = spacing + 'px';
+      ctx[mode](text, x, y);
+      ctx.letterSpacing = '0px';
+      return;
+    }
     let cx = x;
     for (const ch of text) {
       ctx[mode](ch, cx, y);
@@ -139,6 +147,12 @@ class TitleScene {
   }
 
   static spacedWidth(ctx, text, spacing) {
+    if ('letterSpacing' in ctx) {
+      ctx.letterSpacing = spacing + 'px';
+      const w = ctx.measureText(text).width - spacing;
+      ctx.letterSpacing = '0px';
+      return w;
+    }
     let width = 0;
     for (const ch of text) width += ctx.measureText(ch).width + spacing;
     return width - spacing;
@@ -354,18 +368,27 @@ class TitleScene {
   }
 
   // Frase en lila bajo la línea
+  // Subtítulo: se compone una sola vez, cuando la tipografía ya está cargada, y después solo se copia
   renderTagline(ctx) {
-    ctx.save();
-    ctx.font = `600 19px ${CONFIG.PLAIN_FONT}`;
-    ctx.textBaseline = 'alphabetic';
-    const gradient = ctx.createLinearGradient(0, 372, 0, 396);
-    gradient.addColorStop(0, '#fff3d0');
-    gradient.addColorStop(1, '#c9a6ff');
-    ctx.shadowColor = '#7c3aff';
-    ctx.shadowBlur = 10;
-    ctx.fillStyle = gradient;
-    TitleScene.drawSpaced(ctx, 'AND THE QUEST FOR THE FINAL MELODY', TitleScene.TEXT_X, 392, 1.2, 'fillText');
-    ctx.restore();
+    const font = `600 19px ${CONFIG.PLAIN_FONT}`;
+    const ready = !document.fonts || document.fonts.check(font, 'AND THE QUEST');
+    if (!this.tagArt && ready) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 520;
+      canvas.height = 40;
+      const c = canvas.getContext('2d');
+      c.font = font;
+      c.textBaseline = 'alphabetic';
+      const gradient = c.createLinearGradient(0, 8, 0, 30);
+      gradient.addColorStop(0, '#fff3d0');
+      gradient.addColorStop(1, '#c9a6ff');
+      c.shadowColor = '#7c3aff';
+      c.shadowBlur = 10;
+      c.fillStyle = gradient;
+      TitleScene.drawSpaced(c, 'AND THE QUEST FOR THE FINAL MELODY', 4, 28, 1.2, 'fillText');
+      this.tagArt = canvas;
+    }
+    if (this.tagArt) ctx.drawImage(this.tagArt, TitleScene.TEXT_X - 4, 364);
   }
 
   renderMenu(ctx) {
