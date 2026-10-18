@@ -16,6 +16,17 @@ const Assets = {
     return Promise.all(loads);
   },
 
+  // Carga las tipografías del juego. Siempre se resuelve (con un tiempo máximo) para no bloquear el arranque.
+  loadFonts(fonts) {
+    if (typeof FontFace === 'undefined' || !document.fonts) return Promise.resolve();
+    const loads = fonts.map(({ family, url, weight }) => new FontFace(family, `url(${url})`, { weight })
+      .load()
+      .then((face) => { document.fonts.add(face); })
+      .catch(() => {}));
+    const timeout = new Promise((resolve) => setTimeout(resolve, 4000));
+    return Promise.race([Promise.all(loads), timeout]);
+  },
+
   image(key) {
     return this.images.get(key) || null;
   },

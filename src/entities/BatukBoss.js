@@ -13,6 +13,7 @@ class BatukBoss {
   static IN_TIME = 1.15; // vuelo de un instrumento hasta la órbita
 
   constructor(x, y) {
+    this.musicStyle = 'tribal'; // el duelo suma la percusión de su templo
     this.x = x;
     this.y = y;
     this.z = 0;
@@ -242,6 +243,13 @@ class BatukBoss {
       this.lunge = 1;
       this.powerPose = 0.55; // pose de poder con tambores flotando
       this.ejectInstrument(world, true);
+    } else if (kind === 'tier') {
+      // La racha lo hace temblar: sus instrumentos giran más rápido un instante y adopta la pose de poder
+      this.powerPose = 0.45;
+      this.hurt = 1;
+      this.pulse = 1;
+      this.orbit += 0.5;
+      world.particles.burst({ x: this.x, y: this.y - 140, count: 26, speed: [200, 620], life: [0.3, 0.8], size: [2.4, 5], colors: ['#ffd23a', '#ffffff', '#ff9a1a'], type: 'spark', drag: 1.8 });
     } else if (kind === 'streak') {
       this.hurt = 1;
       this.squash = 0.25;

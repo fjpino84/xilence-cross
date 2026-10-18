@@ -19,6 +19,14 @@ const CONFIG = Object.freeze({
   PLAYER_LANE: 450,
 
   FONT: 'Impact, "Arial Black", sans-serif',
+  // Tipografías del título y los textos solemnes (se cargan desde assets/fonts; si fallan, se usa una serif del sistema)
+  TITLE_FONT: '"Cinzel Decorative", "Cinzel", "Palatino Linotype", "Book Antiqua", Georgia, serif',
+  PLAIN_FONT: '"Cinzel", "Palatino Linotype", "Book Antiqua", Georgia, serif',
+  FONT_FILES: [
+    { family: 'Cinzel Decorative', url: 'assets/fonts/CinzelDecorative-Black.ttf', weight: '900' },
+    { family: 'Cinzel Decorative', url: 'assets/fonts/CinzelDecorative-Bold.ttf', weight: '700' },
+    { family: 'Cinzel', url: 'assets/fonts/Cinzel-Variable.ttf', weight: '400 900' },
+  ],
 
   // Música de fondo (bucle)
   MUSIC: 'assets/audio/zero.mp3',

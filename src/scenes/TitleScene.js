@@ -1,4 +1,4 @@
-// Pantalla de título: ECO a la derecha y el título a la izquierda, sin taparlo.
+// Pantalla de título: ECO a la derecha y el título ("THE ORDER OF XILENCE", en letra decorada con un aro de runas) a la izquierda, sin taparlo.
 class TitleScene {
   static INPUT_DELAY = 0.3; // evita saltar la pantalla con la tecla que nos trajo aquí
   static ART_SHIFT = 170; // cuánto se desplaza la ilustración hacia la derecha para dejar sitio al título
@@ -23,7 +23,8 @@ class TitleScene {
 
   enter() {
     this.time = 0;
-    this.embers = Array.from({ length: 28 }, () => this.newEmber(true));
+    this.embers = Array.from({ length: 34 }, () => this.newEmber(true));
+    this.titleArt = null; // se compone al entrar (necesita la fuente ya cargada)
     this.game.canvas.addEventListener('click', this.onCanvasClick);
   }
 
@@ -43,7 +44,7 @@ class TitleScene {
       speed: 20 + Math.random() * 50,
       drift: (Math.random() - 0.5) * 24,
       size: 1 + Math.random() * 2.2,
-      cyan: Math.random() < 0.55,
+      violet: Math.random() < 0.5,
     };
   }
 
@@ -85,6 +86,7 @@ class TitleScene {
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
     this.renderArt(ctx);
     this.renderEmbers(ctx);
+    this.renderRunes(ctx);
     this.renderTitle(ctx);
     this.renderPulse(ctx);
     this.renderTagline(ctx);
@@ -119,7 +121,7 @@ class TitleScene {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (const ember of this.embers) {
-      ctx.fillStyle = ember.cyan ? 'rgba(0, 245, 255, 0.8)' : 'rgba(255, 190, 60, 0.8)';
+      ctx.fillStyle = ember.violet ? 'rgba(190, 140, 255, 0.8)' : 'rgba(255, 205, 90, 0.85)';
       ctx.beginPath();
       ctx.arc(ember.x, ember.y, ember.size, 0, Math.PI * 2);
       ctx.fill();
@@ -127,34 +129,186 @@ class TitleScene {
     ctx.restore();
   }
 
-  // Palabra con la inicial mucho más grande ("X" + "ILENCE"), alineadas por la base
-  dropCapWord(ctx, word, x, baseline, capSize, size, options) {
-    ctx.save();
-    ctx.font = `${capSize}px ${CONFIG.FONT}`;
-    const capWidth = ctx.measureText(word[0]).width;
-    ctx.restore();
-    const tracking = options.tracking || 0;
-    Draw.rock(ctx, word[0], x, baseline, { ...options, size: capSize, tracking: 0 });
-    Draw.rock(ctx, word.slice(1), x + capWidth + tracking * 0.6 + 6, baseline, { ...options, size });
+  // Dibuja un texto carácter a carácter con separación extra (el lienzo no siempre admite letterSpacing)
+  static drawSpaced(ctx, text, x, y, spacing, mode = 'fillText') {
+    let cx = x;
+    for (const ch of text) {
+      ctx[mode](ch, cx, y);
+      cx += ctx.measureText(ch).width + spacing;
+    }
   }
 
-  // "XILENCE" en cian y "CROSS" en dorado, apilados a la izquierda con la X y la C enormes; entran de golpe y laten con el pulso
+  static spacedWidth(ctx, text, spacing) {
+    let width = 0;
+    for (const ch of text) width += ctx.measureText(ch).width + spacing;
+    return width - spacing;
+  }
+
+  // Compone una sola vez el título: "THE ORDER OF" en letra clásica y "XILENCE" en letra decorada dorada, con un adorno debajo
+  buildTitleArt() {
+    const width = 470;
+    const height = 226;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const c = canvas.getContext('2d');
+    c.textBaseline = 'alphabetic';
+    c.lineJoin = 'round';
+
+    // Línea superior: pequeña, espaciada, en lila claro
+    c.font = `700 25px ${CONFIG.PLAIN_FONT}`;
+    const upper = c.createLinearGradient(0, 18, 0, 44);
+    upper.addColorStop(0, '#fff3d0');
+    upper.addColorStop(1, '#bfa0ff');
+    c.shadowColor = '#7c3aff';
+    c.shadowBlur = 12;
+    c.fillStyle = upper;
+    TitleScene.drawSpaced(c, 'THE ORDER OF', 6, 44, 9);
+    c.shadowBlur = 0;
+
+    // Palabra principal en la versión más pesada de Cinzel (la I decorada de Cinzel Decorative se confunde con un 1): se ajusta el tamaño para que quepa
+    let size = 96;
+    const spacing = 5;
+    c.font = `900 ${size}px ${CONFIG.PLAIN_FONT}`;
+    const natural = TitleScene.spacedWidth(c, 'XILENCE', spacing);
+    size = Math.floor(size * Math.min(1, (width - 14) / natural));
+    c.font = `900 ${size}px ${CONFIG.PLAIN_FONT}`;
+    const baseline = 52 + size * 0.88;
+    const gold = c.createLinearGradient(0, baseline - size * 0.8, 0, baseline + 4);
+    gold.addColorStop(0, '#fffbea');
+    gold.addColorStop(0.3, '#ffe38a');
+    gold.addColorStop(0.62, '#d89a22');
+    gold.addColorStop(1, '#6d3b08');
+    // Contorno oscuro con resplandor violeta, relleno dorado y un filo de luz
+    c.shadowColor = '#9a5cff';
+    c.shadowBlur = 26;
+    c.lineWidth = 9;
+    c.strokeStyle = '#150633';
+    TitleScene.drawSpaced(c, "XILENCE", 4, baseline, spacing, 'strokeText');
+    c.shadowBlur = 0;
+    c.fillStyle = gold;
+    TitleScene.drawSpaced(c, "XILENCE", 4, baseline, spacing, 'fillText');
+    c.lineWidth = 1.4;
+    c.strokeStyle = 'rgba(255, 246, 214, 0.65)';
+    TitleScene.drawSpaced(c, "XILENCE", 4, baseline, spacing, 'strokeText');
+
+    // Adorno bajo la palabra: línea que se desvanece con un rombo en el centro
+    const y = baseline + 22;
+    const line = c.createLinearGradient(6, 0, width - 6, 0);
+    line.addColorStop(0, 'rgba(255, 220, 130, 0)');
+    line.addColorStop(0.2, 'rgba(255, 220, 130, 0.9)');
+    line.addColorStop(0.5, 'rgba(255, 245, 210, 1)');
+    line.addColorStop(0.8, 'rgba(190, 150, 255, 0.9)');
+    line.addColorStop(1, 'rgba(190, 150, 255, 0)');
+    c.strokeStyle = line;
+    c.lineWidth = 2;
+    c.beginPath();
+    c.moveTo(6, y);
+    c.lineTo(width - 6, y);
+    c.stroke();
+    const cx = width / 2;
+    c.fillStyle = '#ffe9a8';
+    c.shadowColor = '#ffb000';
+    c.shadowBlur = 10;
+    for (const [dx, r] of [[0, 8], [-26, 4], [26, 4]]) {
+      c.beginPath();
+      c.moveTo(cx + dx, y - r);
+      c.lineTo(cx + dx + r, y);
+      c.lineTo(cx + dx, y + r);
+      c.lineTo(cx + dx - r, y);
+      c.closePath();
+      c.fill();
+    }
+    this.titleArt = canvas;
+    this.titleBaseline = baseline;
+    this.shimmer = document.createElement('canvas');
+    this.shimmer.width = width;
+    this.shimmer.height = height;
+  }
+
+  // Aro de runas que gira muy despacio detrás del título: dos anillos, marcas y glifos angulosos
+  renderRunes(ctx) {
+    this.runes = this.runes || (() => {
+      const random = Draw.seededRandom(20241017);
+      return Array.from({ length: 28 }, () => {
+        const strokes = [];
+        const count = 2 + Math.floor(random() * 3);
+        for (let i = 0; i < count; i++) strokes.push([random() * 2 - 1, random() * 2 - 1, random() * 2 - 1, random() * 2 - 1]);
+        return strokes;
+      });
+    })();
+    const cx = TitleScene.TEXT_X + 262;
+    const cy = 168;
+    const pulse = 0.5 + 0.5 * Math.sin(this.time * 1.4);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.globalCompositeOperation = 'lighter';
+    const glow = ctx.createRadialGradient(0, 0, 20, 0, 0, 250);
+    glow.addColorStop(0, `rgba(150, 90, 255, ${0.2 + 0.08 * pulse})`);
+    glow.addColorStop(1, 'rgba(150, 90, 255, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(-260, -260, 520, 520);
+    ctx.lineCap = 'round';
+    for (const [radius, width, alpha, speed] of [[218, 2, 0.35, 0.05], [186, 1.2, 0.3, -0.07], [154, 1, 0.22, 0.04]]) {
+      ctx.save();
+      ctx.rotate(this.time * speed);
+      ctx.strokeStyle = `rgba(214, 180, 255, ${alpha})`;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    // Marcas y glifos entre los dos anillos exteriores
+    ctx.save();
+    ctx.rotate(this.time * -0.07);
+    ctx.strokeStyle = 'rgba(255, 220, 140, 0.4)';
+    ctx.lineWidth = 1.4;
+    this.runes.forEach((strokes, i) => {
+      ctx.save();
+      ctx.rotate((i / this.runes.length) * Math.PI * 2);
+      ctx.translate(0, -202);
+      ctx.beginPath();
+      for (const [x1, y1, x2, y2] of strokes) {
+        ctx.moveTo(x1 * 6, y1 * 8);
+        ctx.lineTo(x2 * 6, y2 * 8);
+      }
+      ctx.stroke();
+      ctx.restore();
+    });
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // Título: entra con un golpe de escala, late con el pulso y un destello dorado lo recorre de vez en cuando
   renderTitle(ctx) {
-    const { COLORS } = CONFIG;
-    const x = TitleScene.TEXT_X;
-    const slam = Math.min(1, this.time / 0.4);
-    const beat = 1 + 0.035 * this.heartbeat + (1 - slam) * (1 - slam) * 1.1;
+    if (!this.titleArt) this.buildTitleArt();
+    const x = TitleScene.TEXT_X - 10;
+    const y = 56;
+    const slam = Math.min(1, this.time / 0.5);
+    const beat = 1 + 0.018 * this.heartbeat + (1 - slam) * (1 - slam) * 0.5;
+    const art = this.titleArt;
+
+    // Capa de destello: el título con una banda de luz que se desplaza (solo sobre las letras)
+    const t = this.shimmer.getContext('2d');
+    t.clearRect(0, 0, art.width, art.height);
+    t.globalCompositeOperation = 'source-over';
+    t.drawImage(art, 0, 0);
+    const sweep = ((this.time * 0.32) % 2.4) - 0.7;
+    const bandX = sweep * art.width;
+    const band = t.createLinearGradient(bandX - 70, 0, bandX + 70, 0);
+    band.addColorStop(0, 'rgba(255, 255, 255, 0)');
+    band.addColorStop(0.5, 'rgba(255, 255, 255, 0.75)');
+    band.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    t.globalCompositeOperation = 'source-atop';
+    t.fillStyle = band;
+    t.fillRect(0, 0, art.width, art.height);
 
     ctx.save();
     ctx.globalAlpha = Math.min(1, slam * 1.6);
-    ctx.translate(x, 0);
+    ctx.translate(x + art.width / 2, y + 110);
     ctx.scale(beat, beat);
-    this.dropCapWord(ctx, 'XILENCE', 0, 178, 142, 88, {
-      colors: ['#ffffff', COLORS.CYAN, '#005a85'], glow: COLORS.CYAN, glowBlur: 30, rim: '#00323f', tracking: 6,
-    });
-    this.dropCapWord(ctx, 'CROSS', 0, 292, 142, 88, {
-      colors: ['#ffffff', COLORS.YELLOW, '#c04a00'], glow: '#ff9a00', glowBlur: 30, rim: '#4a2000', tracking: 18,
-    });
+    ctx.drawImage(this.shimmer, -art.width / 2, -110);
     ctx.restore();
   }
 
@@ -201,9 +355,17 @@ class TitleScene {
 
   // Frase en lila bajo la línea
   renderTagline(ctx) {
-    Draw.rock(ctx, 'Music, the great communicator', TitleScene.TEXT_X, 392, {
-      size: 25, colors: ['#f6ecff', '#c9a6ff', '#7c3aff'], glow: '#9d6bff', glowBlur: 10, rim: '#2a0f5a', outlineWidth: 5, skew: 0.14, tracking: 1,
-    });
+    ctx.save();
+    ctx.font = `600 22px ${CONFIG.PLAIN_FONT}`;
+    ctx.textBaseline = 'alphabetic';
+    const gradient = ctx.createLinearGradient(0, 372, 0, 396);
+    gradient.addColorStop(0, '#fff3d0');
+    gradient.addColorStop(1, '#c9a6ff');
+    ctx.shadowColor = '#7c3aff';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = gradient;
+    TitleScene.drawSpaced(ctx, 'MUSIC, THE GREAT COMMUNICATOR', TitleScene.TEXT_X, 392, 2.5, 'fillText');
+    ctx.restore();
   }
 
   renderMenu(ctx) {

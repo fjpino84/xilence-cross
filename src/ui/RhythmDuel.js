@@ -28,7 +28,10 @@ class RhythmDuel {
     this.boss = boss;
     this.onWin = onWin;
     this.chart = DuelMusic.buildChart();
-    this.music = new DuelMusic();
+    this.music = new DuelMusic(boss.musicStyle || 'rock');
+    this.tier = 1; // multiplicador alcanzado (1-4); sube con la racha y se reinicia al fallar
+    this.sparks = []; // chispas de las rachas (coordenadas de pantalla)
+    this.sparkTimer = 0;
     this.age = 0;
     this.state = 'intro'; // intro → play → won | lost
     this.stateTime = 0;
@@ -54,6 +57,8 @@ class RhythmDuel {
     this.shownMeter = 0.5;
     this.pops.length = 0;
     this.failFlash = 0;
+    this.tier = 1;
+    this.sparks = [];
   }
 
   setState(state) {
@@ -102,6 +107,8 @@ class RhythmDuel {
       this.padFlash[i] = Math.max(0, this.padFlash[i] - dt * 5);
     }
     this.failFlash = Math.max(0, this.failFlash - dt * 3);
+    this.tierFlash = Math.max(0, (this.tierFlash || 0) - dt * 2.4);
+    this.updateSparks(dt);
     this.shownMeter += (this.meter - this.shownMeter) * Math.min(1, dt * 10);
     for (const pop of this.pops) pop.age += dt;
     this.pops = this.pops.filter((pop) => pop.age < 0.7);
@@ -178,9 +185,11 @@ class RhythmDuel {
     this.counts[perfect ? 'perfect' : 'good']++;
     this.combo++;
     this.maxCombo = Math.max(this.maxCombo, this.combo);
+    if (this.multiplier > this.tier) this.tierUp(this.multiplier);
     this.score += (perfect ? 100 : 50) * this.multiplier;
     this.meter = Math.min(1, this.meter + RhythmDuel.GAIN[perfect ? 'perfect' : 'good']);
     this.music.playLead(lane);
+    if (perfect) this.music.playSparkle(lane);
     this.hitEffects(lane, perfect);
     this.addPop(perfect ? 'PERFECTO' : 'BIEN', perfect ? '#ffffff' : RhythmDuel.LANE_COLORS[1], lane);
     if (this.combo % RhythmDuel.STREAK_EVERY === 0) this.streakBeam();
@@ -190,6 +199,7 @@ class RhythmDuel {
     note.missed = true;
     this.counts.miss++;
     this.combo = 0;
+    this.tier = 1;
     this.meter = Math.max(0, this.meter - RhythmDuel.MISS_PENALTY);
     this.music.playMiss(true);
     this.addPop('FALLO', '#ff3355', note.lane);
@@ -202,8 +212,40 @@ class RhythmDuel {
     this.scene.particles.add({ type: 'ring', x: this.boss.x - 40, y: this.boss.y - 100, size: 16, sizeEnd: 150, life: 0.35, color: '#a066ff', width: 6 });
   }
 
-  addPop(text, color, lane) {
-    this.pops.push({ text, color, age: 0, lane });
+  addPop(text, color, lane, size = 0) {
+    this.pops.push({ text, color, age: 0, lane, size });
+  }
+
+  // Colores de la racha según el multiplicador: cian → oro → naranja ardiente → blanco dorado de leyenda
+  static TIER = {
+    1: { rail: '120, 250, 255', glow: '#00f5ff', text: '#ffffff' },
+    2: { rail: '150, 255, 235', glow: '#40ffd0', text: '#9affe4' },
+    3: { rail: '255, 190, 80', glow: '#ff9a1a', text: '#ffcf5a' },
+    4: { rail: '255, 236, 170', glow: '#ffd23a', text: '#fff2a8' },
+  };
+  static TIER_NAMES = { 2: '¡EN RACHA!', 3: '¡EN LLAMAS!', 4: '¡LEYENDA!' };
+
+  // Sube de nivel la racha: destello, onda, chispas, cartel, acorde ascendente y reacción del jefe
+  tierUp(level) {
+    this.tier = level;
+    const world = this.scene.world;
+    const style = RhythmDuel.TIER[level];
+    this.music.playTierUp(level);
+    world.flash(0.18 + 0.05 * level, style.glow);
+    world.shake(5 + 3 * level, 0.3);
+    this.tierFlash = 1;
+    this.addPop(`×${level}  ${RhythmDuel.TIER_NAMES[level]}`, style.text, 1.5, 38 + 4 * level);
+    if (this.boss.react) this.boss.react('tier', world);
+    // Lluvia de chispas desde los pads
+    for (let lane = 0; lane < 4; lane++) {
+      const point = this.lanePoint(lane, 1);
+      for (let i = 0; i < 10 + 6 * level; i++) {
+        this.sparks.push({
+          x: point.x + (Math.random() - 0.5) * 50, y: point.y, vx: (Math.random() - 0.5) * 240, vy: -(160 + Math.random() * 420),
+          age: 0, life: 0.5 + Math.random() * 0.7, size: 1.8 + Math.random() * 2.6, hot: Math.random() < 0.4,
+        });
+      }
+    }
   }
 
   // Chispas y onda en el pad que se acaba de tocar
@@ -304,6 +346,7 @@ class RhythmDuel {
     this.renderLights(ctx, pulse);
     this.renderHighway(ctx, pulse);
     this.renderLaneBeams(ctx);
+    this.renderStreakFx(ctx, pulse);
     this.renderMeter(ctx, pulse);
     if (this.state === 'play' || this.state === 'won') this.renderNotes(ctx);
     this.renderPads(ctx, pulse);
@@ -419,10 +462,11 @@ class RhythmDuel {
       ctx.lineTo(b.x, b.y);
       ctx.stroke();
     }
-    ctx.shadowColor = '#00f5ff';
-    ctx.shadowBlur = 10 + 12 * pulse;
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = `rgba(120, 250, 255, ${0.75 + 0.25 * pulse})`;
+    const railStyle = RhythmDuel.TIER[this.tier] || RhythmDuel.TIER[1];
+    ctx.shadowColor = railStyle.glow;
+    ctx.shadowBlur = 10 + 12 * pulse + 8 * (this.tier - 1);
+    ctx.lineWidth = 4 + (this.tier - 1) * 0.6;
+    ctx.strokeStyle = `rgba(${railStyle.rail}, ${0.75 + 0.25 * pulse})`;
     for (const [p, q] of [[topL, botL], [topR, botR]]) {
       ctx.beginPath();
       ctx.moveTo(p.x, TOP);
@@ -663,14 +707,119 @@ class RhythmDuel {
   renderSideInfo(ctx) {
     // Racha, a la izquierda
     Draw.rock(ctx, 'RACHA', 34, 118, { size: 20, colors: ['#ffffff', '#ffe600', '#c46a00'], outlineWidth: 4, tracking: 2 });
-    Draw.text(ctx, String(this.combo), 34, 188, { size: 70, color: this.combo >= 8 ? '#ffe600' : '#ffffff', strokeWidth: 8 });
-    Draw.text(ctx, `x${this.multiplier}`, 34, 226, { size: 34, color: this.multiplier > 1 ? '#00f5ff' : '#8fa0b8', strokeWidth: 6 });
+    const style = RhythmDuel.TIER[this.tier] || RhythmDuel.TIER[1];
+    ctx.save();
+    if (this.tier >= 2) {
+      // El número de la racha arde: halo del color del nivel y un temblor leve con el pulso
+      ctx.shadowColor = style.glow;
+      ctx.shadowBlur = 14 + 8 * this.tier;
+    }
+    const wobble = this.tier >= 3 ? Math.sin(this.age * 40) * 1.2 : 0;
+    Draw.text(ctx, String(this.combo), 34 + wobble, 188, { size: 70 + (this.tier - 1) * 4, color: this.tier > 1 ? style.text : '#ffffff', strokeWidth: 8 });
+    ctx.restore();
+    Draw.text(ctx, `x${this.multiplier}`, 34, 226, { size: 34, color: this.multiplier > 1 ? style.text : '#8fa0b8', strokeWidth: 6 });
+    if (this.tier >= 2) Draw.text(ctx, RhythmDuel.TIER_NAMES[this.tier], 34, 252, { size: 18, color: style.text, strokeWidth: 4 });
     // Puntos y precisión, a la derecha
     Draw.rock(ctx, 'PUNTOS', CONFIG.WIDTH - 34, 118, { size: 20, align: 'right', colors: ['#ffffff', '#ffe600', '#c46a00'], outlineWidth: 4, tracking: 2 });
     Draw.text(ctx, String(this.score).padStart(6, '0'), CONFIG.WIDTH - 34, 168, { size: 40, align: 'right', color: '#ffe600', strokeWidth: 7 });
     if (this.counts.perfect + this.counts.good + this.counts.miss > 0) {
       Draw.text(ctx, `Precisión ${Math.round(this.accuracy * 100)}%`, CONFIG.WIDTH - 34, 204, { size: 20, align: 'right', color: '#cfe', strokeWidth: 4 });
     }
+  }
+
+  // Chispas de las rachas: suben desde los bordes de la pista (más cantidad con cada nivel) y desde los pads
+  updateSparks(dt) {
+    for (const spark of this.sparks) {
+      spark.age += dt;
+      spark.x += spark.vx * dt;
+      spark.y += spark.vy * dt;
+      spark.vy += 160 * dt;
+      spark.vx *= Math.max(0, 1 - dt * 1.5);
+    }
+    this.sparks = this.sparks.filter((spark) => spark.age < spark.life);
+    if (this.state !== 'play' || this.tier < 2 || this.sparks.length > (FX.low ? 60 : 160)) return;
+    this.sparkTimer -= dt;
+    if (this.sparkTimer > 0) return;
+    this.sparkTimer = [0, 0, 0.07, 0.04, 0.025][this.tier];
+    for (const side of [-0.5, 3.5]) {
+      const depth = 0.55 + Math.random() * 0.45;
+      const point = this.lanePoint(side, depth);
+      this.sparks.push({
+        x: point.x, y: point.y, vx: (Math.random() - 0.5) * 60 + (side < 0 ? -20 : 20), vy: -(100 + Math.random() * 240),
+        age: 0, life: 0.5 + Math.random() * 0.6, size: 1.6 + Math.random() * 2.2, hot: this.tier >= 3 && Math.random() < 0.5,
+      });
+    }
+  }
+
+  // Efectos de racha: resplandor del borde de la pantalla, rayos entre los carriles y chispas
+  renderStreakFx(ctx, pulse) {
+    const style = RhythmDuel.TIER[this.tier] || RhythmDuel.TIER[1];
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+
+    // Destello al subir de nivel
+    if (this.tierFlash > 0.02) {
+      ctx.fillStyle = `rgba(${style.rail}, ${0.22 * this.tierFlash})`;
+      ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
+    }
+
+    if (this.tier >= 2) {
+      // Resplandor a los lados de la pantalla: sube con el nivel (de un halo suave a llamas de leyenda)
+      const strength = [0, 0, 0.12, 0.22, 0.32][this.tier] + 0.1 * pulse;
+      for (const side of [-1, 1]) {
+        const x0 = side < 0 ? 0 : CONFIG.WIDTH;
+        const edge = ctx.createLinearGradient(x0, 0, x0 - side * 230, 0);
+        edge.addColorStop(0, `rgba(${style.rail}, ${strength})`);
+        edge.addColorStop(1, `rgba(${style.rail}, 0)`);
+        ctx.fillStyle = edge;
+        ctx.fillRect(side < 0 ? 0 : CONFIG.WIDTH - 230, 0, 230, CONFIG.HEIGHT);
+      }
+      // Luz bajo la pista
+      const floor = ctx.createRadialGradient(CONFIG.WIDTH / 2, RhythmDuel.HIT + 30, 20, CONFIG.WIDTH / 2, RhythmDuel.HIT + 30, 330);
+      floor.addColorStop(0, `rgba(${style.rail}, ${0.2 + 0.1 * this.tier + 0.15 * pulse})`);
+      floor.addColorStop(1, `rgba(${style.rail}, 0)`);
+      ctx.fillStyle = floor;
+      ctx.fillRect(0, RhythmDuel.HIT - 300, CONFIG.WIDTH, 420);
+    }
+
+    // Rayos que recorren los bordes de la pista (a partir de ×3), más frecuentes en leyenda
+    if (this.tier >= 3 && !FX.low) {
+      const seed = Math.floor(this.age * (this.tier >= 4 ? 18 : 11));
+      const random = Draw.seededRandom(seed * 7919 + 13);
+      const bolts = this.tier >= 4 ? 3 : 1;
+      for (let b = 0; b < bolts; b++) {
+        const side = random() < 0.5 ? -0.5 : 3.5;
+        const top = this.lanePoint(side, 0.05 + random() * 0.2);
+        const bottom = this.lanePoint(side, 0.8 + random() * 0.2);
+        const points = [{ x: top.x, y: top.y }];
+        const steps = 7;
+        for (let i = 1; i <= steps; i++) {
+          const t = i / steps;
+          points.push({ x: top.x + (bottom.x - top.x) * t + (i === steps ? 0 : (random() - 0.5) * 46), y: top.y + (bottom.y - top.y) * t });
+        }
+        ctx.lineJoin = 'round';
+        for (const [width, color, alpha] of [[9, style.glow, 0.28], [3, '#ffffff', 0.9]]) {
+          ctx.globalAlpha = alpha * (0.5 + 0.5 * pulse);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = width;
+          ctx.beginPath();
+          points.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Chispas
+    for (const spark of this.sparks) {
+      const t = spark.age / spark.life;
+      ctx.globalAlpha = Math.max(0, 1 - t);
+      ctx.fillStyle = spark.hot ? '#ffffff' : `rgb(${style.rail})`;
+      ctx.beginPath();
+      ctx.arc(spark.x, spark.y, spark.size * (1 - 0.5 * t), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
   renderPops(ctx) {
@@ -680,7 +829,7 @@ class RhythmDuel {
       ctx.save();
       ctx.globalAlpha *= 1 - t * t;
       Draw.text(ctx, pop.text, pop.lane === 1.5 ? RhythmDuel.CX : point.x, (pop.lane === 1.5 ? RhythmDuel.HIT - 170 : RhythmDuel.HIT - 52) - t * 36, {
-        size: 24 + (1 - t) * 8, align: 'center', color: pop.color, strokeWidth: 5,
+        size: (pop.size || 24) + (1 - t) * 8, align: 'center', color: pop.color, strokeWidth: 5,
       });
       ctx.restore();
     }
