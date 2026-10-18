@@ -22,6 +22,7 @@ class TitleScene {
   }
 
   enter() {
+    this.game.audio.releaseBoss(0.8); // al volver al menú se apaga la canción del jefe y vuelve la música normal
     this.time = 0;
     this.embers = Array.from({ length: 34 }, () => this.newEmber(true));
     this.titleArt = null; // se compone al entrar (necesita la fuente ya cargada)

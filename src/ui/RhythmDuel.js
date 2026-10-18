@@ -99,7 +99,8 @@ class RhythmDuel {
     this.done = true;
     this.setPaused(false);
     this.game.audio.setSfxFilter(null);
-    this.game.audio.pauseMusic(false);
+    // Con la canción del jefe la música de la etapa NO vuelve al terminar el duelo (se libera al volver al menú)
+    if (this.song !== TrackMusic) this.game.audio.pauseMusic(false);
   }
 
   // ---------------------------------------------------------------- lógica

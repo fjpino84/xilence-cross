@@ -28,6 +28,7 @@ class GameScene {
 
   // data: { levelIndex, score } — la puntuación se arrastra entre niveles
   enter({ levelIndex = 0, score = 0 } = {}) {
+    this.game.audio.releaseBoss(0.4); // una partida nueva empieza con la música normal
     this.levelIndex = levelIndex;
     this.startScore = score;
     this.player = new Player(120);
@@ -99,8 +100,6 @@ class GameScene {
 
   exit() {
     if (this.duel) this.duel.dispose();
-    this.game.audio.stopBoss(0.2);
-    this.game.audio.pauseMusic(false);
     this.game.modal.hide();
     this.game.audio.duckMusic(false); // por si se sale desde la pausa
   }
@@ -991,7 +990,7 @@ class GameScene {
   // ECO gana el duelo: Batuk cae y, pasado un momento, aparece la imagen de derrota
   batukDefeated(boss) {
     this.duel = null;
-    this.game.audio.stopBoss(1.8); // la canción se apaga al caer Batuk
+    this.game.audio.keepBoss(); // la canción de Batuk sigue sonando tras el duelo (no vuelve la de la etapa)
     this.finale.phase = 'defeat';
     this.finale.defeatTime = 0;
     boss.defeat(this.world);

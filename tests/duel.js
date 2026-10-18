@@ -83,9 +83,13 @@ const { loadGame, createChecker } = require('./harness');
     if (guard % 10 === 0) render();
   }
   ok(cardSeen, 'se muestra la imagen de Batuk derrotado');
+  ok(game.audio.musicHeld === true, 'tras el duelo no vuelve la música de la etapa (la del jefe sigue retenida)');
   ok(epilogue >= 25, `se recorre el diálogo posterior al combate (${epilogue} líneas)`);
   ok(stood, 'Batuk se pone de pie durante el diálogo');
   ok(game.scenes.current !== scene, 'pasa a la escena final');
+
+  game.scenes.change('title');
+  ok(game.audio.musicHeld === false, 'al volver al menú se libera la música normal');
 
   // --- Bot que no toca nada
   scene = startDuel();

@@ -168,6 +168,23 @@ class AudioManager {
     else this.boss.play().catch(() => {});
   }
 
+  // Tras ganar el duelo la canción sigue sonando (en bucle) durante el epílogo y la pantalla final
+  keepBoss() {
+    if (this.boss) { this.boss.loop = true; this.boss.volume = AudioManager.BOSS_VOLUME; }
+  }
+
+  // Fin del cierre con el jefe (menú o nueva partida): la canción se apaga y vuelve la música normal de la etapa
+  releaseBoss(fade = 0.8) {
+    if (!this.musicHeld && (!this.boss || this.boss.paused)) return;
+    if (this.boss) this.boss.loop = false;
+    if (this.boss && !this.boss.paused) {
+      this.stopBoss(fade);
+      setTimeout(() => { if (this.musicHeld) this.pauseMusic(false); }, fade * 1000);
+    } else {
+      this.pauseMusic(false);
+    }
+  }
+
   // Apaga la canción del jefe con un fundido corto
   stopBoss(fade = 1.2) {
     const boss = this.boss;
