@@ -5,16 +5,18 @@ const { loadGame, createChecker } = require('./harness');
 (async () => {
   const api = await loadGame();
   const { game, DuelMusic, RhythmDuel, press, step, render } = api;
+  const TrackMusic = api.TrackMusic;
   const checker = createChecker();
   const ok = checker.check;
 
   // --- Partitura
-  const chart = DuelMusic.buildChart();
-  ok(DuelMusic.SECTIONS.every((section) => section.bars.length === 6 && section.bars.every((bar) => bar.length === 8)), 'cada compás tiene 8 corcheas y cada sección 6 compases');
+  const chart = TrackMusic.buildChart();
+  ok(TrackMusic.CHART.start === 43 && TrackMusic.CHART.end === 150, 'el duelo se juega del 0:43 al 2:30 de la canción');
   ok(chart.length > 120, `la partitura tiene notas suficientes (${chart.length})`);
   ok(chart.every((note, i) => i === 0 || note.t >= chart[i - 1].t), 'las notas están ordenadas en el tiempo');
   ok(chart.every((note) => note.lane >= 0 && note.lane <= 3), 'todos los carriles son válidos');
-  ok(chart[0].t >= DuelMusic.COUNT_IN_BARS * 4 * DuelMusic.BEAT - 0.01, 'la primera nota llega tras la cuenta atrás');
+  ok(chart[0].t >= 1 && chart[chart.length - 1].t < TrackMusic.endTime, 'las notas caen dentro del tramo (tras 1 s de margen)');
+  ok(DuelMusic.buildChart().length > 100, 'el tema sintetizado de respaldo sigue disponible');
 
   // Velocidad constante: la posición de una nota crece en línea recta con el tiempo
   {
@@ -49,7 +51,7 @@ const { loadGame, createChecker } = require('./harness');
   ok(scene.usesDuelPads(), 'se activan los pads táctiles del duelo');
   let duel = scene.duel;
   let guard = 0;
-  while (duel.state === 'play' && guard++ < 60 * 90) {
+  while (duel.state === 'play' && guard++ < 60 * 130) {
     const time = duel.songTime;
     for (let lane = 0; lane < 4; lane++) {
       const due = duel.notes.some((note) => note.lane === lane && !note.hit && !note.missed && Math.abs(note.t - time) < 0.012);
@@ -74,7 +76,7 @@ const { loadGame, createChecker } = require('./harness');
   ok(scene.finale.phase === 'defeat' || scene.finale.phase === 'epilogue', 'empieza la secuencia de derrota');
   guard = 0;
   let cardSeen = false; let epilogue = 0; let stood = false;
-  while (game.scenes.current === scene && guard++ < 60 * 90) {
+  while (game.scenes.current === scene && guard++ < 60 * 130) {
     if (scene.finale.defeatTime > 4.6) cardSeen = true;
     if (scene.finale.phase === 'epilogue' && scene.dialogue) { epilogue = Math.max(epilogue, scene.dialogue.index + 1); if (scene.finale.boss.state === 'rise' || scene.finale.boss.state === 'calm') stood = true; }
     if (guard % 20 === 0) { press('Enter', true); step(); press('Enter', false); } else step();
@@ -89,7 +91,7 @@ const { loadGame, createChecker } = require('./harness');
   scene = startDuel();
   duel = scene.duel;
   guard = 0;
-  while (duel.state === 'play' && guard++ < 60 * 90) step();
+  while (duel.state === 'play' && guard++ < 60 * 130) step();
   ok(duel.state === 'lost', `sin tocar, gana el silencio (estado: ${duel.state})`);
   ok(!!api.lastModal && /SILENCIO/.test(api.lastModal.title), 'aparece el cuadro de reintentar');
   api.lastModal.buttons[0].onClick(); // Reintentar duelo
@@ -100,7 +102,7 @@ const { loadGame, createChecker } = require('./harness');
   scene = startDuel();
   duel = scene.duel;
   guard = 0;
-  while (duel.state === 'play' && guard++ < 60 * 90) {
+  while (duel.state === 'play' && guard++ < 60 * 130) {
     for (const code of ['KeyZ', 'KeyX', 'KeyC', 'KeyV']) press(code, true);
     step();
     for (const code of ['KeyZ', 'KeyX', 'KeyC', 'KeyV']) press(code, false);

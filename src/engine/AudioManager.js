@@ -22,6 +22,9 @@ class AudioManager {
     this.musicDetail = '';
     this.musicPlayingSince = 0;
     this.triedBlobFallback = false;
+    this.sfxFilter = null;
+    this.boss = null;
+    this.bossError = false;
   }
 
   // ---------------------------------------------------------------- música de fondo
@@ -110,6 +113,75 @@ class AudioManager {
     if (!this.music) return;
     if (on) this.music.pause();
     else if (this.musicState !== 'error') this.music.play().catch(() => {});
+  }
+
+  // --- Música del jefe (archivo grabado) ---
+  static BOSS_MUSIC = 'assets/audio/batuk-battle.mp3';
+  static BOSS_VOLUME = 0.75;
+
+  // Empieza la canción del jefe desde el principio; la música de fondo normal calla
+  startBoss() {
+    this.pauseMusic(true);
+    if (typeof Audio === 'undefined') return;
+    if (!this.boss) {
+      this.boss = new Audio(AudioManager.BOSS_MUSIC);
+      this.boss.preload = 'auto';
+      this.boss.loop = false;
+      this.bossError = false;
+      this.boss.addEventListener('error', () => { this.bossError = true; });
+    }
+    this.boss.volume = AudioManager.BOSS_VOLUME;
+    this.boss.muted = this.muted;
+    try { this.boss.currentTime = 0; } catch (error) { /* aún sin metadatos: empezará desde el principio */ }
+    this.boss.play().catch(() => {});
+    this.bossStamp = performance.now();
+  }
+
+  // Salta a un instante de la canción y la deja sonando. Devuelve true si hay audio real al que sincronizarse.
+  seekBoss(seconds) {
+    if (!this.boss || this.bossError) return false;
+    try { this.boss.currentTime = seconds; } catch (error) { return false; }
+    this.bossLastReported = null;
+    this.boss.play().catch(() => {});
+    return true;
+  }
+
+  // Tiempo de la canción (s), suavizado: currentTime avanza a saltos, así que se interpola con el reloj del navegador
+  bossTime() {
+    if (!this.boss || this.bossError || this.boss.paused) return this.boss && !this.bossError ? this.boss.currentTime : null;
+    const now = performance.now();
+    const reported = this.boss.currentTime;
+    if (reported !== this.bossLastReported) {
+      this.bossLastReported = reported;
+      this.bossLastStamp = now;
+    }
+    return reported + (now - this.bossLastStamp) / 1000;
+  }
+
+  pauseBoss(on) {
+    if (!this.boss) return;
+    if (on) this.boss.pause();
+    else this.boss.play().catch(() => {});
+  }
+
+  // Apaga la canción del jefe con un fundido corto
+  stopBoss(fade = 1.2) {
+    const boss = this.boss;
+    if (!boss) return;
+    const startVolume = boss.volume;
+    const started = performance.now();
+    const tick = () => {
+      const t = Math.min(1, (performance.now() - started) / (fade * 1000));
+      boss.volume = Math.max(0, startVolume * (1 - t));
+      if (t < 1) setTimeout(tick, 50);
+      else boss.pause();
+    };
+    tick();
+  }
+
+  // Solo suenan los efectos de la lista (null = todos). Se usa en el duelo con canción grabada.
+  setSfxFilter(names) {
+    this.sfxFilter = names ? new Set(names) : null;
   }
 
   // Baja el volumen de la música (pausa) o lo restaura
@@ -437,6 +509,7 @@ class AudioManager {
 
   play(name, options = {}) {
     if (!this.ready) return;
+    if (this.sfxFilter && !this.sfxFilter.has(name)) return;
     const now = this.context.currentTime;
     if (now - (this.lastPlayed.get(name) ?? -1) < AudioManager.MIN_GAP) return;
     this.lastPlayed.set(name, now);
@@ -665,6 +738,14 @@ AudioManager.SOUNDS = {
     const f = 280 + Math.random() * 380;
     a.tone({ type: 'triangle', from: f, to: f * 0.6, duration: 0.16, volume: 0.13, attack: 0.002, wet: 0.2 });
     a.noise({ type: 'bandpass', from: 2500, to: 1800, q: 2, duration: 0.05, volume: 0.07, attack: 0.001 });
+  },
+  // Nota mal tocada: dos "pac pac" secos y desafinados, como una cuerda apagada con la palma
+  duelBad: (a) => {
+    for (const [delay, pitch] of [[0, 196], [0.1, 174]]) {
+      a.tone({ type: 'square', from: pitch, to: pitch * 0.82, duration: 0.07, volume: 0.13, delay, lowpass: 900, attack: 0.001 });
+      a.tone({ type: 'sawtooth', from: pitch * 1.06, to: pitch * 0.8, duration: 0.06, volume: 0.07, delay, lowpass: 700, attack: 0.001 });
+      a.noise({ type: 'bandpass', from: 1400, to: 500, q: 1.2, duration: 0.05, volume: 0.17, delay, attack: 0.001 });
+    }
   },
   // Se pierde el duelo: acorde que se hunde y se apaga
   duelFail: (a) => {

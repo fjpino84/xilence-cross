@@ -38,7 +38,7 @@ async function loadGame() {
     requestAnimationFrame() {},
   };
   vm.createContext(sandbox);
-  vm.runInContext(`${files.map((file) => fs.readFileSync(path.join(root, file), 'utf8')).join('\n;\n')}\n;globalThis.__t = { game, CONFIG, RexVane, Level01, Records, DuelMusic, RhythmDuel };`, sandbox);
+  vm.runInContext(`${files.map((file) => fs.readFileSync(path.join(root, file), 'utf8')).join('\n;\n')}\n;globalThis.__t = { game, CONFIG, RexVane, Level01, Records, DuelMusic, RhythmDuel, TrackMusic };`, sandbox);
   await new Promise((resolve) => setTimeout(resolve, 60));
 
   const api = { ...sandbox.__t, ctx, sandbox };

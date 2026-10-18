@@ -13,7 +13,7 @@ class BatukBoss {
   static IN_TIME = 1.15; // vuelo de un instrumento hasta la órbita
 
   constructor(x, y) {
-    this.musicStyle = 'tribal'; // el duelo suma la percusión de su templo
+    this.musicStyle = 'track'; // el duelo se juega sobre su canción grabada
     this.x = x;
     this.y = y;
     this.z = 0;

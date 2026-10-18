@@ -95,6 +95,8 @@ class GameScene {
 
   exit() {
     if (this.duel) this.duel.dispose();
+    this.game.audio.stopBoss(0.2);
+    this.game.audio.pauseMusic(false);
     this.game.modal.hide();
     this.game.audio.duckMusic(false); // por si se sale desde la pausa
   }
@@ -883,7 +885,6 @@ class GameScene {
     this.camera.lockX = this.camera.x; // la cámara se queda quieta
     player.facing = 1;
     player.energy = 0;
-    this.game.audio.duckMusic(true);
     this.game.audio.play('drumRumble');
     this.hud.finaleStart = this.hud.time;
   }
@@ -905,6 +906,7 @@ class GameScene {
     if (!finale.boss && finale.time >= GameScene.FINALE_FALL_AT) {
       finale.boss = new BatukBoss(this.camera.right + 200, 462);
       finale.boss.targetX = Math.min(this.player.x + 330, this.camera.right - 150);
+      this.game.audio.startBoss(); // su música empieza en cuanto aparece Batuk
     }
 
     const boss = finale.boss;
@@ -980,6 +982,7 @@ class GameScene {
   // ECO gana el duelo: Batuk cae y, pasado un momento, aparece la imagen de derrota
   batukDefeated(boss) {
     this.duel = null;
+    this.game.audio.stopBoss(1.8); // la canción se apaga al caer Batuk
     this.finale.phase = 'defeat';
     this.finale.defeatTime = 0;
     boss.defeat(this.world);
@@ -1294,6 +1297,8 @@ class GameScene {
   togglePause() {
     this.paused = !this.paused;
     this.game.audio.duckMusic(this.paused);
+    if (this.finale && this.finale.boss && !this.duel) this.game.audio.pauseBoss(this.paused);
+    if (this.duel) this.duel.setPaused(this.paused);
     if (this.paused) {
       this.game.modal.show({
         title: 'PAUSA',

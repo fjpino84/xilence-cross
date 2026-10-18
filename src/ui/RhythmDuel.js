@@ -27,8 +27,10 @@ class RhythmDuel {
     this.player = scene.player;
     this.boss = boss;
     this.onWin = onWin;
-    this.chart = DuelMusic.buildChart();
-    this.music = new DuelMusic(boss.musicStyle || 'rock');
+    // Con la canción grabada (jefe con musicStyle 'track') se usa su partitura; si no, el tema de rock sintetizado
+    this.song = boss.musicStyle === 'track' ? TrackMusic : DuelMusic;
+    this.chart = this.song.buildChart();
+    this.music = this.song === TrackMusic ? new TrackMusic() : new DuelMusic(boss.musicStyle || 'rock');
     this.tier = 1; // multiplicador alcanzado (1-4); sube con la racha y se reinicia al fallar
     this.sparks = []; // chispas de las rachas (coordenadas de pantalla)
     this.sparkTimer = 0;
@@ -43,6 +45,7 @@ class RhythmDuel {
     this.lastBeat = -1;
     this.reset();
     this.game.audio.pauseMusic(true); // la música del juego calla: ahora suena la del duelo
+    this.game.audio.setSfxFilter(this.song === TrackMusic ? ['duelBad'] : null); // con canción grabada solo se oye un fallo
   }
 
   get active() { return !this.done; }
@@ -79,6 +82,7 @@ class RhythmDuel {
 
   // Pausa: el reloj del audio se detiene y la canción espera
   setPaused(paused) {
+    if (this.song === TrackMusic) { this.game.audio.pauseBoss(paused); return; }
     const context = this.game.audio.context;
     if (!context) return;
     try {
@@ -94,6 +98,7 @@ class RhythmDuel {
     this.music.stop();
     this.done = true;
     this.setPaused(false);
+    this.game.audio.setSfxFilter(null);
     this.game.audio.pauseMusic(false);
   }
 
@@ -143,7 +148,7 @@ class RhythmDuel {
     this.music.advance(dt);
     const time = this.songTime;
     // Cada tiempo de la canción, el jefe late con la música (y puede traer instrumentos)
-    const beat = Math.floor(time / DuelMusic.BEAT);
+    const beat = Math.floor((time - this.song.BEAT_OFFSET) / this.song.BEAT);
     if (time >= 0 && beat > this.lastBeat) {
       this.lastBeat = beat;
       if (this.boss.onBeat) this.boss.onBeat(beat, this.combo, this.scene.world);
@@ -158,7 +163,7 @@ class RhythmDuel {
 
     if (this.meter <= 0) {
       this.lose();
-    } else if (time >= DuelMusic.endTime) {
+    } else if (time >= this.song.endTime) {
       this.win();
     }
   }
@@ -274,6 +279,7 @@ class RhythmDuel {
   lose() {
     this.music.stop();
     this.setState('lost');
+    if (this.song === TrackMusic) this.game.audio.pauseBoss(true);
     this.game.audio.play('duelFail');
     this.scene.world.shake(12, 0.5);
     this.scene.world.flash(0.35, '#ff2a55');
@@ -327,7 +333,7 @@ class RhythmDuel {
   // Pulso del compás: 1 justo en cada tiempo y cae rápido
   get beatPulse() {
     if (this.state !== 'play') return 0;
-    const phase = (this.songTime / DuelMusic.BEAT) % 1;
+    const phase = (((this.songTime - this.song.BEAT_OFFSET) / this.song.BEAT) % 1 + 1) % 1;
     return phase < 0 ? 0 : Math.pow(1 - phase, 3);
   }
 
@@ -421,10 +427,10 @@ class RhythmDuel {
 
     // Líneas de tiempo que corren a velocidad constante, con los compases más marcados
     const time = this.state === 'play' || this.state === 'won' ? this.songTime : 0;
-    const beat = DuelMusic.BEAT;
-    const first = Math.floor(time / beat) - 1;
+    const beat = this.song.BEAT;
+    const first = Math.floor((time - this.song.BEAT_OFFSET) / beat) - 1;
     for (let k = first; k < first + Math.ceil(this.travel / beat) + 3; k++) {
-      const depth = 1 - (k * beat - time) / this.travel;
+      const depth = 1 - (k * beat + this.song.BEAT_OFFSET - time) / this.travel;
       if (depth < 0 || depth > bottomDepth) continue;
       const a = this.lanePoint(-0.5, depth);
       const b = this.lanePoint(3.5, depth);
@@ -554,7 +560,7 @@ class RhythmDuel {
     Draw.rock(ctx, 'ECO', x - 12, y + 18, { size: 22, align: 'right', colors: ['#ffffff', '#00f5ff', '#005e8a'], glow: '#00f5ff', glowBlur: 10, outlineWidth: 4 });
     Draw.rock(ctx, this.boss.name || 'VÓIDHAR', x + width + 12, y + 18, { size: 22, align: 'left', colors: ['#ffffff', '#ff5a8a', '#6a0030'], glow: '#ff2a55', glowBlur: 10, outlineWidth: 4 });
     // Avance de la canción
-    const progress = this.state === 'play' ? Math.max(0, Math.min(1, this.songTime / DuelMusic.endTime)) : (this.state === 'won' ? 1 : 0);
+    const progress = this.state === 'play' ? Math.max(0, Math.min(1, this.songTime / this.song.endTime)) : (this.state === 'won' ? 1 : 0);
     ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
     ctx.fillRect(x, y + height + 7, width, 3);
     ctx.fillStyle = '#ffffff';
@@ -843,13 +849,15 @@ class RhythmDuel {
     }
     if (this.state !== 'play') return;
     const time = this.songTime;
-    const countIn = DuelMusic.COUNT_IN_BARS * 4 * DuelMusic.BEAT;
-    if (time < countIn - 0.2) {
+    const countIn = this.song.countInTime;
+    if (time < countIn - (this.song === DuelMusic ? 0.2 : 0)) {
       Draw.rock(ctx, 'TOCA AL RITMO', CONFIG.WIDTH / 2, 232, { size: 34, align: 'center', colors: ['#ffffff', '#ffe600', '#c46a00'], outlineWidth: 7, tracking: 3 });
       Draw.text(ctx, 'Z  X  C  V   o   ←  ↓  ↑  →', CONFIG.WIDTH / 2, 270, { size: 20, align: 'center', color: '#cfe', strokeWidth: 4 });
       if (time >= 0) {
-        const beat = Math.floor(time / DuelMusic.BEAT) % 4;
-        Draw.text(ctx, String(4 - beat), CONFIG.WIDTH / 2, 340, { size: 60, align: 'center', color: '#ffffff', strokeWidth: 8 });
+        if (this.song === DuelMusic) {
+          const beat = Math.floor(time / DuelMusic.BEAT) % 4;
+          Draw.text(ctx, String(4 - beat), CONFIG.WIDTH / 2, 340, { size: 60, align: 'center', color: '#ffffff', strokeWidth: 8 });
+        }
       }
     }
   }

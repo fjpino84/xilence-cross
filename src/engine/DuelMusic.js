@@ -48,6 +48,9 @@ class DuelMusic {
     return null;
   }
 
+  static BEAT_OFFSET = 0;
+  static get countInTime() { return DuelMusic.COUNT_IN_BARS * 4 * DuelMusic.BEAT; }
+
   static get totalBars() { return DuelMusic.COUNT_IN_BARS + DuelMusic.SECTIONS.reduce((sum, section) => sum + section.bars.length, 0); }
   static get endTime() { return DuelMusic.totalBars * 4 * DuelMusic.BEAT; } // el acorde final suena aquí
 
