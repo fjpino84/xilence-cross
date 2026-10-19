@@ -22,7 +22,9 @@ const CONFIG = Object.freeze({
   // Tipografías del título y los textos solemnes (se cargan desde assets/fonts; si fallan, se usa una serif del sistema)
   TITLE_FONT: '"Cinzel Decorative", "Cinzel", "Palatino Linotype", "Book Antiqua", Georgia, serif',
   PLAIN_FONT: '"Cinzel", "Palatino Linotype", "Book Antiqua", Georgia, serif',
+  COMIC_FONT: '"Bangers", Impact, "Arial Black", sans-serif', // cajas de diálogo: letras de cómic de superhéroes
   FONT_FILES: [
+    { family: 'Bangers', url: 'assets/fonts/Bangers-Regular.ttf', weight: '400' },
     { family: 'Cinzel Decorative', url: 'assets/fonts/CinzelDecorative-Black.ttf', weight: '900' },
     { family: 'Cinzel Decorative', url: 'assets/fonts/CinzelDecorative-Bold.ttf', weight: '700' },
     { family: 'Cinzel', url: 'assets/fonts/Cinzel-Variable.ttf', weight: '400 900' },

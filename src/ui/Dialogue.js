@@ -264,12 +264,12 @@ class Dialogue {
       }
     }
 
-    // Texto: escrito hasta donde llega, con tipografía clásica para que respire
-    const size = hasPortrait ? 19 : 18;
-    const font = `${hasPortrait ? 700 : 600} ${size}px ${CONFIG.PLAIN_FONT}`;
+    // Texto: escrito hasta donde llega, con letras de cómic de superhéroes
+    const size = hasPortrait ? 23 : 22;
+    const font = `400 ${size}px ${CONFIG.COMIC_FONT}`;
     const lines = this.wrap(ctx, this.line.text, textW, size, font);
     let remaining = Math.floor(this.shown);
-    const lineHeight = size + 9;
+    const lineHeight = size + 7;
     const startY = panelY + (hasPortrait ? 62 : 70) + (lines.length < 3 ? 8 : 0);
     ctx.font = font;
     ctx.textAlign = 'left';
