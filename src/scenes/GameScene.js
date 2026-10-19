@@ -1,6 +1,7 @@
 // Escena de juego: orquesta jugador, enemigos, nivel, cámara, efectos y HUD.
 // También reparte los "servicios de impacto" (partículas, sonido, hit-stop, cámara lenta…) vía `world`.
 class GameScene {
+  static DEPTH_SCALE = [0.92, 1.08]; // tamaño al fondo del suelo y junto a la cámara
   static MAX_SIMULTANEOUS_ATTACKERS = 2; // los demás rodean y esperan su turno
   static VICTORY_DELAY = 1.2;
   static DEATH_DELAY = 1.4;
@@ -51,6 +52,7 @@ class GameScene {
     this.particles = new ParticleSystem();
     this.ambient = new ParticleSystem();
     this.atmosphere = new Atmosphere(this.level);
+    this.foreground = new Foreground();
     this.atmosphereHooks = {
       thunder: () => this.game.audio.play('thunder'),
       zap: () => this.game.audio.play('zap'),
@@ -1170,6 +1172,13 @@ class GameScene {
     this.camera.punch(0.05);
   }
 
+  // Escala visual según la profundidad del suelo (0 = al fondo, 1 = junto a la cámara). No afecta a los golpes ni a las colisiones.
+  depthScale(y) {
+    if (this.finale) return 1;
+    const t = Math.max(0, Math.min(1, (y - CONFIG.GROUND_TOP) / (CONFIG.GROUND_BOTTOM - CONFIG.GROUND_TOP)));
+    return GameScene.DEPTH_SCALE[0] + (GameScene.DEPTH_SCALE[1] - GameScene.DEPTH_SCALE[0]) * t;
+  }
+
   // Evita que los enemigos se amontonen en el mismo punto
   separateEnemies() {
     const living = this.enemies.filter((enemy) => enemy.isAlive && enemy.z === 0 && !enemy.boss);
@@ -1340,7 +1349,17 @@ class GameScene {
     for (const enemy of this.enemies) if (enemy.renderHazards) enemy.renderHazards(ctx); // rayos y avisos del jefe
     for (const effect of this.effects) if (effect.ground) this.renderEffect(ctx, effect); // grietas bajo los personajes
     const drawables = [this.player, this.trino, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : [])].sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
-    for (const entity of drawables) entity.render(ctx);
+    // Perspectiva: los personajes crecen un poco al acercarse a la cámara (bajar por el suelo) y se encogen al alejarse
+    for (const entity of drawables) {
+      const scale = this.depthScale(entity === this.trino ? this.player.y : entity.y);
+      if (scale === 1) { entity.render(ctx); continue; }
+      ctx.save();
+      ctx.translate(entity.x, entity.y);
+      ctx.scale(scale, scale);
+      ctx.translate(-entity.x, -entity.y);
+      entity.render(ctx);
+      ctx.restore();
+    }
     for (const pickup of this.pickups) this.renderPickup(ctx, pickup);
     for (const bolt of this.projectiles) this.renderProjectile(ctx, bolt);
     for (const effect of this.effects) if (!effect.ground) this.renderEffect(ctx, effect);
@@ -1349,6 +1368,7 @@ class GameScene {
     this.particles.render(ctx);
     if (globalThis.DEBUG_PUDDLES) this.renderPuddleDebug(ctx);
     ctx.restore();
+    this.foreground.render(ctx, this.camera.x); // chatarra y cables por delante, con parallax
     ctx.restore();
 
     this.ambient.render(ctx);
