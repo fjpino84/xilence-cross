@@ -55,7 +55,7 @@ const CONFIG = Object.freeze({
     bgLevel07: 'assets/backgrounds/nivel07-planeta-en-llamas.jpg',
     spriteEco: 'assets/sprites/eco.png',
     ecoCaminar: 'assets/sprites/eco/caminar.png',
-    ...frameAssets('ecoCaminar', 'eco', 'caminar', 12), // ciclo de 12 cuadros sacado del video "Eco caminando"
+    ...frameAssets('ecoCaminar', 'eco', 'caminar', 36), // ciclo completo (36 cuadros) del video "Eco caminando"
     ecoCombo1: 'assets/sprites/eco/combo_1.png',
     ecoCombo2: 'assets/sprites/eco/combo_2.png',
     ecoCombo3: 'assets/sprites/eco/combo_3.png',
@@ -90,9 +90,9 @@ const CONFIG = Object.freeze({
     ...frameAssets('ecoPatada', 'eco', 'patada', 6),
     ...frameAssets('ecoPuno', 'eco', 'puno', 6),
     ...frameAssets('ecoIdle', 'eco', 'idle', 3),
-    ...frameAssets('ecoVPuno', 'eco', 'vpuno', 7), // golpes sacados del video "video golpes"
-    ...frameAssets('ecoVPatada', 'eco', 'vpatada', 8),
-    ...frameAssets('ecoVGiro', 'eco', 'vgiro', 12),
+    ...frameAssets('ecoVPuno', 'eco', 'vpuno', 23), // golpes sacados del video "video golpes"
+    ...frameAssets('ecoVPatada', 'eco', 'vpatada', 16),
+    ...frameAssets('ecoVGiro', 'eco', 'vgiro', 30),
     ecoMix2: 'assets/sprites/eco/mix_2.png',
     ecoMix3: 'assets/sprites/eco/mix_3.png',
     ecoMix4: 'assets/sprites/eco/mix_4.png',

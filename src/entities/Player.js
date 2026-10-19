@@ -1,7 +1,7 @@
 // ECO, el guerrero ciego. Estados: idle → walk → jump → attack → specialAttack → superAttack → hurt → dead
 // (más 'block' para la guardia, con retardo de activación).
 class Player extends Entity {
-  static SPEED = 220;
+  static SPEED = 185;
   static DEPTH_SPEED = 150; // movimiento vertical por el suelo (profundidad)
   static JUMP_VELOCITY = 640;
   static BLOCK_DELAY = 0.08; // casi inmediato: el escudo protege en cuanto se pulsa
@@ -22,12 +22,12 @@ class Player extends Entity {
   // Cuadros de animación (mismo tamaño de lienzo, alineados por el torso)
   // Ciclo de caminar de 12 cuadros (dos pasos completos, uno por pierna) sacado del video "Eco caminando" (cuadros 82-117, a 24 fps
   // submuestreados cada 3). A 20 cuadros por segundo el ciclo dura 0,6 s. Se dibuja con su propia escala porque esta hoja trae los personajes más pequeños.
-  static WALK_FPS = 20;
-  static WALK_FRAMES = 12;
+  static WALK_FPS = 36; // 36 cuadros en 1,0 s (el video original dura 1,5 s: aquí va algo más rápido, pero con zancada acorde a la velocidad)
+  static WALK_FRAMES = 36;
   static WALK_HEIGHT = 148;
-  static WALK_ANCHOR = 0.407;
-  static WALK_FEET = 0.9903; // fracción de la imagen donde está el suelo
-  static WALK_BLEND = 0; // con 12 cuadros no hace falta mezclar // opacidad máxima del cuadro siguiente al fundirse (0 = sin fundido)
+  static WALK_ANCHOR = 0.4048;
+  static WALK_FEET = 0.9808; // fracción de la imagen donde está el suelo
+  static WALK_BLEND = 1; // mezcla lineal con el cuadro siguiente (son casi idénticos, así que no se nota doble imagen) // opacidad máxima del cuadro siguiente al fundirse (0 = sin fundido)
   static FRAME_HEIGHT = 141;
   static FRAME_ANCHOR = { walk: 0.389, hit: 0.398 };
   // Secuencias con efectos: altura = alto del lienzo (px de imagen) × escala. La escala iguala el tamaño del personaje.
@@ -70,10 +70,12 @@ class Player extends Entity {
   // Golpes del video "video golpes" (guitarra en las manos, como al caminar): puño (golpes 1 y 3), patada frontal (2) y patada
   // giratoria con estela (4). g = px de juego por px de imagen (igual para todos: el personaje mide lo mismo en el video).
   static VIDEO_G = 0.477;
+  // Cada set usa todos los cuadros del video (uno de cada dos, a 24 fps) y un mapa de tiempo [fracción del golpe, cuadro]: así el
+  // impacto cae en el momento del daño y el resto fluye entre cuadros (con mezcla suave del cuadro siguiente).
   static VIDEO_SETS = {
-    puno: { key: 'ecoVPuno', anchor: 0.3985, feet: 0.9902, track: [[0, 1], [0.1, 2], [0.22, 3], [0.42, 4], [0.55, 5], [0.7, 6], [0.85, 7]] },
-    patada: { key: 'ecoVPatada', anchor: 0.4191, feet: 0.9917, track: [[0, 1], [0.1, 2], [0.22, 3], [0.34, 4], [0.5, 5], [0.62, 6], [0.78, 7], [0.9, 8]] },
-    giro: { key: 'ecoVGiro', anchor: 0.474, feet: 0.9836, track: [[0, 1], [0.08, 2], [0.16, 3], [0.24, 4], [0.32, 5], [0.4, 6], [0.46, 7], [0.52, 8], [0.62, 9], [0.72, 10], [0.82, 11], [0.92, 12]] },
+    puno: { key: 'ecoVPuno', count: 23, anchor: 0.3985, feet: 0.9837, warp: [[0, 1], [0.2, 6], [0.28, 8], [0.5, 12], [0.64, 16], [1, 23]] },
+    patada: { key: 'ecoVPatada', count: 16, anchor: 0.4184, feet: 0.9802, warp: [[0, 1], [0.2, 5], [0.32, 8], [0.56, 10], [0.7, 12], [1, 16]] },
+    giro: { key: 'ecoVGiro', count: 30, anchor: 0.4752, feet: 0.9771, warp: [[0, 1], [0.3, 14], [0.4, 16], [0.44, 18], [0.64, 22], [0.8, 27], [1, 30]] },
   };
   static VIDEO_BY_STEP = { 1: 'puno', 2: 'patada', 3: 'puno', 4: 'giro' };
   static AIR_KICK_TRACK = [[0, 3], [0.07, 4], [0.30, 5], [0.38, 6]];
@@ -646,13 +648,24 @@ class Player extends Entity {
     const name = Player.VIDEO_BY_STEP[this.attackStep];
     if (!name) return null;
     const set = Player.VIDEO_SETS[name];
-    const progress = this.stateTime / Player.ATTACKS[this.attackStep - 1].duration;
-    let number = set.track[0][1];
-    for (const [from, frame] of set.track) if (progress >= from) number = frame;
-    const image = Assets.image(set.key + number);
+    const progress = Math.min(1, this.stateTime / Player.ATTACKS[this.attackStep - 1].duration);
+    // Posición (con decimales) en la lista de cuadros, interpolando entre los puntos del mapa de tiempo
+    let position = set.warp[set.warp.length - 1][1];
+    for (let i = 1; i < set.warp.length; i++) {
+      if (progress <= set.warp[i][0]) {
+        const [p0, f0] = set.warp[i - 1];
+        const [p1, f1] = set.warp[i];
+        position = f0 + (f1 - f0) * ((progress - p0) / (p1 - p0));
+        break;
+      }
+    }
+    const index = Math.min(set.count, Math.max(1, Math.floor(position)));
+    const image = Assets.image(set.key + index);
     if (!image) return null;
+    const next = Assets.image(set.key + Math.min(set.count, index + 1));
+    const fraction = index >= set.count ? 0 : position - Math.floor(position);
     const height = image.height * Player.VIDEO_G;
-    return { image, height, anchorX: set.anchor, drop: (1 - set.feet) * height };
+    return { image, height, anchorX: set.anchor, drop: (1 - set.feet) * height, blendImage: next, blend: next ? fraction : 0 };
   }
 
   // Cuadro del puño (golpes 1 y 3)
@@ -713,8 +726,8 @@ class Player extends Entity {
         // Fundido con el cuadro siguiente en el último tramo de cada cuadro: suaviza el salto entre poses (a 10 cuadros por segundo)
         const fraction = position - Math.floor(position);
         const next = Assets.image(`ecoCaminar${1 + ((index + 1) % Player.WALK_FRAMES)}`);
-        const blend = next && fraction > 0.55 ? Player.WALK_BLEND * (fraction - 0.55) / 0.45 : 0;
-        return { image: walkImage, height: Player.WALK_HEIGHT, anchorX: Player.WALK_ANCHOR, blendImage: next, blend, drop: (1 - Player.WALK_FEET) * Player.WALK_HEIGHT };
+        const height = walkImage.height * Player.VIDEO_G;
+        return { image: walkImage, height, anchorX: Player.WALK_ANCHOR, blendImage: next, blend: next ? fraction * Player.WALK_BLEND : 0, drop: (1 - Player.WALK_FEET) * height };
       }
     } else if (this.state === 'idle') {
       const idle = this.idleFrame();
