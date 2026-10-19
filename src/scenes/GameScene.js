@@ -53,6 +53,8 @@ class GameScene {
     this.ambient = new ParticleSystem();
     this.atmosphere = new Atmosphere(this.level);
     this.foreground = new Foreground();
+    this.live = new LiveBackground(this.level);
+    this.ambientBack = new ParticleSystem(); // lluvia lejana: por detrás de los personajes
     this.atmosphereHooks = {
       thunder: () => this.game.audio.play('thunder'),
       zap: () => this.game.audio.play('zap'),
@@ -1071,6 +1073,7 @@ class GameScene {
     this.updateSplashes(scaled);
     if (this.level.config.ambient === 'rain') this.rainRipples(scaled);
     this.updateAmbient(scaled);
+    this.live.update(scaled);
     this.atmosphere.update(scaled, this.camera, this.atmosphereHooks);
     this.maxCombo = Math.max(this.maxCombo, this.player.comboHits);
     this.updateHeartbeat(scaled);
@@ -1256,15 +1259,25 @@ class GameScene {
       }
     }
     this.ambient.update(dt);
+    this.ambientBack.update(dt);
   }
 
   spawnAmbient(type) {
     const { WIDTH, HEIGHT } = CONFIG;
     const x = Math.random() * (WIDTH + 200);
     switch (type) {
-      case 'rain':
-        this.ambient.add({ type: 'streak', x, y: -10, vx: -140, vy: 900 + Math.random() * 300, life: 0.7, size: 1.2, color: 'rgba(170, 205, 255, 0.55)', additive: false });
+      case 'rain': {
+        // Tres planos de lluvia: lejana (pequeña, lenta y tenue, por detrás), media y cercana (grande, rápida y clara, por delante)
+        const depth = Math.random();
+        if (depth < 0.4) {
+          this.ambientBack.add({ type: 'streak', x, y: -10, vx: -90, vy: 560 + Math.random() * 140, life: 1.0, size: 0.8, color: 'rgba(170, 205, 255, 0.28)', additive: false });
+        } else if (depth < 0.85) {
+          this.ambient.add({ type: 'streak', x, y: -10, vx: -140, vy: 900 + Math.random() * 300, life: 0.7, size: 1.2, color: 'rgba(170, 205, 255, 0.55)', additive: false });
+        } else {
+          this.ambient.add({ type: 'streak', x, y: -10, vx: -250, vy: 1500 + Math.random() * 400, life: 0.45, size: 2.2, color: 'rgba(205, 228, 255, 0.5)', additive: false });
+        }
         break;
+      }
       case 'embers':
         this.ambient.add({ type: 'dot', x, y: HEIGHT + 10, vx: (Math.random() - 0.5) * 60, vy: -(60 + Math.random() * 120), life: 3, size: 1.5 + Math.random() * 2.5, sizeEnd: 0, color: '#ff8a2a' });
         break;
@@ -1353,7 +1366,11 @@ class GameScene {
     ctx.save();
     this.camera.applyZoom(ctx);
     this.level.renderBackground(ctx, this.camera);
+    this.live.render(ctx, this.camera); // telas, cadenas, cables, carteles y generador animados
     this.atmosphere.renderBack(ctx, this.camera);
+    this.live.renderFog(ctx, this.camera, 'far'); // niebla del fondo y del plano medio, por detrás de los personajes
+    this.live.renderFog(ctx, this.camera, 'mid');
+    this.ambientBack.render(ctx); // lluvia lejana
     if (this.darkness > 0.01) {
       ctx.fillStyle = `rgba(3, 3, 12, ${this.darkness})`;
       ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
@@ -1388,6 +1405,7 @@ class GameScene {
     if (globalThis.DEBUG_PUDDLES) this.renderPuddleDebug(ctx);
     ctx.restore();
     this.foreground.render(ctx, this.camera.x); // chatarra y cables por delante, con parallax
+    this.live.renderFog(ctx, this.camera, 'front'); // neblina baja junto al suelo, por delante
     ctx.restore();
 
     this.ambient.render(ctx);

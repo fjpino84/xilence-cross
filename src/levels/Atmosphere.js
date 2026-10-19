@@ -43,6 +43,9 @@ const ATMOSPHERE_DATA = {
       { x: 0.08, y: 0.45, w: 0.12, rate: 5, dark: true }, { x: 0.35, y: 0.53, w: 0.16, rate: 4, dark: true },
       { x: 0.60, y: 0.57, w: 0.2, rate: 4, dark: true }, { x: 0.90, y: 0.58, w: 0.1, rate: 3, dark: true },
     ],
+    emit: [
+      { kind: 'ember', x: 0.03, y: 0.53, w: 0.20, h: 0.06, rate: 8 },
+    ],
   },
   bgLevel01s: {
     lamps: [
@@ -55,6 +58,12 @@ const ATMOSPHERE_DATA = {
       { x: 0.08, y: 0.45, w: 0.12, rate: 5, dark: true }, { x: 0.40, y: 0.55, w: 0.16, rate: 4, dark: true },
       { x: 0.60, y: 0.57, w: 0.2, rate: 4, dark: true },
     ],
+    emit: [
+      { kind: 'spark', x: 0.46, y: 0.18, w: 0.09, h: 0.28, rate: 7 }, // chispas de la torre central
+      { kind: 'spark', x: 0.52, y: 0.44, w: 0.06, h: 0.06, rate: 5, color: '#ffd9a0' },
+      { kind: 'ember', x: 0.03, y: 0.53, w: 0.20, h: 0.06, rate: 9 }, // brasas del fuego de la izquierda
+      { kind: 'ember', x: 0.60, y: 0.58, w: 0.12, h: 0.04, rate: 5 },
+    ],
   },
   bgLevel01j: {
     lamps: [
@@ -62,7 +71,11 @@ const ATMOSPHERE_DATA = {
       { x: 0.10, y: 0.23, kind: 'red' }, { x: 0.26, y: 0.24, kind: 'red' }, { x: 0.41, y: 0.42, kind: 'red' }, { x: 0.32, y: 0.53, kind: 'red' },
       { x: 0.04, y: 0.84, kind: 'arc' }, { x: 0.97, y: 0.82, kind: 'arc' }, { x: 0.33, y: 0.62, kind: 'arc' },
     ],
-    smoke: [{ x: 0.12, y: 0.68, w: 0.14, rate: 3 }, { x: 0.86, y: 0.72, w: 0.1, rate: 3 }],
+    smoke: [{ x: 0.12, y: 0.68, w: 0.14, rate: 3 }, { x: 0.86, y: 0.72, w: 0.1, rate: 3 }, { x: 0.375, y: 0.62, w: 0.03, rate: 3, dark: true }], // escape del generador
+    emit: [
+      { kind: 'mote', x: 0.50, y: 0.30, w: 0.22, h: 0.26, rate: 9 }, // polvo flotando en la luz del garaje
+      { kind: 'spark', x: 0.32, y: 0.62, w: 0.05, h: 0.05, rate: 4, color: '#9ff4ff' }, // chispas del generador
+    ],
   },
 };
 
@@ -83,6 +96,7 @@ class Atmosphere {
     this.smoke = new ParticleSystem(); // humo en coordenadas del mundo (se dibuja bajo los personajes)
     this.lamps = [];
     this.sources = [];
+    this.emitters = [];
     this.searchlights = [];
     (level.config.backgroundSequence || []).forEach((tile, index) => {
       const data = ATMOSPHERE_DATA[tile.key];
@@ -102,6 +116,9 @@ class Atmosphere {
           beam: lamp.beam ? lamp.beam * (tile.flip ? -1 : 1) : 0,
           phase: Math.random() * 6.28, timer: 1 + Math.random() * 8, event: 0, arcTimer: 0, arcs: [],
         });
+      }
+      for (const emitter of data.emit || []) {
+        this.emitters.push({ ...emitter, wx: worldX(emitter.x), wy: emitter.y * CONFIG.HEIGHT, ww: emitter.w * Level.TILE_WIDTH, wh: emitter.h * CONFIG.HEIGHT, budget: 0 });
       }
       for (const source of data.smoke) {
         this.sources.push({ x: worldX(source.x), y: source.y * CONFIG.HEIGHT, w: source.w * Level.TILE_WIDTH, rate: source.rate, dark: !!source.dark, budget: 0 });
@@ -153,6 +170,23 @@ class Atmosphere {
         });
         if (source.dark && Math.random() < 0.3) {
           this.smoke.add({ type: 'dot', x: source.x + (Math.random() - 0.5) * source.w, y: source.y, vx: (Math.random() - 0.3) * 30, vy: -(40 + Math.random() * 60), life: 1.6, size: 1.8, sizeEnd: 0, color: '#ff8a2a' });
+        }
+      }
+    }
+    // Chispas, brasas y polvo: nacen dentro de una zona y suben o flotan
+    for (const emitter of this.emitters) {
+      if (emitter.wx > right || emitter.wx + emitter.ww < left) continue;
+      emitter.budget += emitter.rate * dt * (FX.low ? 0.3 : 1);
+      while (emitter.budget >= 1) {
+        emitter.budget -= 1;
+        const x = emitter.wx + Math.random() * emitter.ww;
+        const y = emitter.wy + Math.random() * emitter.wh;
+        if (emitter.kind === 'spark') {
+          this.smoke.add({ type: 'spark', x, y, vx: (Math.random() - 0.5) * 120, vy: -(40 + Math.random() * 150), gravity: 260, drag: 0.6, life: 0.5 + Math.random() * 0.7, size: 1.8 + Math.random() * 1.6, color: emitter.color || (Math.random() < 0.5 ? '#ffb040' : '#ff7a1a') });
+        } else if (emitter.kind === 'ember') {
+          this.smoke.add({ type: 'dot', x, y, vx: (Math.random() - 0.3) * 40, vy: -(30 + Math.random() * 90), life: 1.6 + Math.random() * 1.6, size: 1.4 + Math.random() * 2.2, sizeEnd: 0, color: Math.random() < 0.6 ? '#ff8a2a' : '#ffd070' });
+        } else {
+          this.smoke.add({ type: 'dot', x, y, vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.7) * 8, life: 3.5 + Math.random() * 3, size: 1.1 + Math.random() * 1.4, sizeEnd: 0.3, color: 'rgba(255, 240, 200, 0.55)' });
         }
       }
     }
