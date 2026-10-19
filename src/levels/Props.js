@@ -19,7 +19,7 @@ class Props {
     generador: { h: 255, lights: [[0.22, 0.45, '#8ff6ff', 22, 3.0]] },
   };
   // Objetos casuales para tapar las uniones (sin la torre-reactor ni las torres altas). h = altura grande en pantalla.
-  static SEAM = ['pila', 'tuberia', 'carrete', 'valla', 'generador', 'cartel'];
+  static SEAM = ['pila', 'pila', 'carrete', 'pila', 'tuberia', 'valla', 'generador', 'cartel'];
 
   constructor(level) {
     this.time = 0;
