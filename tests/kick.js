@@ -64,6 +64,24 @@ const { loadGame, createChecker } = require('./harness');
     ok(punchFrames > 5, `el golpe 1 usa los cuadros del puño (${punchFrames} cuadros)`);
     ok(enemy.hp < hp, 'el puño golpea al enemigo');
   }
+  // --- Rayo: carga, disparo y regreso por los mismos cuadros en orden inverso
+  {
+    const { scene, p } = setup();
+    const { Assets } = api;
+    press('KeyK', true);
+    const seq = [];
+    for (let i = 0; i < 60 * 3; i++) {
+      if (i === 30) press('KeyK', false);
+      step();
+      if (p.state !== 'specialAttack') continue;
+      const f = p.effectFrame();
+      let n = null;
+      for (let k = 1; k <= 9; k++) if (f && Assets.image('ecoRayoB' + k) === f.image) n = k;
+      seq.push(n);
+    }
+    const compact = seq.filter((v, i) => v !== seq[i - 1]).join(' ');
+    ok(compact === '1 2 3 4 5 6 5 4 3 2 1', `rayo: carga 1-2-3, disparo 4-5-6 y regreso 5-4-3-2-1 (${compact})`);
+  }
   console.log(checker.failures ? `\n${checker.failures} comprobaciones fallaron` : '\nTodo correcto');
   process.exit(checker.failures ? 1 : 0);
 })();

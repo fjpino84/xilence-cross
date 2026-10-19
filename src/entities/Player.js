@@ -74,9 +74,11 @@ class Player extends Entity {
   // Rayo cargable (K): mantener carga, soltar dispara. Cuanto más carga, más largo, grueso y dañino (con máximo).
   static CHARGE_MAX = 1.3; // segundos de carga hasta el máximo
   static CHARGE_FRAMES = [0.07, 0.15]; // cuadros 1 y 2 de la carga; luego se mantiene el 3
-  static FIRE_TIMES = [0.07, 0.14, 0.31, 0.41, 0.49]; // desde soltar: cuadros 5 a 9 (el 4 va primero)
+  // Disparo desde que se suelta: sale (4), rayo (5 y 6) y regresa por los mismos cuadros en orden inverso hasta la posición
+  // inicial (5, 4, 3, 2, 1). [segundo desde soltar, cuadro]
+  static FIRE_SEQUENCE = [[0, 4], [0.07, 5], [0.14, 6], [0.32, 5], [0.39, 4], [0.46, 3], [0.53, 2], [0.60, 1]];
   static FIRE_DELAY = 0.07; // desde soltar hasta que sale el rayo
-  static SPECIAL_END = 0.61; // desde soltar hasta recuperar el control
+  static SPECIAL_END = 0.70; // desde soltar hasta recuperar el control
   static BEAM_MIN = 170;
   static BEAM_MAX = 560;
   static SUPER_TIMES = [0.25, 0.38, 0.62, 0.85];
@@ -585,9 +587,9 @@ class Player extends Entity {
         // Carga: cuadros 1 y 2 al empezar y luego se mantiene el 3 (con la esfera de energía)
         number = this.chargeTime < Player.CHARGE_FRAMES[0] ? 1 : (this.chargeTime < Player.CHARGE_FRAMES[1] ? 2 : 3);
       } else {
-        // Disparo: cuadro 4 al soltar, luego 5 a 9
+        // Disparo y regreso a la posición inicial
         number = 4;
-        for (const limit of Player.FIRE_TIMES) if (this.releaseTime >= limit) number += 1;
+        for (const [from, frame] of Player.FIRE_SEQUENCE) if (this.releaseTime >= from) number = frame;
       }
       const image = Assets.image('ecoRayoB' + number);
       return image ? { image, height: image.height * Player.RAYO2_SCALE, anchorX: Player.RAYO2_ANCHOR, effect: true } : null;
