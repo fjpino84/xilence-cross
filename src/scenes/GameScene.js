@@ -1172,6 +1172,23 @@ class GameScene {
     this.camera.punch(0.05);
   }
 
+  // Objetos de primer plano que ahora mismo tapan a alguien: visibles en pantalla y con un personaje detrás (pies más arriba que su base).
+  // Se devuelven como "dibujables" con su línea de profundidad para ordenarlos junto a los personajes.
+  activeOccluders(walkers) {
+    const level = this.level;
+    if (!level.occluders || !level.occluders.length) return [];
+    const left = this.camera.left - 40;
+    const right = this.camera.right + 40;
+    const active = [];
+    for (const occluder of level.occluders) {
+      if (occluder.maxX < left || occluder.minX > right) continue;
+      const hides = walkers.some((walker) => walker.y < occluder.base - 1 && walker.x > occluder.minX - 70 && walker.x < occluder.maxX + 70);
+      if (!hides) continue;
+      active.push({ occluder: true, y: occluder.base, sortY: occluder.base, render: (ctx) => level.renderOccluder(ctx, occluder) });
+    }
+    return active;
+  }
+
   // Escala visual según la profundidad del suelo (0 = al fondo, 1 = junto a la cámara). No afecta a los golpes ni a las colisiones.
   depthScale(y) {
     if (this.finale) return 1;
@@ -1348,10 +1365,12 @@ class GameScene {
     this.atmosphere.renderSmoke(ctx); // humo del escenario, bajo los personajes
     for (const enemy of this.enemies) if (enemy.renderHazards) enemy.renderHazards(ctx); // rayos y avisos del jefe
     for (const effect of this.effects) if (effect.ground) this.renderEffect(ctx, effect); // grietas bajo los personajes
-    const drawables = [this.player, this.trino, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : [])].sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
+    const walkers = [this.player, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : [])];
+    const drawables = [this.player, this.trino, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : []), ...this.activeOccluders(walkers)]
+      .sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
     // Perspectiva: los personajes crecen un poco al acercarse a la cámara (bajar por el suelo) y se encogen al alejarse
     for (const entity of drawables) {
-      const scale = this.depthScale(entity === this.trino ? this.player.y : entity.y);
+      const scale = entity.occluder ? 1 : this.depthScale(entity === this.trino ? this.player.y : entity.y);
       if (scale === 1) { entity.render(ctx); continue; }
       ctx.save();
       ctx.translate(entity.x, entity.y);

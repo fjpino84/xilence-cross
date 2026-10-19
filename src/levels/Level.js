@@ -7,6 +7,7 @@ class Level {
     this.name = config.name;
     this.width = config.width;
     this.puddles = this.buildPuddles();
+    this.occluders = this.buildOccluders();
     this.tileCanvases = [];
     this.waves = config.waves.map((wave) => ({ ...wave, started: false, cleared: false, enemies: [], pending: [], clock: 0 }));
     this.patrols = config.patrols;
@@ -38,6 +39,47 @@ class Level {
       }
     });
     return list;
+  }
+
+  // Objetos de primer plano en coordenadas del mundo (ver OccluderData.js): contorno, línea de profundidad y caja
+  buildOccluders() {
+    const list = [];
+    (this.config.backgroundSequence || []).forEach((tile, index) => {
+      const data = (typeof OCCLUDER_DATA !== 'undefined' && OCCLUDER_DATA[tile.key]) || [];
+      const originX = index * Level.TILE_STRIDE;
+      for (const item of data) {
+        const poly = item.poly.map(([fx, fy]) => [originX + (tile.flip ? 1 - fx : fx) * Level.TILE_WIDTH, fy * CONFIG.HEIGHT]);
+        const xs = poly.map((point) => point[0]);
+        const ys = poly.map((point) => point[1]);
+        list.push({ poly, base: item.base * CONFIG.HEIGHT, minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) });
+      }
+    });
+    return list;
+  }
+
+  // Vuelve a pintar, en coordenadas del mundo, el trozo de fondo que cubre un objeto de primer plano. Reproduce el fondo ya compuesto
+  // (con los fundidos entre ilustraciones), recortado al contorno; se dibuja encima de los personajes que están detrás.
+  renderOccluder(ctx, occluder) {
+    const sequence = this.config.backgroundSequence;
+    if (!sequence) return;
+    ctx.save();
+    ctx.beginPath();
+    occluder.poly.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    ctx.closePath();
+    ctx.clip();
+    const x0 = Math.floor(occluder.minX) - 1;
+    const x1 = Math.ceil(occluder.maxX) + 1;
+    const y0 = Math.max(0, Math.floor(occluder.minY) - 1);
+    const height = Math.min(CONFIG.HEIGHT, Math.ceil(occluder.maxY) + 1) - y0;
+    sequence.forEach((tile, index) => {
+      const left = index * Level.TILE_STRIDE;
+      const from = Math.max(x0, left);
+      const to = Math.min(x1, left + Level.TILE_WIDTH);
+      if (to <= from) return;
+      const canvas = this.tileCanvas(index);
+      if (canvas) ctx.drawImage(canvas, from - left, y0, to - from, height, from, y0, to - from, height);
+    });
+    ctx.restore();
   }
 
   // Charco bajo los pies en (x, y), o null
