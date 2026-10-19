@@ -55,10 +55,7 @@ const CONFIG = Object.freeze({
     bgLevel07: 'assets/backgrounds/nivel07-planeta-en-llamas.jpg',
     spriteEco: 'assets/sprites/eco.png',
     ecoCaminar: 'assets/sprites/eco/caminar.png',
-    ecoCaminar1: 'assets/sprites/eco/caminar_1.png',
-    ecoCaminar2: 'assets/sprites/eco/caminar_2.png',
-    ecoCaminar3: 'assets/sprites/eco/caminar_3.png',
-    ecoCaminar4: 'assets/sprites/eco/caminar_4.png',
+    ...frameAssets('ecoCaminar', 'eco', 'caminar', 12), // ciclo de 12 cuadros sacado del video "Eco caminando"
     ecoCombo1: 'assets/sprites/eco/combo_1.png',
     ecoCombo2: 'assets/sprites/eco/combo_2.png',
     ecoCombo3: 'assets/sprites/eco/combo_3.png',

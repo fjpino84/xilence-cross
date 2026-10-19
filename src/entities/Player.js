@@ -20,12 +20,14 @@ class Player extends Entity {
   // Poses ilustradas. height = altura en pantalla (px), anchorX = posición del torso en la imagen (0-1).
   // Las alturas salen de normalizar el tamaño de la cabeza entre poses (cada una se dibujó a distinta escala).
   // Cuadros de animación (mismo tamaño de lienzo, alineados por el torso)
-  // Ciclo de caminar de 4 cuadros: zancada → paso (el cuerpo sube) → estirado (stretch) → zancada. (Se quitó el cuadro agachado.) Se dibuja con su propia escala porque esta hoja trae los personajes más pequeños.
-  static WALK_FPS = 10;
-  static WALK_FRAMES = 4;
-  static WALK_HEIGHT = 147;
-  static WALK_ANCHOR = 0.387;
-  static WALK_BLEND = 0.3; // opacidad máxima del cuadro siguiente al fundirse (0 = sin fundido)
+  // Ciclo de caminar de 12 cuadros (dos pasos completos, uno por pierna) sacado del video "Eco caminando" (cuadros 82-117, a 24 fps
+  // submuestreados cada 3). A 20 cuadros por segundo el ciclo dura 0,6 s. Se dibuja con su propia escala porque esta hoja trae los personajes más pequeños.
+  static WALK_FPS = 20;
+  static WALK_FRAMES = 12;
+  static WALK_HEIGHT = 148;
+  static WALK_ANCHOR = 0.407;
+  static WALK_FEET = 0.9903; // fracción de la imagen donde está el suelo
+  static WALK_BLEND = 0; // con 12 cuadros no hace falta mezclar // opacidad máxima del cuadro siguiente al fundirse (0 = sin fundido)
   static FRAME_HEIGHT = 141;
   static FRAME_ANCHOR = { walk: 0.389, hit: 0.398 };
   // Secuencias con efectos: altura = alto del lienzo (px de imagen) × escala. La escala iguala el tamaño del personaje.
@@ -688,7 +690,7 @@ class Player extends Entity {
         const fraction = position - Math.floor(position);
         const next = Assets.image(`ecoCaminar${1 + ((index + 1) % Player.WALK_FRAMES)}`);
         const blend = next && fraction > 0.55 ? Player.WALK_BLEND * (fraction - 0.55) / 0.45 : 0;
-        return { image: walkImage, height: Player.WALK_HEIGHT, anchorX: Player.WALK_ANCHOR, blendImage: next, blend };
+        return { image: walkImage, height: Player.WALK_HEIGHT, anchorX: Player.WALK_ANCHOR, blendImage: next, blend, drop: (1 - Player.WALK_FEET) * Player.WALK_HEIGHT };
       }
     } else if (this.state === 'idle') {
       const idle = this.idleFrame();
@@ -742,9 +744,8 @@ class Player extends Entity {
       case 'walk':
         // Con el ciclo ilustrado: rebote en cada paso e inclinación hacia delante, suavizados al arrancar y frenar
         if (Assets.image('ecoCaminar1')) {
-          const phase = this.walkTime * Player.WALK_FPS / Player.WALK_FRAMES;
-          pose.offsetY = -Math.abs(Math.sin(phase * Math.PI * 2)) * 2.4 * this.walkEase;
-          pose.rotation = 0.035 * this.walkEase;
+          // El video ya trae el rebote y el balanceo; solo una leve inclinación hacia delante al arrancar
+          pose.rotation = 0.02 * this.walkEase;
         } else {
           // Una sola ilustración de zancada: rebote, balanceo y compresión simulan el ciclo
           pose.offsetY = -Math.abs(Math.sin(t * 12)) * 5;
