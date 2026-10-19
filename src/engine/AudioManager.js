@@ -110,22 +110,51 @@ class AudioManager {
     }
   }
 
-  // Detiene la música de fondo (duelo musical) o la reanuda
+  // Rampa de volumen suave de un elemento de audio (una sola a la vez por elemento); al terminar ejecuta done
+  static ramp(element, target, seconds, done = null) {
+    if (!element) return;
+    if (element.rampTimer) clearInterval(element.rampTimer);
+    const from = element.volume;
+    const started = performance.now();
+    const finish = () => {
+      if (element.rampTimer) clearInterval(element.rampTimer);
+      element.rampTimer = null;
+      element.volume = Math.max(0, Math.min(1, target));
+      if (done) done();
+    };
+    if (seconds <= 0 || typeof setInterval === 'undefined') { finish(); return; }
+    element.rampTimer = setInterval(() => {
+      const t = Math.min(1, (performance.now() - started) / (seconds * 1000));
+      const eased = t * t * (3 - 2 * t); // arranque y llegada suaves
+      element.volume = Math.max(0, Math.min(1, from + (target - from) * eased));
+      if (t >= 1) finish();
+    }, 40);
+  }
+
+  // Detiene la música de fondo (duelo musical) o la reanuda; con fade (s) calla o vuelve de forma gradual
   // Mientras está retenida (jefe con su propia canción), ningún gesto del usuario puede reanudarla
-  pauseMusic(on) {
+  pauseMusic(on, fade = 0) {
     this.musicHeld = on;
     if (!this.music) return;
-    if (on) this.music.pause();
-    else if (this.musicState !== 'error') this.music.play().catch(() => {});
+    if (on) {
+      if (fade > 0 && !this.music.paused) AudioManager.ramp(this.music, 0, fade, () => { if (this.musicHeld) this.music.pause(); });
+      else { AudioManager.ramp(this.music, 0, 0); this.music.pause(); }
+      return;
+    }
+    if (this.musicState === 'error') return;
+    const target = AudioManager.MUSIC_VOLUME;
+    if (fade > 0) this.music.volume = 0; else AudioManager.ramp(this.music, target, 0);
+    this.music.play().catch(() => {});
+    if (fade > 0) AudioManager.ramp(this.music, target, fade);
   }
 
   // --- Música del jefe (archivo grabado) ---
   static BOSS_MUSIC = 'assets/audio/batuk-battle.mp3';
   static BOSS_VOLUME = 0.75;
 
-  // Empieza la canción del jefe desde el principio; la música de fondo normal calla
+  // Empieza la canción del jefe desde el principio; la música de fondo normal se apaga con un fundido cruzado
   startBoss() {
-    this.pauseMusic(true);
+    this.pauseMusic(true, 1.4);
     if (typeof Audio === 'undefined') return;
     if (!this.boss) {
       this.boss = new Audio(AudioManager.BOSS_MUSIC);
@@ -134,10 +163,11 @@ class AudioManager {
       this.bossError = false;
       this.boss.addEventListener('error', () => { this.bossError = true; });
     }
-    this.boss.volume = AudioManager.BOSS_VOLUME;
+    this.boss.volume = 0;
     this.boss.muted = this.muted;
     try { this.boss.currentTime = 0; } catch (error) { /* aún sin metadatos: empezará desde el principio */ }
     this.boss.play().catch(() => {});
+    AudioManager.ramp(this.boss, AudioManager.BOSS_VOLUME, 2.0); // entra poco a poco mientras sale la música de la etapa
     this.bossStamp = performance.now();
   }
 
@@ -147,6 +177,9 @@ class AudioManager {
     try { this.boss.currentTime = seconds; } catch (error) { return false; }
     this.bossLastReported = null;
     this.boss.play().catch(() => {});
+    // El salto de la canción se disimula con un golpe de volumen que baja un instante y vuelve
+    this.boss.volume = AudioManager.BOSS_VOLUME * 0.15;
+    AudioManager.ramp(this.boss, AudioManager.BOSS_VOLUME, 0.7);
     return true;
   }
 

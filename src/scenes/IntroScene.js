@@ -78,6 +78,13 @@ class IntroScene {
     if (this.leaving) return;
     this.leaving = true;
     this.leaveTime = 0;
+    // El sonido del video baja en un fundido mientras empieza a entrar la música de la partida
+    if (this.video && !this.video.ended && !this.video.muted) {
+      AudioManager.ramp(this.video, 0, IntroScene.FADE_OUT, () => this.game.scenes.change('game'));
+      this.game.audio.pauseMusic(false, 2.5);
+      this.musicStarted = true;
+      return;
+    }
     this.game.scenes.change('game');
   }
 
@@ -87,6 +94,12 @@ class IntroScene {
     if (this.time > IntroScene.SKIP_DELAY && (input.justPressed('confirm') || input.justPressed('attack') || input.justPressed('pause'))) {
       this.finish();
       return;
+    }
+    // Los últimos instantes del video se apagan solos, para que no corte en seco al entrar en la partida
+    const video = this.video;
+    if (video && !this.leaving && video.duration > 0 && !video.muted) {
+      const left = video.duration - video.currentTime;
+      if (left < IntroScene.FADE_OUT) video.volume = Math.max(0, Math.min(1, left / IntroScene.FADE_OUT));
     }
     // Si el video nunca arranca, no se deja al jugador esperando
     if (!this.started && this.time > IntroScene.START_TIMEOUT) this.finish();
@@ -103,7 +116,8 @@ class IntroScene {
       if (this.hint.remove) this.hint.remove();
       this.hint = null;
     }
-    this.game.audio.pauseMusic(false); // vuelve la música (la partida empieza con la suya)
+    if (!this.musicStarted) this.game.audio.pauseMusic(false, 2.5); // vuelve la música (la partida empieza con la suya), entrando poco a poco
+    this.musicStarted = false;
   }
 
   // El video está en el DOM, encima del lienzo: aquí solo se pinta el fondo negro y la ayuda para saltar
