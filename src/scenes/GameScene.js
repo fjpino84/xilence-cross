@@ -21,6 +21,11 @@ class GameScene {
     { who: 'rex', name: 'REX VANE', whisper: true, text: 'Sí. Ante una resistencia armada, supresión total. Tu castigo es la muerte.' },
     { who: 'rex', name: 'REX VANE', whisper: true, text: 'Olvida tu música. Donde vas no habrá sonido, solo silencio...' },
   ];
+  // Últimas palabras de Rex Vane, mientras se deshace
+  static REX_LAST_WORDS = [
+    { who: 'rex', name: 'REX VANE', text: '¡Luz y melodías! He fallado. Esto es solo el comienzo.' },
+    { who: 'rex', name: 'REX VANE', text: 'No sabes en qué te has metido. ¡Aaargh!!' },
+  ];
   static AMBIENT_RATES = { rain: 110, embers: 28, fireflies: 7, motes: 10 };
 
   constructor(game) {
@@ -1060,6 +1065,7 @@ class GameScene {
 
     for (const enemy of this.enemies) enemy.update(scaled, this.world);
     this.checkBossIntro();
+    this.checkRexLastWords();
     this.separateEnemies();
     this.enemies.splice(0, this.enemies.length, ...this.enemies.filter((enemy) => !enemy.removable));
 
@@ -1102,6 +1108,15 @@ class GameScene {
   }
 
   // Oleada limpia: instante en cámara lenta
+  // Al caer Rex Vane se abre su última frase; al cerrarla se desvanece del todo
+  checkRexLastWords() {
+    if (this.dialogue) return;
+    const rex = this.enemies.find((enemy) => enemy.lastWords && !enemy.lastWordsDone && enemy.deadTime >= 0.7);
+    if (!rex) return;
+    this.player.vx = 0;
+    this.dialogue = new Dialogue(GameScene.REX_LAST_WORDS, () => { rex.lastWordsDone = true; });
+  }
+
   // Cuando el jefe termina de aparecer se abre el diálogo; al cerrarlo empieza el combate
   checkBossIntro() {
     const boss = this.enemies.find((enemy) => enemy.boss);

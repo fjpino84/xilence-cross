@@ -75,6 +75,8 @@ class RexVane extends Enemy {
       this.hp = 0;
       this.setState('dead');
       this.deadTime = 0;
+      this.lastWords = true; // se deshace en el aire mientras dice sus últimas palabras (las abre GameScene)
+      this.lastWordsDone = false;
       this.sub = '';
       if (this.world) this.world.audio.play('rexDie');
       if (this.world) this.world.callout('REX VANE CAE', 2.4, { y: 96, colors: ['#ffffff', '#ff5a8a', '#6a0030'], glow: '#ff2a55', rim: '#1a0010' });
@@ -366,6 +368,7 @@ class RexVane extends Enemy {
   // --- Muerte: se deshace en humo rojo y relámpagos ---
   updateDead(dt, world) {
     this.deadTime += dt;
+    if (this.lastWords && !this.lastWordsDone) this.deadTime = Math.min(this.deadTime, 1.05); // la explosión final espera a que termine de hablar
     this.kx = 0;
     this.z += (RexVane.HOVER + 10 - this.z) * Math.min(1, dt * 3);
     this.fxTimer -= dt;
