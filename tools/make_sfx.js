@@ -1,4 +1,4 @@
-// Recorta los sonidos grabados de src/levels/ECO en una sola hoja (assets/audio/sfx.wav, mono 24 kHz) y escribe la tabla de
+// Recorta los sonidos grabados de src/levels/ECO en una sola hoja (assets/audio/sfx.wav, mono 22 kHz) y escribe la tabla de
 // recortes en src/engine/SfxData.js. Usa Edge sin interfaz para decodificar los MP3 (no hace falta ffmpeg).
 // Uso: node tools/make_sfx.js   (Edge debe estar en la ruta de siempre)
 const fs = require('fs');
@@ -24,6 +24,13 @@ const F = {
   disparo: 'disparo rayo.mp3',
   superIni: 'sonido inicial super poder.mp3',
   superFin: 'sonido super poder.mp3',
+  // Rex Vane (carpeta "Subjefe level 2"; el prefijo @ indica una ruta desde src/levels)
+  rexArr: '@Subjefe level 2/ES_Creatures, Ethereal, Possessed, Creepy, Evil, Dark 03 - Epidemic Sound.mp3',
+  rexVoz: '@Subjefe level 2/ES_Voices, Alien, Grey, Vocalization 02 - Epidemic Sound.mp3',
+  rexPod1: '@Subjefe level 2/Sonido poder 1.mp3',
+  rexPod2: '@Subjefe level 2/Poder dos.mp3',
+  rexMuere: '@Subjefe level 2/Sonido cuando muere.mp3',
+  rexHabla: '@Subjefe level 2/sonido mientras habla con Eco.mp3',
 };
 const CLIPS = {
   // pasos de ECO (alternando pie) y paso en charco
@@ -44,9 +51,16 @@ const CLIPS = {
   // poderes de ECO
   rayCharge: [F.carga, 0, 2.4, 0.4], rayFire: [F.disparo, 0, 2.6, 0.8], rayMini: [F.disparo, 0, 0.9, 0.4],
   superStart: [F.superIni, 0, 1.0, 0.1], superBlast: [F.superFin, 0, 6.5, 1.5],
+  // Rex Vane: llegada (el pico cae al aterrizar, a 1,8 s), cargas con el pico al final de la espera (rayos 1,2 s / 0,9 s; haz 1,0 s / 0,75 s),
+  // muerte, voz de fondo del diálogo, rugido al enfurecerse y quejidos
+  rexArrive: [F.rexArr, 0, 3.2, 1.2],
+  rexBolt1: [F.rexPod1, 0.6, 2.4, 1.0], rexBolt2: [F.rexPod1, 0.9, 2.2, 1.0],
+  rexRay1: [F.rexPod2, 4.3, 2.4, 0.9], rexRay2: [F.rexPod2, 4.55, 2.2, 0.9],
+  rexDie: [F.rexMuere, 0, 4.5, 1.8], rexTalk: [F.rexHabla, 0, 20, 2.5],
+  rexRoar: [F.rexVoz, 2.3, 2.4, 0.5], rexHurt1: [F.rexVoz, 6.3, 1.1, 0.2], rexHurt2: [F.rexVoz, 10.3, 1.4, 0.25],
 };
 const GAP = 0.06;
-const RATE = 24000;
+const RATE = 22050;
 
 // ---------------------------------------------------------------- página que corta y codifica
 const page = `<html><body><script>
@@ -54,7 +68,7 @@ const page = `<html><body><script>
   const clips = ${JSON.stringify(CLIPS)}, gap = ${GAP}, rate = ${RATE};
   const ctx = new AudioContext();
   const cache = {};
-  const decode = async (file) => cache[file] || (cache[file] = await ctx.decodeAudioData(await (await fetch('/${SOURCE_DIR}' + encodeURIComponent(file))).arrayBuffer()));
+  const decode = async (file) => cache[file] || (cache[file] = await ctx.decodeAudioData(await (await fetch(file.startsWith('@') ? '/src/levels/' + file.slice(1).split('/').map(encodeURIComponent).join('/') : '/${SOURCE_DIR}' + encodeURIComponent(file))).arrayBuffer()));
   const parts = [], table = {};
   let cursor = 0;
   for (const [name, [file, start, dur, fade]] of Object.entries(clips)) {

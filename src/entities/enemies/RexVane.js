@@ -70,11 +70,13 @@ class RexVane extends Enemy {
     this.hitFlash = 0.1;
     this.hitSquash = 0.12;
     this.kx = knockback * 0.12;
+    if (this.hp > 0 && this.world) this.world.audio.play('rexHurt');
     if (this.hp <= 0) {
       this.hp = 0;
       this.setState('dead');
       this.deadTime = 0;
       this.sub = '';
+      if (this.world) this.world.audio.play('rexDie');
       if (this.world) this.world.callout('REX VANE CAE', 2.4, { y: 96, colors: ['#ffffff', '#ff5a8a', '#6a0030'], glow: '#ff2a55', rim: '#1a0010' });
       return { killed: true };
     }
@@ -84,6 +86,7 @@ class RexVane extends Enemy {
         this.world.callout('¡SE ENFURECE!', 1.6, { y: 96, colors: ['#ffffff', '#ff5a8a', '#6a0030'], glow: '#ff2a55', rim: '#1a0010' });
         this.world.flash(0.25, CONFIG.COLORS.RED);
         this.world.shake(8, 0.3);
+        this.world.audio.play('rexRoar');
       }
     }
     return { killed: false };
@@ -236,7 +239,7 @@ class RexVane extends Enemy {
     const shift = (Math.random() - 0.5) * 100;
     const spacing = RexVane.BOLT_SPACING;
     this.boltXs = [-1.5, -0.5, 0.5, 1.5].map((k) => this.bounds.center + k * spacing + shift);
-    world.audio.play('rexCharge');
+    world.audio.play('rexCharge', { kind: 'bolt', enraged: this.enraged });
   }
 
   chargeFx(dt, world, progress) {
@@ -291,7 +294,7 @@ class RexVane extends Enemy {
         break;
       }
       case 'touch':
-        if (this.subTime >= 0.16) { this.sub = 'windup'; this.subTime = 0; this.rayFacing = this.facing; world.audio.play('rexCharge'); }
+        if (this.subTime >= 0.16) { this.sub = 'windup'; this.subTime = 0; this.rayFacing = this.facing; world.audio.play('rexCharge', { kind: 'ray', enraged: this.enraged }); }
         break;
       case 'windup': {
         // Sigue el carril de ECO al principio y lo fija antes de disparar

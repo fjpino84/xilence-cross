@@ -1107,7 +1107,9 @@ class GameScene {
     boss.talked = true;
     this.player.facing = Math.sign(boss.x - this.player.x) || this.player.facing;
     this.player.vx = 0;
+    this.game.audio.play('rexTalk'); // voz de fondo mientras habla con ECO
     this.dialogue = new Dialogue(GameScene.REX_DIALOGUE, () => {
+      this.game.audio.play('rexTalkEnd');
       boss.engage();
       this.showCallout(boss.name, 2.2, { y: 84, colors: ['#ffffff', '#ff5a8a', '#6a0030'], glow: '#ff2a55', rim: '#1a0010' });
       this.game.audio.play('rexBolt');

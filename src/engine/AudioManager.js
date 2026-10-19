@@ -6,6 +6,7 @@ class AudioManager {
   static MUSIC_VOLUME = 0.3;
   static MUSIC_DUCKED = 0.1; // volumen bajo mientras el juego está en pausa
   static SFX_FILE = 'assets/audio/sfx.wav';
+  static SFX_SCRIPT = 'src/engine/SfxBank.js';
   static MIN_GAP = 0.03; // evita apilar el mismo sonido varias veces en un instante
 
   constructor() {
@@ -27,6 +28,7 @@ class AudioManager {
     this.sfx = null; // hoja de sonidos grabados ya decodificada
     this.lastPick = {};
     this.chargeVoice = null;
+    this.talkVoice = null;
     this.musicHeld = false;
     this.boss = null;
     this.bossError = false;
@@ -334,28 +336,45 @@ class AudioManager {
 
   // ---------------------------------------------------------------- sonidos grabados (assets/audio/sfx.wav)
   // Una sola hoja con todos los recortes (tabla en SfxData.js, generada por tools/make_sfx.js). Si no carga, suenan los sintetizados.
-  async loadSamples(attempt = 0) {
+  async loadSamples() {
     this.sfx = null;
     if (typeof SFX_CLIPS === 'undefined') return;
-    // La hoja viaja en base64 dentro de SfxBank.js (carga asíncrona): si aún no llegó, se reintenta; así funciona también desde el disco
-    if (typeof SFX_BASE64 === 'undefined') {
-      if (attempt < 20) setTimeout(() => this.loadSamples(attempt + 1), 500);
-      return;
-    }
     try {
-      const binary = atob(SFX_BASE64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      this.sfx = await this.context.decodeAudioData(bytes.buffer);
+      let data = null;
+      try {
+        const response = await fetch(AudioManager.SFX_FILE);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        data = await response.arrayBuffer();
+      } catch (error) {
+        data = await this.loadSamplesFromScript(); // abierto desde el disco: fetch está bloqueado, se usa la copia en base64
+      }
+      this.sfx = await this.context.decodeAudioData(data);
     } catch (error) {
       console.warn('No se pudieron cargar los sonidos grabados; se usan los sintetizados', error);
     }
   }
 
+  // Plan B: la hoja en base64 dentro de SfxBank.js, cargada como un script solo cuando hace falta
+  loadSamplesFromScript() {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = AudioManager.SFX_SCRIPT;
+      script.onload = () => {
+        const binary = atob(SFX_BASE64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        resolve(bytes.buffer);
+      };
+      script.onerror = () => reject(new Error('SfxBank.js no cargó'));
+      document.head.appendChild(script);
+    });
+  }
+
   // Reproduce un recorte (o uno al azar de una serie: 'ecoStep' + 1..count) y devuelve su voz para poder apagarla
-  sample(name, { count = 0, volume = 1, rate = 1, jitter = 0.05, pan = 0, wet = 0 } = {}) {
+  sample(name, options = {}) {
+    const { count = 0, volume = 1, rate = 1, jitter = 0.05, pan = 0, wet = 0 } = options;
     if (!this.sfx || !this.ready) return null;
-    let key = name;
+    let key = options.name || name;
     if (count > 0) {
       let pick = 1 + Math.floor(Math.random() * count);
       if (count > 1 && pick === this.lastPick[name]) pick = (pick % count) + 1; // nunca el mismo dos veces seguidas
@@ -677,6 +696,22 @@ AudioManager.RECORDED = {
   superCharge: (a) => { a.sample('superStart', { volume: 0.9, jitter: 0 }); },
   super: (a) => { a.sample('superBlast', { volume: 1, jitter: 0 }); },
   hurt: (a) => { a.fadeVoice(a.chargeVoice, 0.08); a.chargeVoice = null; return true; },
+  // Rex Vane: la llegada, las cargas (el pico del sonido coincide con el final de la espera), su muerte, rugido y quejidos
+  rexArrive: (a) => { a.sample('rexArrive', { volume: 0.85, jitter: 0 }); },
+  rexCharge: (a, { kind = 'bolt', enraged = false }) => {
+    a.sample(kind === 'ray' ? 'rexRay' : 'rexBolt', { count: 0, volume: 0.9, jitter: 0, name: (kind === 'ray' ? 'rexRay' : 'rexBolt') + (enraged ? 2 : 1) });
+  },
+  rexDie: (a) => { a.sample('rexDie', { volume: 0.95, jitter: 0 }); },
+  rexRoar: (a) => { a.sample('rexRoar', { volume: 0.9, jitter: 0.02 }); },
+  rexHurt: (a) => {
+    const now = a.context.currentTime;
+    if (now - (a.lastRexHurt ?? -9) < 1.4) return; // no gruñe con cada golpe
+    a.lastRexHurt = now;
+    a.sample('rexHurt', { count: 2, volume: 0.8, jitter: 0.05 });
+  },
+  // Voz de fondo mientras habla con ECO: dura lo que el diálogo
+  rexTalk: (a) => { a.fadeVoice(a.talkVoice, 0.1); a.talkVoice = a.sample('rexTalk', { volume: 0.55, jitter: 0 }); },
+  rexTalkEnd: (a) => { a.fadeVoice(a.talkVoice, 0.8); a.talkVoice = null; },
 };
 
 // Biblioteca de sonidos. Cada entrada recibe el AudioManager y opciones (power, step…).
