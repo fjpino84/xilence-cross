@@ -407,7 +407,7 @@ class Player extends Entity {
       power: level >= 0.5 ? 2 : 1, thickness, dim: level >= 0.5,
     });
     if (full) {
-      world.callout('¡ONDA SÓNICA!', 0.95, { colors: ['#ffffff', CONFIG.COLORS.CYAN, '#005e8a'], glow: CONFIG.COLORS.CYAN, rim: '#00323f' });
+      world.callout('¡THUNDER RIFF!', 0.95, { colors: ['#ffffff', CONFIG.COLORS.CYAN, '#005e8a'], glow: CONFIG.COLORS.CYAN, rim: '#00323f' });
       world.slowMo(0.55, 0.2);
     }
     if (level > 0.6) world.flash(0.14, '#ffffff');
@@ -445,7 +445,7 @@ class Player extends Entity {
     world.cinematic(true);
     world.slowMo(0.35, 0.4);
     world.audio.play('superCharge');
-    world.callout('¡FRECUENCIA CERO!', 1.15, { colors: ['#ffffff', CONFIG.COLORS.YELLOW, '#c04a00'], glow: '#ff9a00', rim: '#4a2000' });
+    world.callout('¡POWER CHORD!', 1.15, { colors: ['#ffffff', CONFIG.COLORS.YELLOW, '#c04a00'], glow: '#ff9a00', rim: '#4a2000' });
   }
 
   updateSuper(world) {

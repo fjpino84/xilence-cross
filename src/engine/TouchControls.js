@@ -8,8 +8,8 @@ class TouchControls {
   static BUTTONS = [
     { action: 'attack', label: 'GOLPE', size: 21, right: 4, bottom: 5, color: 'yellow' },
     { action: 'jump', label: 'SALTO', size: 16, right: 27.5, bottom: 4, color: 'cyan' },
-    { action: 'special', label: 'RAYO', size: 16, right: 5, bottom: 29.5, color: 'cyan' },
-    { action: 'super', label: 'SÚPER', size: 14, right: 24.5, bottom: 25, color: 'purple' },
+    { action: 'special', label: 'THUNDER RIFF', size: 16, right: 5, bottom: 29.5, color: 'cyan' },
+    { action: 'super', label: 'POWER CHORD', size: 14, right: 24.5, bottom: 25, color: 'purple' },
     { action: 'block', label: 'BLOQ', size: 12.5, right: 41, bottom: 18, color: 'white' },
   ];
 

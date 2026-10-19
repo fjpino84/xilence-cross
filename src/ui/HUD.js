@@ -514,7 +514,7 @@ class HUD {
     const fade = Math.min(1, (HUD.CONTROLS_HINT_TIME - this.time) / 1.5);
     ctx.save();
     ctx.globalAlpha = fade;
-    Draw.text(ctx, 'WASD/flechas mover · Espacio saltar · J golpe · K rayo (mantén para cargar) · L súper · Shift bloquear · P pausa · M sonido', CONFIG.WIDTH / 2, CONFIG.HEIGHT - 14, {
+    Draw.text(ctx, 'WASD/flechas mover · Espacio saltar · J golpe · K Thunder Riff (mantén para cargar) · L Power Chord · Shift bloquear · P pausa · M sonido', CONFIG.WIDTH / 2, CONFIG.HEIGHT - 14, {
       size: 16, color: '#ffffff', align: 'center', strokeWidth: 4,
     });
     ctx.restore();

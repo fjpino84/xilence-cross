@@ -30,15 +30,15 @@ Se juega con controles táctiles: joystick flotante a la izquierda y botones a l
 | Mover (también por profundidad) | `WASD` o flechas |
 | Saltar | `Espacio` |
 | Golpe (combo de 5 golpes) | `J` o `Z` |
-| Rayo cargable: mantén para cargar, suelta para disparar | `K` o `X` |
-| Súper (con la barra AMP llena) | `L` o `C` |
+| Thunder Riff (rayo cargable): mantén para cargar, suelta para disparar | `K` o `X` |
+| Power Chord (súper, con la barra AMP llena) | `L` o `C` |
 | Bloquear | `Shift` o `E` |
 | Pausa | `P` o `Esc` |
 | Silenciar | `M` |
 
 ## Qué incluye
 
-- Combo de cinco golpes con animación por cuadros, rayo con carga estilo Mega Man y súper que limpia la pantalla.
+- Combo de cinco golpes con animación por cuadros, Thunder Riff (rayo con carga estilo Mega Man) y Power Chord (súper que limpia la pantalla).
 - **Trino**, el compañero que orbita a ECO y dispara un proyectil sónico.
 - Enemigo pesado (el Martillo) con embestida, combos y rugido propio.
 - Efectos al estilo de los juegos de lucha: congelado de impacto, esquirlas de energía, estrellas de cómic, cámara lenta, grietas en el suelo, salpicaduras en los charcos.
