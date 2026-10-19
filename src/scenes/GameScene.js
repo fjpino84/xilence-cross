@@ -12,14 +12,14 @@ class GameScene {
   static ELITE_VARIANT = 1;
   // Diálogo de la llegada de Rex Vane (sub jefe)
   static REX_DIALOGUE = [
-    { who: 'rex', name: 'REX VANE', scan: true, text: 'Frecuencia identificada. Archivo: ECO. Clasificación: perturbador de silencio. Nivel de amenaza... negligible.' },
-    { who: 'rex', name: 'REX VANE', scan: true, text: 'Llevas semanas cruzando jurisdicciones de The Inquietsition. Sembrando ruido. Creyendo que eso es resistencia.' },
-    { who: 'eco', name: 'ECO', text: '¿Y tú eres lo que mandan a silenciarme? ¿Una sombra con formulario?' },
-    { who: 'rex', name: 'REX VANE', text: 'No vengo a silenciarte. Vengo a documentar tu extinción.' },
-    { who: 'rex', name: 'REX VANE', text: 'Esa guitarra que empuñas... cada nota que tocas es una violación del Decreto de Frecuencia Cero. Y cada violación tiene consecuencias catalogadas. Yo soy la consecuencia.' },
+    { who: 'rex', name: 'REX VANE', scan: true, text: 'Tú. ¿Por qué te atreves a ensuciar nuestro régimen con tu ruido asqueroso?' },
+    { who: 'rex', name: 'REX VANE', scan: true, text: 'Llevo semanas sintiendo esos sonidos sin sentido. The Inquietsition ha hecho un barrido para eliminar a gente como tú. Sembrando silencio. ¿Acaso crees que esto es resistencia?' },
+    { who: 'eco', name: 'ECO', text: '¿Y tú eres lo que mandan a callarme? ¿Una sombra voladora?' },
+    { who: 'rex', name: 'REX VANE', text: 'No vengo a callarte. No, vengo a extinguirte.' },
+    { who: 'rex', name: 'REX VANE', text: 'Eso que empuñas se conocía como guitarra... cada nota que tocas es una violación al orden, al vacío. Y cada violación tiene consecuencias. Yo soy la consecuencia.' },
     { who: 'eco', name: 'ECO', text: 'Entonces ya sabes lo que sigue.' },
-    { who: 'rex', name: 'REX VANE', whisper: true, text: 'Sí. Página cuarenta y dos. Párrafo siete: «Ante resistencia armada con instrumento de frecuencia prohibida: supresión total. Sin advertencia adicional. Sin compasión registrada.»' },
-    { who: 'rex', name: 'REX VANE', whisper: true, text: 'Olvida tu música, ECO. Donde vas después del silencio... no hay frecuencia que alcance.' },
+    { who: 'rex', name: 'REX VANE', whisper: true, text: 'Sí. Ante una resistencia armada, supresión total. Tu castigo es la muerte.' },
+    { who: 'rex', name: 'REX VANE', whisper: true, text: 'Olvida tu música. Donde vas no habrá sonido, solo silencio...' },
   ];
   static AMBIENT_RATES = { rain: 110, embers: 28, fireflies: 7, motes: 10 };
 
