@@ -5,6 +5,7 @@ class AudioManager {
   static MASTER_VOLUME = 0.8;
   static MUSIC_VOLUME = 0.3;
   static MUSIC_DUCKED = 0.1; // volumen bajo mientras el juego está en pausa
+  static SFX_FILE = 'assets/audio/sfx.wav';
   static MIN_GAP = 0.03; // evita apilar el mismo sonido varias veces en un instante
 
   constructor() {
@@ -23,6 +24,9 @@ class AudioManager {
     this.musicPlayingSince = 0;
     this.triedBlobFallback = false;
     this.sfxFilter = null;
+    this.sfx = null; // hoja de sonidos grabados ya decodificada
+    this.lastPick = {};
+    this.chargeVoice = null;
     this.musicHeld = false;
     this.boss = null;
     this.bossError = false;
@@ -260,6 +264,7 @@ class AudioManager {
   // Construye la cadena de efectos sobre un contexto (en vivo, o uno "offline" para pruebas)
   setup(context) {
     this.context = context;
+    this.loadSamples();
     this.master = context.createGain();
     this.master.gain.value = this.muted ? 0 : AudioManager.MASTER_VOLUME;
 
@@ -325,6 +330,53 @@ class AudioManager {
     const norm = Math.tanh(drive);
     for (let i = 0; i < size; i++) curve[i] = Math.tanh(((i / (size - 1)) * 2 - 1) * drive) / norm;
     return curve;
+  }
+
+  // ---------------------------------------------------------------- sonidos grabados (assets/audio/sfx.wav)
+  // Una sola hoja con todos los recortes (tabla en SfxData.js, generada por tools/make_sfx.js). Si no carga, suenan los sintetizados.
+  async loadSamples() {
+    this.sfx = null;
+    if (typeof fetch === 'undefined' || typeof SFX_CLIPS === 'undefined') return;
+    try {
+      const response = await fetch(AudioManager.SFX_FILE);
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      this.sfx = await this.context.decodeAudioData(await response.arrayBuffer());
+    } catch (error) {
+      console.warn('No se pudieron cargar los sonidos grabados; se usan los sintetizados', error);
+    }
+  }
+
+  // Reproduce un recorte (o uno al azar de una serie: 'ecoStep' + 1..count) y devuelve su voz para poder apagarla
+  sample(name, { count = 0, volume = 1, rate = 1, jitter = 0.05, pan = 0, wet = 0 } = {}) {
+    if (!this.sfx || !this.ready) return null;
+    let key = name;
+    if (count > 0) {
+      let pick = 1 + Math.floor(Math.random() * count);
+      if (count > 1 && pick === this.lastPick[name]) pick = (pick % count) + 1; // nunca el mismo dos veces seguidas
+      this.lastPick[name] = pick;
+      key = name + pick;
+    }
+    const clip = SFX_CLIPS[key];
+    if (!clip) return null;
+    const source = this.context.createBufferSource();
+    source.buffer = this.sfx;
+    source.playbackRate.value = rate * (1 + (Math.random() - 0.5) * 2 * jitter);
+    const gain = this.context.createGain();
+    gain.gain.value = volume;
+    source.connect(gain);
+    this.out(gain, { pan, wet });
+    source.start(this.context.currentTime, clip[0], clip[1]);
+    return { source, gain };
+  }
+
+  // Apaga una voz con un fundido corto
+  fadeVoice(voice, seconds = 0.12) {
+    if (!voice) return;
+    const now = this.context.currentTime;
+    voice.gain.gain.cancelScheduledValues(now);
+    voice.gain.gain.setValueAtTime(voice.gain.gain.value, now);
+    voice.gain.gain.linearRampToValueAtTime(0, now + seconds);
+    try { voice.source.stop(now + seconds + 0.02); } catch (error) { /* ya terminó */ }
   }
 
   toggleMute() {
@@ -567,10 +619,59 @@ class AudioManager {
     const now = this.context.currentTime;
     if (now - (this.lastPlayed.get(name) ?? -1) < AudioManager.MIN_GAP) return;
     this.lastPlayed.set(name, now);
+    // Con los sonidos grabados cargados, estos reemplazan a los sintetizados (si la función devuelve true, se mezclan ambos)
+    const recorded = this.sfx && AudioManager.RECORDED[name];
+    if (recorded && !recorded(this, options)) return;
     const sound = AudioManager.SOUNDS[name];
     if (sound) sound(this, options);
   }
 }
+
+// Sonidos grabados por evento del juego. Devuelven true si además debe sonar el sintetizado.
+AudioManager.RECORDED = {
+  // ECO camina (una pisada por medio ciclo), pisa un charco y golpea: un recorte por paso del combo
+  step: (a) => { a.sample('ecoStep', { count: 4, volume: 0.8, jitter: 0.06 }); },
+  splash: (a, { power = 1 }) => { a.sample('ecoWater', { volume: 0.5 + 0.25 * power, jitter: 0.12 }); },
+  swing: (a, { step = 1 }) => {
+    a.sample('ecoHit' + Math.min(5, Math.max(1, step)), { volume: 0.9, jitter: 0.04 });
+    return step >= 5; // el remate del combo conserva su carga sintética
+  },
+  hit: () => true,
+  // Adversarios: pisadas (las pesadas del martillo), quejidos al ser golpeados, aviso de ataque y grito de muerte
+  enemyStep: (a, { heavy = false }) => {
+    if (heavy) a.sample('advHeavy', { count: 3, volume: 0.9, jitter: 0.05 });
+    else a.sample('advStep', { count: 4, volume: 0.85, jitter: 0.06 });
+  },
+  enemyHurt: (a, { power = 1 }) => {
+    if (Math.random() < 0.5) a.sample('foeHit', { count: 2, volume: 0.75 + 0.1 * power });
+    else a.sample('foeHurt', { count: 4, volume: 0.7 + 0.1 * power, jitter: 0.08 });
+  },
+  enemyWarn: (a) => { a.sample('foeWarn', { count: 5, volume: 0.8, jitter: 0.06 }); },
+  enemySwing: (a) => {
+    a.sample('foeWarn', { count: 5, volume: 0.8, jitter: 0.06 });
+    // el aire cortado por el martillo sigue siendo sintético
+    a.noise({ type: 'bandpass', from: 180, to: 950, q: 0.8, duration: 0.26, volume: 0.4, attack: 0.08 });
+    a.tone({ from: 120, to: 55, duration: 0.22, volume: 0.2, attack: 0.06 });
+  },
+  enemyDie: (a) => {
+    a.sample('foeDie', { count: 4, volume: 0.9, jitter: 0.05 });
+    // estallido de la armadura (sin el rugido sintético)
+    a.noise({ type: 'lowpass', from: 5000, to: 100, duration: 0.6, volume: 0.5, attack: 0.001, wet: 0.2 });
+    a.tone({ from: 95, to: 24, duration: 0.6, volume: 0.6, attack: 0.002 });
+    a.clang({ base: 260, duration: 0.7, volume: 0.2, wet: 0.3, delay: 0.04 });
+    a.crackle({ duration: 0.45, rate: 45, volume: 0.12, low: 700, high: 4000 });
+  },
+  // Poderes: la carga suena mientras se mantiene K y se apaga al soltar; el disparo, el rayo corto y el súper tienen su grabación
+  rayCharge: (a) => { a.fadeVoice(a.chargeVoice, 0.05); a.chargeVoice = a.sample('rayCharge', { volume: 0.55, jitter: 0 }); },
+  chargeTick: () => {},
+  rayRelease: (a) => { a.fadeVoice(a.chargeVoice, 0.1); a.chargeVoice = null; return true; },
+  rayFire: (a) => { a.fadeVoice(a.chargeVoice, 0.05); a.chargeVoice = null; a.sample('rayFire', { volume: 1, jitter: 0.02 }); },
+  special: (a) => AudioManager.RECORDED.rayFire(a),
+  rayMini: (a) => { a.sample('rayMini', { volume: 0.9, jitter: 0.04 }); },
+  superCharge: (a) => { a.sample('superStart', { volume: 0.9, jitter: 0 }); },
+  super: (a) => { a.sample('superBlast', { volume: 1, jitter: 0 }); },
+  hurt: (a) => { a.fadeVoice(a.chargeVoice, 0.08); a.chargeVoice = null; return true; },
+};
 
 // Biblioteca de sonidos. Cada entrada recibe el AudioManager y opciones (power, step…).
 // Los tonos de notas musicales ya no existen: sonaban como una melodía suelta sobre la canción.

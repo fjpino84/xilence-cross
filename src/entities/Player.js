@@ -140,6 +140,7 @@ class Player extends Entity {
     this.comboHits = 0;
     this.comboTimer = 0;
     this.stepTimer = 0;
+    this.stepPhase = -1;
     this.walkTime = 0;
     this.ghostTimer = 0;
     this.ghosts = [];
@@ -233,14 +234,16 @@ class Player extends Entity {
     }
     if (!this.onGround) this.setState('jump');
 
-    // Polvo al caminar
+    // Polvo y pisada al caminar: una por cada medio ciclo de la animación (dos pasos por segundo de caminata), el primero al arrancar
     if (this.state === 'walk') {
-      this.stepTimer -= dt;
-      if (this.stepTimer <= 0) {
-        this.stepTimer = 0.17;
+      const stepPhase = Math.floor(this.walkTime * 2);
+      if (stepPhase !== this.stepPhase) {
+        this.stepPhase = stepPhase;
         world.landDust(this.x - this.facing * 14, this.y, 2);
         world.audio.play('step');
       }
+    } else {
+      this.stepPhase = -1;
     }
 
     if (input.justPressed('attack') && !this.onGround) {

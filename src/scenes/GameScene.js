@@ -386,7 +386,7 @@ class GameScene {
     if (!onScreen || Math.abs(enemy.x - this.player.x) > 440) return;
     this.landDust(enemy.x - enemy.facing * 8, enemy.y, 3);
     this.camera.shake(1.8, 0.07);
-    this.game.audio.play('enemyStep');
+    this.game.audio.play('enemyStep', { heavy: enemy.variant === 2 });
   }
 
   // Estrella de cómic en el punto de impacto (los destellos de los juegos de Marvel vs. Capcom)
