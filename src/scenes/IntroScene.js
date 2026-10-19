@@ -27,8 +27,8 @@ class IntroScene {
     // La música del menú calla mientras suena el video
     this.game.audio.pauseMusic(true);
 
-    const shell = document.querySelector('.game-shell');
-    if (!shell || typeof document.createElement !== 'function') {
+    const shell = typeof document.querySelector === 'function' ? document.querySelector('.game-shell') : null;
+    if (!shell) {
       this.finish();
       return;
     }
