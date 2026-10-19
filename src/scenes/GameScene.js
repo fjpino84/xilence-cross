@@ -13,7 +13,7 @@ class GameScene {
   // Diálogo de la llegada de Rex Vane (sub jefe)
   static REX_DIALOGUE = [
     { who: 'rex', name: 'REX VANE', scan: true, text: 'Frecuencia identificada. Archivo: ECO. Clasificación: perturbador de silencio. Nivel de amenaza... negligible.' },
-    { who: 'rex', name: 'REX VANE', scan: true, text: 'Llevas semanas cruzando jurisdicciones de La Quietud. Sembrando ruido. Creyendo que eso es resistencia.' },
+    { who: 'rex', name: 'REX VANE', scan: true, text: 'Llevas semanas cruzando jurisdicciones de The Quietarchy. Sembrando ruido. Creyendo que eso es resistencia.' },
     { who: 'eco', name: 'ECO', text: '¿Y tú eres lo que mandan a silenciarme? ¿Una sombra con formulario?' },
     { who: 'rex', name: 'REX VANE', text: 'No vengo a silenciarte. Vengo a documentar tu extinción.' },
     { who: 'rex', name: 'REX VANE', text: 'Esa guitarra que empuñas... cada nota que tocas es una violación del Decreto de Frecuencia Cero. Y cada violación tiene consecuencias catalogadas. Yo soy la consecuencia.' },
@@ -860,7 +860,7 @@ class GameScene {
     { who: 'batuk', name: 'BATUK', text: 'Porque nos lo pidieron. Nos dijeron que si seguíamos vibrando... algo en el universo se desestabilizaría.' },
     { who: 'batuk', name: 'BATUK', text: 'Que éramos demasiado para este tiempo.' },
     { who: 'stage', text: '(Se pone de pie, despacio, con el peso de alguien que carga una decisión vieja.)', event: 'stand' },
-    { who: 'batuk', name: 'BATUK', text: 'Somos — éramos — una orden. La Orden del Silencio. No el silencio de ellos, no el de La Quietud. El nuestro. Elegido.' },
+    { who: 'batuk', name: 'BATUK', text: 'Somos — éramos — una orden. La Orden del Silencio. No el silencio de ellos, no el de The Quietarchy. El nuestro. Elegido.' },
     { who: 'batuk', name: 'BATUK', text: 'Éramos doce, cada uno con una frecuencia distinta. Decidimos callar para proteger lo que amábamos.' },
     { who: 'eco', name: 'ECO', text: '¿Y funcionó?' },
     { who: 'stage', text: '(Batuk mira el distrito destruido a su alrededor.)' },
@@ -872,7 +872,7 @@ class GameScene {
     { who: 'eco', name: 'ECO', text: '¿Dónde están los otros?' },
     { who: 'stage', text: '(Batuk duda un momento.)' },
     { who: 'batuk', name: 'BATUK', text: 'Dispersos. Algunos cedieron como yo. Otros... no sé. Pero hace poco, antes de que me pusieran aquí de guardia...' },
-    { who: 'stage', text: '(Baja la voz, como si La Quietud pudiera escucharlo.)' },
+    { who: 'stage', text: '(Baja la voz, como si The Quietarchy pudiera escucharlo.)' },
     { who: 'batuk', name: 'BATUK', whisper: true, text: 'Vi a alguien. En las estaciones de tren del Sector Meridian — las viejas, las que ya no usa nadie.' },
     { who: 'batuk', name: 'BATUK', whisper: true, text: 'Una figura que se movía entre los andenes vacíos como si estuviera esperando algo. O a alguien.' },
     { who: 'batuk', name: 'BATUK', text: 'No vi su cara. Pero la frecuencia...' },

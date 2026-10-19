@@ -5,7 +5,7 @@ Tipografías del título: Cinzel y Cinzel Decorative (SIL Open Font License, en 
 
 Beat 'em up 2D de desplazamiento lateral con estética rock y cyberpunk, hecho en **HTML5 Canvas y JavaScript puro**, sin frameworks ni dependencias. Todo el contenido está en español.
 
-En un universo donde la música fue prohibida por el régimen de La Quietud, **ECO**, un guerrero ciego, empuña su guitarra de chatarra como arma. Su compañero **Trino** lo acompaña en el aire. Esta demo incluye el **primer nivel** y el cierre con la aparición de **Vóidhar**.
+En un universo donde la música fue prohibida por el régimen de The Quietarchy, **ECO**, un guerrero ciego, empuña su guitarra de chatarra como arma. Su compañero **Trino** lo acompaña en el aire. Esta demo incluye el **primer nivel** y el cierre con la aparición de **Vóidhar**.
 
 ## Jugar
 
