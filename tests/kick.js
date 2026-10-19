@@ -40,10 +40,10 @@ const { loadGame, createChecker } = require('./harness');
   {
     const { scene, p } = setup();
     const enemy = scene.spawnEnemy(p.x + 80, p.y, false);
-    enemy.state = 'patrol'; enemy.stats = { ...enemy.stats, aggroRange: 0, hp: 9999 }; enemy.hp = enemy.maxHp = 9999;
+    enemy.state = 'patrol'; enemy.stats = { ...enemy.stats, aggroRange: 0, hp: 9999, damage: 0 }; enemy.hp = enemy.maxHp = 9999; enemy.startAttack = () => {}; // inofensivo: si no, al recibir golpes persigue y aturde a ECO
     let reached = false; let usedKick = false;
     for (let i = 0; i < 400 && !reached; i++) {
-      if (i % 12 === 0) tap('KeyJ'); else step();
+      if (i % 7 === 0) tap("KeyJ"); else step();
       if (p.state === 'attack' && p.attackStep === 4) {
         reached = true;
         if (p.kickFrame()) usedKick = true;

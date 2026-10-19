@@ -43,7 +43,7 @@ Se juega con controles táctiles: joystick flotante a la izquierda y botones a l
 - Enemigo pesado (el Martillo) con embestida, combos y rugido propio.
 - Efectos al estilo de los juegos de lucha: congelado de impacto, esquirlas de energía, estrellas de cómic, cámara lenta, grietas en el suelo, salpicaduras en los charcos.
 - Sonido sintetizado con Web Audio (sin archivos de efectos) y música de fondo.
-- Puños con cuadros propios (golpes 1 y 3 del combo). Patada alta (golpe 4 del combo) y **patada voladora** (pulsa golpe en el aire), con cuadros propios. Pruebas: `node tests/kick.js`.
+- Puños con cuadros propios (golpes 1 y 3), patada baja (2) y patada alta con estela (4) en el combo y **patada voladora** (pulsa golpe en el aire), con cuadros propios. Pruebas: `node tests/kick.js`.
 - Interfaz de rock: barra de vida con daño fantasma, medidor de amplificador por LEDs, combo por niveles (¡RIFF!, ¡SOLO!, ¡LEYENDA!).
 - Nivel 1 de 10 escenarios: el 1.º es fijo, el 5.º es el del **sub jefe**, el 10.º el del **jefe** y los demás se sortean en cada partida. Los enemigos entran corriendo y atacando (aviso rojo en el borde de la pantalla) y los **élites** del sub jefe y el jefe llevan barra de vida propia.
 - Escenarios vivos: reflectores que barren el suelo desde el cielo (como un helicóptero), focos de aviso que laten y se cortocircuitan con descargas, tormenta eléctrica (relámpagos con réplicas y truenos), reflectores y humo/brasas en las zonas de chatarra. Los élites son la **Garra** (arte propio por cuadros); la tropa normal es el Martillo.
