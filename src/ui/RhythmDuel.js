@@ -45,7 +45,7 @@ class RhythmDuel {
     this.lastBeat = -1;
     this.reset();
     this.game.audio.pauseMusic(true); // la música del juego calla: ahora suena la del duelo
-    this.game.audio.setSfxFilter(this.song === TrackMusic ? ['duelBad'] : null); // con canción grabada solo se oye un fallo
+    this.game.audio.setSfxFilter(null); // los efectos del duelo suenan sobre la canción: el rayo de las rachas, los instrumentos y tambores de Batuk, los fallos
   }
 
   get active() { return !this.done; }
