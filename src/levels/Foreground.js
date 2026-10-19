@@ -1,11 +1,11 @@
-// Primer plano con parallax: siluetas oscuras de chatarra, neumáticos, tuberías y cables que pasan por delante de los personajes a más
-// velocidad que el fondo. Se pinta una sola vez en dos tiras (inferior y superior) y después solo se copian, desplazadas.
+// Primer plano con parallax: por ahora solo cables finos que cuelgan por arriba y pasan a más velocidad que el fondo. Se pinta una sola vez en dos tiras (inferior y superior) y después solo se copian, desplazadas.
 // Son escasos y están en los bordes para no tapar el combate.
 class Foreground {
   static STRIP_WIDTH = 2400;
   static SPEED_BOTTOM = 1.4; // veces lo que se mueve el escenario
   static SPEED_TOP = 1.18;
   static BOTTOM_HEIGHT = 150;
+  static BOTTOM_ENABLED = false;
   static TOP_HEIGHT = 130;
 
   constructor() {
@@ -153,7 +153,7 @@ class Foreground {
   // scrollX: posición de la cámara en el mundo
   render(ctx, scrollX) {
     if (typeof document === 'undefined') return;
-    if (!this.bottom) { this.buildBottom(); this.buildTop(); }
+    if (!this.top) this.buildTop();
     const { STRIP_WIDTH: W } = Foreground;
     const draw = (strip, speed, y, alpha) => {
       const offset = -((scrollX * speed) % W);
@@ -162,7 +162,12 @@ class Foreground {
     };
     ctx.save();
     draw(this.top, Foreground.SPEED_TOP, 0, 0.9);
-    draw(this.bottom, Foreground.SPEED_BOTTOM, CONFIG.HEIGHT - Foreground.BOTTOM_HEIGHT + 12, 0.96);
+    // La tira inferior (montones y neumáticos inventados) se quitó: no encajaba con el dibujo. Los objetos de primer plano de verdad
+    // se marcan en OccluderData.js y tapan a los personajes. Para probarla de nuevo: Foreground.BOTTOM_ENABLED = true.
+    if (Foreground.BOTTOM_ENABLED) {
+      if (!this.bottom) this.buildBottom();
+      draw(this.bottom, Foreground.SPEED_BOTTOM, CONFIG.HEIGHT - Foreground.BOTTOM_HEIGHT + 12, 0.96);
+    }
     ctx.restore();
   }
 }
