@@ -664,27 +664,27 @@ AudioManager.RECORDED = {
   hit: () => true,
   // Adversarios: pisadas (las pesadas del martillo), quejidos al ser golpeados, aviso de ataque y grito de muerte
   enemyStep: (a, { heavy = false }) => {
-    if (heavy) a.sample('advHeavy', { count: 3, volume: 0.9, jitter: 0.05 });
-    else a.sample('advStep', { count: 4, volume: 0.85, jitter: 0.06 });
+    if (heavy) a.sample('advHeavy', { count: 3, volume: 0.55, jitter: 0.05 });
+    else a.sample('advStep', { count: 4, volume: 0.5, jitter: 0.06 });
   },
   enemyHurt: (a, { power = 1 }) => {
-    if (Math.random() < 0.5) a.sample('foeHit', { count: 2, volume: 0.75 + 0.1 * power });
-    else a.sample('foeHurt', { count: 4, volume: 0.7 + 0.1 * power, jitter: 0.08 });
+    if (Math.random() < 0.5) a.sample('foeHit', { count: 2, volume: 0.45 + 0.06 * power });
+    else a.sample('foeHurt', { count: 4, volume: 0.42 + 0.06 * power, jitter: 0.08 });
   },
-  enemyWarn: (a) => { a.sample('foeWarn', { count: 5, volume: 0.8, jitter: 0.06 }); },
+  enemyWarn: (a) => { a.sample('foeWarn', { count: 5, volume: 0.5, jitter: 0.06 }); },
   enemySwing: (a) => {
-    a.sample('foeWarn', { count: 5, volume: 0.8, jitter: 0.06 });
+    a.sample('foeWarn', { count: 5, volume: 0.5, jitter: 0.06 });
     // el aire cortado por el martillo sigue siendo sintético
-    a.noise({ type: 'bandpass', from: 180, to: 950, q: 0.8, duration: 0.26, volume: 0.4, attack: 0.08 });
-    a.tone({ from: 120, to: 55, duration: 0.22, volume: 0.2, attack: 0.06 });
+    a.noise({ type: 'bandpass', from: 180, to: 950, q: 0.8, duration: 0.26, volume: 0.28, attack: 0.08 });
+    a.tone({ from: 120, to: 55, duration: 0.22, volume: 0.14, attack: 0.06 });
   },
   enemyDie: (a) => {
-    a.sample('foeDie', { count: 4, volume: 0.9, jitter: 0.05 });
+    a.sample('foeDie', { count: 4, volume: 0.55, jitter: 0.05 });
     // estallido de la armadura (sin el rugido sintético)
-    a.noise({ type: 'lowpass', from: 5000, to: 100, duration: 0.6, volume: 0.5, attack: 0.001, wet: 0.2 });
-    a.tone({ from: 95, to: 24, duration: 0.6, volume: 0.6, attack: 0.002 });
-    a.clang({ base: 260, duration: 0.7, volume: 0.2, wet: 0.3, delay: 0.04 });
-    a.crackle({ duration: 0.45, rate: 45, volume: 0.12, low: 700, high: 4000 });
+    a.noise({ type: 'lowpass', from: 5000, to: 100, duration: 0.6, volume: 0.34, attack: 0.001, wet: 0.2 });
+    a.tone({ from: 95, to: 24, duration: 0.6, volume: 0.4, attack: 0.002 });
+    a.clang({ base: 260, duration: 0.7, volume: 0.14, wet: 0.3, delay: 0.04 });
+    a.crackle({ duration: 0.45, rate: 45, volume: 0.09, low: 700, high: 4000 });
   },
   // Poderes: la carga suena mientras se mantiene K y se apaga al soltar; el disparo, el rayo corto y el súper tienen su grabación
   rayCharge: (a) => { a.fadeVoice(a.chargeVoice, 0.05); a.chargeVoice = a.sample('rayCharge', { volume: 0.55, jitter: 0 }); },
