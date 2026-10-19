@@ -920,13 +920,13 @@ class GameScene {
       if (!finale.dialogueShown && boss.landedTime > (this.skipBatukDialogue ? 0.4 : 1.4)) {
         finale.dialogueShown = true;
         const startDuel = () => {
+          this.showCallout('BATUK', 2.4, { y: 84, colors: ['#ffffff', '#ffd23a', '#9a5a00'], glow: '#ffb000', rim: '#2a1600' }); // el nombre aparece al empezar el duelo
           finale.phase = 'duel';
           this.duel = new RhythmDuel(this, boss, () => this.batukDefeated(boss));
         };
         if (this.skipBatukDialogue) {
           startDuel();
         } else {
-          this.showCallout('BATUK', 2.4, { y: 84, colors: ['#ffffff', '#ffd23a', '#9a5a00'], glow: '#ffb000', rim: '#2a1600' });
           this.dialogue = new Dialogue(GameScene.BATUK_DIALOGUE, startDuel, (index, line) => { if (line.event === 'step') boss.stepForward(); });
         }
       }

@@ -614,7 +614,7 @@ class Player extends Entity {
 
   // Cuadro de la secuencia mejorada del combo según el golpe y el tiempo transcurrido
   // Cuadro de la patada alta (golpe 4) o de la patada voladora; null si no toca o las imágenes no cargaron
-  // Reposo en ida y vuelta, con fundido completo entre cuadros contiguos (son poses muy parecidas, no se nota doble imagen)
+  // Reposo en ida y vuelta, con un fundido leve entre cuadros contiguos
   idleFrame() {
     const sequence = Player.IDLE_SEQUENCE;
     const position = this.age / Player.IDLE_STEP;
@@ -623,7 +623,8 @@ class Player extends Entity {
     const next = Assets.image('ecoIdle' + sequence[(index + 1) % sequence.length]);
     if (!current) return null;
     const fraction = position - Math.floor(position);
-    const eased = fraction * fraction * (3 - 2 * fraction);
+    // Fundido corto solo al final de cada cuadro y nunca completo: mezclar poses distintas al 50 % duplica la guitarra
+    const eased = fraction > 0.7 ? 0.3 * (fraction - 0.7) / 0.3 : 0;
     const height = current.height * (Player.IDLE_HEIGHT / current.height);
     return { image: current, height: Player.IDLE_HEIGHT, anchorX: Player.IDLE_ANCHOR, blendImage: next, blend: next ? eased : 0, drop: (1 - Player.IDLE_FEET) * Player.IDLE_HEIGHT };
   }
