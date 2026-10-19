@@ -54,6 +54,7 @@ class GameScene {
     this.atmosphere = new Atmosphere(this.level);
     this.foreground = new Foreground();
     this.live = new LiveBackground(this.level);
+    this.props = new Props(this.level);
     this.ambientBack = new ParticleSystem(); // lluvia lejana: por detrás de los personajes
     this.atmosphereHooks = {
       thunder: () => this.game.audio.play('thunder'),
@@ -1074,6 +1075,7 @@ class GameScene {
     if (this.level.config.ambient === 'rain') this.rainRipples(scaled);
     this.updateAmbient(scaled);
     this.live.update(scaled);
+    this.props.update(scaled);
     this.atmosphere.update(scaled, this.camera, this.atmosphereHooks);
     this.maxCombo = Math.max(this.maxCombo, this.player.comboHits);
     this.updateHeartbeat(scaled);
@@ -1369,6 +1371,7 @@ class GameScene {
     this.live.render(ctx, this.camera); // telas, cadenas, cables, carteles y generador animados
     this.atmosphere.renderBack(ctx, this.camera);
     this.live.renderFog(ctx, this.camera, 'far'); // niebla del fondo y del plano medio, por detrás de los personajes
+    this.props.renderBack(ctx, this.camera); // objetos del plano trasero, bajo la niebla media
     this.live.renderFog(ctx, this.camera, 'mid');
     this.ambientBack.render(ctx); // lluvia lejana
     if (this.darkness > 0.01) {
@@ -1405,6 +1408,7 @@ class GameScene {
     if (globalThis.DEBUG_PUDDLES) this.renderPuddleDebug(ctx);
     ctx.restore();
     this.foreground.render(ctx, this.camera.x); // chatarra y cables por delante, con parallax
+    if (!this.finale) this.props.renderFront(ctx, this.camera); // objetos grandes y oscuros del plano delantero
     this.live.renderFog(ctx, this.camera, 'front'); // neblina baja junto al suelo, por delante
     ctx.restore();
 
