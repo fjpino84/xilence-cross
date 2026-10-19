@@ -3,6 +3,8 @@ class Game {
   constructor(canvas, modalRoot) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
+    // Los sprites se reducen mucho (de 300 px a 140 px): con calidad alta los bordes quedan limpios en vez de dentados
+    if (this.ctx) { this.ctx.imageSmoothingEnabled = true; this.ctx.imageSmoothingQuality = 'high'; }
     this.input = new InputManager();
     this.audio = new AudioManager();
     this.modal = new Modal(modalRoot);

@@ -22,3 +22,5 @@ Se ejecutan con `powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\<
 - **frames_row.ps1**: coloca los cuadros elegidos en una fila para pasarlos por extract.ps1 (que quita el fondo y alinea los pies).
 
 - **make_sfx.js**: recorta los sonidos grabados de src/levels/ECO (pasos, golpes, voces de adversarios, rayo, súper) en una sola hoja assets/audio/sfx.wav y escribe la tabla de recortes src/engine/SfxData.js. Uso: node tools/make_sfx.js (con Edge instalado). Los instantes de cada recorte están en la lista CLIPS del script.
+
+- **defringe.ps1**: limpia el contorno de los sprites: pinta de oscuro el halo claro (blanco o gris) que dejó el recorte del fondo y suaviza el escalón del borde. No toca los destellos de color. Uso: defringe.ps1 -ListFile lista.txt (una ruta por línea) o -Path archivo.png; con PowerShell 5 (powershell.exe).

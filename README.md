@@ -88,3 +88,5 @@ No se ha definido aún una licencia para el código ni para el arte, por lo que,
 - **Sonidos grabados** (assets/audio/sfx.wav, tabla en src/engine/SfxData.js): pasos de ECO al ritmo de la animación, golpes del combo, paso por charcos, pasos y voces de los adversarios (quejidos, avisos de ataque, muerte), carga y disparo del rayo, inicio y estallido del súper. Si no cargan, suenan los sintetizados de siempre.
 
 - **Sonidos de Rex Vane** (carpeta src/levels/Subjefe level 2, dentro de la misma hoja assets/audio/sfx.wav): llegada, carga de los rayos y del haz (el pico cae al disparar), rugido al enfurecerse, quejidos, muerte y una voz de fondo mientras habla con ECO.
+
+- **Contorno de los personajes**: los sprites pasaron por tools/defringe.ps1 (sin halo blanco en el borde) y el lienzo dibuja con suavizado de calidad alta, así los bordes ya no se ven cortados ni dentados.
