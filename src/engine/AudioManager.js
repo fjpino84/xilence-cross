@@ -334,13 +334,19 @@ class AudioManager {
 
   // ---------------------------------------------------------------- sonidos grabados (assets/audio/sfx.wav)
   // Una sola hoja con todos los recortes (tabla en SfxData.js, generada por tools/make_sfx.js). Si no carga, suenan los sintetizados.
-  async loadSamples() {
+  async loadSamples(attempt = 0) {
     this.sfx = null;
-    if (typeof fetch === 'undefined' || typeof SFX_CLIPS === 'undefined') return;
+    if (typeof SFX_CLIPS === 'undefined') return;
+    // La hoja viaja en base64 dentro de SfxBank.js (carga asíncrona): si aún no llegó, se reintenta; así funciona también desde el disco
+    if (typeof SFX_BASE64 === 'undefined') {
+      if (attempt < 20) setTimeout(() => this.loadSamples(attempt + 1), 500);
+      return;
+    }
     try {
-      const response = await fetch(AudioManager.SFX_FILE);
-      if (!response.ok) throw new Error('HTTP ' + response.status);
-      this.sfx = await this.context.decodeAudioData(await response.arrayBuffer());
+      const binary = atob(SFX_BASE64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      this.sfx = await this.context.decodeAudioData(bytes.buffer);
     } catch (error) {
       console.warn('No se pudieron cargar los sonidos grabados; se usan los sintetizados', error);
     }

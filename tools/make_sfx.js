@@ -1,4 +1,4 @@
-// Recorta los sonidos grabados de src/levels/ECO en una sola hoja (assets/audio/sfx.wav, mono 32 kHz) y escribe la tabla de
+// Recorta los sonidos grabados de src/levels/ECO en una sola hoja (assets/audio/sfx.wav, mono 24 kHz) y escribe la tabla de
 // recortes en src/engine/SfxData.js. Usa Edge sin interfaz para decodificar los MP3 (no hace falta ffmpeg).
 // Uso: node tools/make_sfx.js   (Edge debe estar en la ruta de siempre)
 const fs = require('fs');
@@ -46,7 +46,7 @@ const CLIPS = {
   superStart: [F.superIni, 0, 1.0, 0.1], superBlast: [F.superFin, 0, 6.5, 1.5],
 };
 const GAP = 0.06;
-const RATE = 32000;
+const RATE = 24000;
 
 // ---------------------------------------------------------------- página que corta y codifica
 const page = `<html><body><script>
@@ -115,7 +115,12 @@ const server = http.createServer((req, res) => {
   req.on('end', () => {
     const body = Buffer.concat(chunks);
     if (req.url === '/table') table = JSON.parse(body.toString());
-    if (req.url === '/wav') fs.writeFileSync(path.join(root, 'assets/audio/sfx.wav'), body);
+    if (req.url === '/wav') {
+      fs.writeFileSync(path.join(root, 'assets/audio/sfx.wav'), body);
+      // También en base64 dentro de un script: así suena igual abriendo index.html desde el disco (donde fetch está bloqueado)
+      const header = '// Generado por tools/make_sfx.js: la hoja de sonidos (assets/audio/sfx.wav) en base64';
+      fs.writeFileSync(path.join(root, 'src/engine/SfxBank.js'), header + String.fromCharCode(10) + 'const SFX_BASE64 = ' + JSON.stringify(body.toString('base64')) + ';' + String.fromCharCode(10));
+    }
     if (req.url === '/done') {
       const message = body.toString();
       res.end('ok');
