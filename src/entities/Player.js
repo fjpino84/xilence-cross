@@ -59,6 +59,12 @@ class Player extends Entity {
   static IDLE_FEET = 0.9718; // fracción de la imagen donde están los pies
   static PUNCH_ANCHOR = 0.414;
   static PUNCH_TRACK = [[0, 2], [0.18, 3], [0.34, 4], [0.58, 5], [0.78, 6]]; // fracción de la duración del golpe
+  // Patada baja (golpe 2) y patada alta con estela (golpe 4): cuadros del collage "Golpes mejorados" (ecoMix2-4) combinados con
+  // los de las hojas de puño y patada. [fracción de la duración del golpe, clave del cuadro]
+  static MIX_ANCHOR = 0.331;
+  static MIX_SCALE = 0.55;
+  static LOW_KICK_TRACK = [[0, 'ecoPuno2'], [0.22, 'ecoMix2'], [0.72, 'ecoPuno6']];
+  static HIGH_KICK_TRACK = [[0, 'ecoPatada2'], [0.2, 'ecoMix3'], [0.36, 'ecoMix4'], [0.78, 'ecoPatada6']];
   static AIR_KICK_TRACK = [[0, 3], [0.07, 4], [0.30, 5], [0.38, 6]];
   static AIR_KICK = { duration: 0.46, hitStart: 0.07, hitEnd: 0.32, multiplier: 1.4, range: 124, knock: 210, power: 2, reachZ: 170 }; // alcanza a enemigos en el suelo desde lo alto del salto
   // Rayo mejorado (K): 9 cuadros → carga, esfera de energía, disparo, rayo completo, avance y recuperación
@@ -87,7 +93,7 @@ class Player extends Entity {
   // power: intensidad del efecto (1 ligero, 2 fuerte, 3 final). launch: lanza al enemigo por el aire.
   static ATTACKS = [
     { duration: 0.32, hitStart: 0.10, hitEnd: 0.20, multiplier: 1.0, range: 112, knock: 120, power: 1 }, // puño
-    { duration: 0.32, hitStart: 0.09, hitEnd: 0.20, multiplier: 1.0, range: 100, knock: 120, power: 1 },
+    { duration: 0.36, hitStart: 0.10, hitEnd: 0.22, multiplier: 1.0, range: 118, knock: 130, power: 1 }, // patada baja
     { duration: 0.36, hitStart: 0.11, hitEnd: 0.22, multiplier: 1.25, range: 114, knock: 150, power: 2 }, // puño cruzado
     { duration: 0.44, hitStart: 0.13, hitEnd: 0.27, multiplier: 1.5, range: 122, knock: 190, power: 2 }, // patada alta
     { duration: 0.52, hitStart: 0.18, hitEnd: 0.30, multiplier: 2.5, range: 300, knock: 380, power: 3, launch: true },
@@ -631,6 +637,19 @@ class Player extends Entity {
     return image ? { image, height: image.height * Player.COMBO_SCALE, anchorX: Player.PUNCH_ANCHOR } : null;
   }
 
+  // Patada baja (golpe 2) y patada alta con estela (golpe 4) con los cuadros combinados
+  mixFrame() {
+    if (this.airKick || (this.attackStep !== 2 && this.attackStep !== 4)) return null;
+    const track = this.attackStep === 2 ? Player.LOW_KICK_TRACK : Player.HIGH_KICK_TRACK;
+    const progress = this.stateTime / Player.ATTACKS[this.attackStep - 1].duration;
+    let key = track[0][1];
+    for (const [from, name] of track) if (progress >= from) key = name;
+    const image = Assets.image(key);
+    if (!image) return null;
+    const mix = key.startsWith('ecoMix');
+    return { image, height: image.height * (mix ? Player.MIX_SCALE : Player.COMBO_SCALE), anchorX: mix ? Player.MIX_ANCHOR : (key.startsWith('ecoPuno') ? Player.PUNCH_ANCHOR : Player.KICK_ANCHOR) };
+  }
+
   kickFrame() {
     if (!this.airKick && this.attackStep !== 4) return null;
     const track = this.airKick ? Player.AIR_KICK_TRACK : Player.KICK_TRACK;
@@ -672,7 +691,7 @@ class Player extends Entity {
       const idle = this.idleFrame();
       if (idle) return idle;
     } else if (this.state === 'attack') {
-      const kick = this.kickFrame() || this.punchFrame();
+      const kick = this.mixFrame() || this.kickFrame() || this.punchFrame();
       if (kick) return kick;
       const attack = Player.ATTACKS[this.attackStep - 1];
       const finisher = this.attackStep >= Player.ATTACKS.length;
