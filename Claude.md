@@ -9,7 +9,7 @@ Tecnología: HTML5 Canvas + JavaScript vanilla (sin frameworks, sin dependencias
 Idioma: Todo el contenido visible en español
 
 HISTORIA
-En un universo donde la música fue prohibida por el régimen de The Quietarchy, el guerrero ciego ECO empuña su guitarra de chatarra espacial como arma. Su misión: atravesar planetas oprimidos por los Silenciadores (el ejército del silencio), enfrentarse a los Monjes de La Orden del Silencio (jefes de cada nivel), y finalmente confrontar al líder supremo VÓIDHAR, el Armonizador Supremo — una entidad que no es oscuridad ni sombra, sino la ausencia absoluta de todo, incluyendo el sonido.
+En un universo donde la música fue prohibida por el régimen de The Inquietsition, el guerrero ciego ECO empuña su guitarra de chatarra espacial como arma. Su misión: atravesar planetas oprimidos por los Silenciadores (el ejército del silencio), enfrentarse a los Monjes de La Orden del Silencio (jefes de cada nivel), y finalmente confrontar al líder supremo VÓIDHAR, el Armonizador Supremo — una entidad que no es oscuridad ni sombra, sino la ausencia absoluta de todo, incluyendo el sonido.
 
 La trama no es solo acción: cada monje jefe fue, en otro tiempo, un músico. La derrota de cada uno libera un fragmento de su melodía perdida. Al final, es esa colección de melodías — no la fuerza — lo que rompe a VÓIDHAR.
 
@@ -74,7 +74,7 @@ tall immaculate monk in pristine robes, perfect posture, playing an impossibly c
 THARR (Jefe Nivel 6 — El que nunca tuvo miedo):
 wild monk on fire, clothes burning but still fighting fiercely, laughing expression, guitar strings wrapped around arms like weapons, burns and scars everywhere, reckless heroic pose mid-leap, red and orange fire neon glow, cel-shaded 2D boss, Streets of Rage 4 style, explosive lighting, full body, thick outlines
 
-SUBJEFES — THE QUIETARCHY
+SUBJEFES — THE INQUIETSITION
 
 REX VANE (Auditor Sonoro, Rango Primero):
 shadowy humanoid figure that barely holds a shape, edges dissolving into black mist, dark auditor robes that seem to absorb light, no face — only a faint red frequency scanner where eyes would be, hovers slightly above the ground, radiates bureaucratic dread, carries a sonic modulator rod that hums with red dissonant energy, presence feels like the air being removed from the room, 2D beat-em-up sub-boss spirit, cel-shaded ghost-like design, Streets of Rage 4 style meets supernatural horror, dark crimson and void black, full body, thick outlines, oppressive silence aura
