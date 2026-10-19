@@ -4,50 +4,38 @@
 //  · plano delantero ('front'): objetos grandes y oscuros pegados al borde inferior, delante de los personajes, con más parallax.
 // La colocación sale de una semilla fija por escenario: es la misma en cada partida y no depende del azar de los fondos.
 class Props {
-  static FRONT_PARALLAX = 1.28;
+  static FRONT_PARALLAX = 1.0; // pegados a la unión: se mueven exactamente con el escenario
   // h: altura en pantalla (px). lights: [fracción x, fracción y, color, radio] de luces que laten. flicker: parpadeo del cartel
   static DEFS = {
     torre: { h: 190, lights: [[0.20, 0.72, '#ff3a3a', 26, 1.1]] },
     balizas: { h: 205, lights: [[0.40, 0.03, '#ff2a2a', 30, 0.9], [0.80, 0.14, '#ff2a2a', 22, 0.7], [0.78, 0.25, '#ff2a2a', 22, 1.3]] },
-    valla: { h: 132 },
-    cartel: { h: 128, flicker: true },
+    valla: { h: 285 },
+    cartel: { h: 285, flicker: true },
     foco: { h: 175, lights: [[0.42, 0.14, '#cfe9ff', 64, 0.6]] },
     grua: { h: 190 },
-    carrete: { h: 112 },
-    pila: { h: 84 },
-    tuberia: { h: 90 },
-    generador: { h: 108, lights: [[0.22, 0.45, '#8ff6ff', 22, 3.0]] },
+    carrete: { h: 270 },
+    pila: { h: 250 },
+    tuberia: { h: 235 },
+    generador: { h: 255, lights: [[0.22, 0.45, '#8ff6ff', 22, 3.0]] },
   };
-  static BACK = ['torre', 'balizas', 'valla', 'cartel', 'foco', 'grua', 'carrete', 'pila', 'generador'];
-  static FRONT = ['pila', 'tuberia', 'carrete', 'valla', 'generador'];
+  // Objetos casuales para tapar las uniones (sin la torre-reactor ni las torres altas). h = altura grande en pantalla.
+  static SEAM = ['pila', 'tuberia', 'carrete', 'valla', 'generador', 'cartel'];
 
   constructor(level) {
     this.time = 0;
-    this.back = [];
+    this.back = []; // ya no se usan objetos de fondo
     this.front = [];
     const sequence = level.config.backgroundSequence || [];
-    const special = new Set(['bgLevel01s', 'bgLevel01j']);
-    sequence.forEach((tile, index) => {
-      const random = Draw.seededRandom(7000 + index * 97 + tile.key.length * 13);
-      const origin = index * Level.TILE_STRIDE;
-      // Plano trasero: uno o dos objetos por escenario, evitando repetir el mismo
-      const count = special.has(tile.key) ? 1 : 2;
-      const used = new Set();
-      for (let k = 0; k < count; k++) {
-        let name;
-        do { name = Props.BACK[Math.floor(random() * Props.BACK.length)]; } while (used.has(name));
-        used.add(name);
-        const x = origin + Level.TILE_OVERLAP + 60 + (k + 0.15 + random() * 0.6) * ((Level.TILE_WIDTH - Level.TILE_OVERLAP * 2 - 120) / count);
-        this.back.push({ name, x, y: CONFIG.GROUND_TOP - 4 + random() * 8, scale: 0.72 + random() * 0.18, flip: random() < 0.5, phase: random() * 6.28 });
-      }
-      // Plano delantero: ni en el sub jefe ni en el jefe (para no tapar el combate), y no siempre
-      if (!special.has(tile.key) && random() < 0.8) {
-        const name = Props.FRONT[Math.floor(random() * Props.FRONT.length)];
-        const x = (origin + 140 + random() * (Level.TILE_STRIDE - 360)) * Props.FRONT_PARALLAX;
-        this.front.push({ name, x, scale: 0.8 + random() * 0.45, flip: random() < 0.5, phase: random() * 6.28 });
-      }
-    });
-    this.back.sort((a, b) => a.x - b.x);
+    // Un objeto casual y grande sobre cada unión entre escenarios: tapa el cambio de dibujo y ECO pasa por detrás al avanzar.
+    let previous = '';
+    for (let index = 1; index < sequence.length; index++) {
+      const random = Draw.seededRandom(9100 + index * 131);
+      let name;
+      do { name = Props.SEAM[Math.floor(random() * Props.SEAM.length)]; } while (name === previous);
+      previous = name;
+      const x = index * Level.TILE_STRIDE + Level.TILE_OVERLAP / 2 + (random() - 0.5) * 40;
+      this.front.push({ name, x, scale: 1, flip: random() < 0.5, phase: random() * 6.28 });
+    }
   }
 
   update(dt) {
@@ -92,13 +80,22 @@ class Props {
     }
   }
 
-  // Plano delantero: después de los personajes, oscuro y pegado al borde inferior (parte fuera de pantalla)
-  renderFront(ctx, camera) {
-    const scroll = camera.x * Props.FRONT_PARALLAX;
+  // Objetos grandes sobre las uniones, delante de los personajes y pegados al borde inferior (parte fuera de pantalla).
+  // Si ECO está justo detrás, el objeto se vuelve translúcido para no taparlo del todo.
+  renderFront(ctx, camera, player) {
     for (const item of this.front) {
-      const sx = item.x - scroll;
-      if (sx < -320 || sx > CONFIG.WIDTH + 320) continue;
-      this.drawProp(ctx, item, sx, CONFIG.HEIGHT + 22, { color: '#05030c', alpha: 0.62 }, 0.97, false);
+      const sx = item.x - camera.x;
+      if (sx < -360 || sx > CONFIG.WIDTH + 360) continue;
+      const def = Props.DEFS[item.name];
+      const image = Assets.image('prop_' + item.name);
+      const halfWidth = image ? (image.width / image.height) * def.h * 0.5 : 200;
+      let alpha = 0.97;
+      if (player) {
+        const near = Math.abs(player.x - item.x) < halfWidth * 0.8;
+        item.fade = (item.fade === undefined ? 1 : item.fade) + ((near ? 0.42 : 1) - (item.fade === undefined ? 1 : item.fade)) * 0.12;
+        alpha *= item.fade;
+      }
+      this.drawProp(ctx, item, sx, CONFIG.HEIGHT + 34, { color: '#05030c', alpha: 0.3 }, alpha, false);
     }
   }
 }

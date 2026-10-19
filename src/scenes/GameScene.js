@@ -1408,7 +1408,7 @@ class GameScene {
     if (globalThis.DEBUG_PUDDLES) this.renderPuddleDebug(ctx);
     ctx.restore();
     this.foreground.render(ctx, this.camera.x); // chatarra y cables por delante, con parallax
-    if (!this.finale) this.props.renderFront(ctx, this.camera); // objetos grandes y oscuros del plano delantero
+    if (!this.finale) this.props.renderFront(ctx, this.camera, this.player); // objetos grandes y oscuros del plano delantero
     this.live.renderFog(ctx, this.camera, 'front'); // neblina baja junto al suelo, por delante
     ctx.restore();
 
