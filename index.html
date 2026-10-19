@@ -42,6 +42,35 @@
       box-shadow: 0 0 40px rgba(0, 245, 255, 0.25);
     }
 
+    /* Video de inicio: cubre el lienzo, centrado y sin recortar */
+    .intro-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+      z-index: 5;
+      border: 3px solid var(--cyan);
+      box-sizing: border-box;
+    }
+    .intro-skip {
+      position: absolute;
+      right: 3%;
+      bottom: 4%;
+      z-index: 6;
+      font-family: var(--font);
+      font-style: italic;
+      font-size: clamp(12px, 2.4vh, 22px);
+      letter-spacing: 0.06em;
+      color: #fff;
+      text-shadow: 0 0.2em 0 #000, 0 0 0.6em rgba(0, 245, 255, 0.8);
+      opacity: 0.85;
+      pointer-events: none;
+      animation: introHint 1.6s ease-in-out infinite;
+    }
+    @keyframes introHint { 50% { opacity: 0.35; } }
+
     #game-canvas {
       display: block;
       width: 100%;
@@ -322,46 +351,47 @@
   </main>
 
   <!-- Orden de carga: configuración → motor → entidades → niveles → UI → escenas → arranque -->
-  <script src="src/config.js?v=61"></script>
-  <script src="src/engine/Draw.js?v=61"></script>
-  <script src="src/engine/Assets.js?v=61"></script>
-  <script src="src/engine/Sprite.js?v=61"></script>
-  <script src="src/engine/ParticleSystem.js?v=61"></script>
-  <script src="src/engine/AudioManager.js?v=61"></script>
-  <script src="src/engine/InputManager.js?v=61"></script>
-  <script src="src/engine/TouchControls.js?v=61"></script>
-  <script src="src/engine/Camera.js?v=61"></script>
-  <script src="src/engine/Collision.js?v=61"></script>
-  <script src="src/engine/Records.js?v=61"></script>
-  <script src="src/engine/DuelMusic.js?v=61"></script>
-  <script src="src/levels/BatukChart.js?v=61"></script>
-  <script src="src/engine/TrackMusic.js?v=61"></script>
-  <script src="src/engine/SceneManager.js?v=61"></script>
-  <script src="src/engine/Game.js?v=61"></script>
-  <script src="src/entities/Entity.js?v=61"></script>
-  <script src="src/entities/Player.js?v=61"></script>
-  <script src="src/entities/Trino.js?v=61"></script>
-  <script src="src/entities/VoidharFinale.js?v=61"></script>
-  <script src="src/entities/BatukBoss.js?v=61"></script>
-  <script src="src/entities/enemies/Enemy.js?v=61"></script>
-  <script src="src/entities/enemies/Silenciador.js?v=61"></script>
-  <script src="src/entities/enemies/RexVane.js?v=61"></script>
-  <script src="src/levels/PuddleData.js?v=61"></script>
-  <script src="src/levels/Level.js?v=61"></script>
-  <script src="src/levels/Atmosphere.js?v=61"></script>
-  <script src="src/levels/Level01.js?v=61"></script>
-  <script src="src/levels/Level02.js?v=61"></script>
-  <script src="src/levels/Level04.js?v=61"></script>
-  <script src="src/levels/Level07.js?v=61"></script>
-  <script src="src/ui/HUD.js?v=61"></script>
-  <script src="src/ui/Modal.js?v=61"></script>
-  <script src="src/ui/Dialogue.js?v=61"></script>
-  <script src="src/ui/DefeatCard.js?v=61"></script>
-  <script src="src/ui/RhythmDuel.js?v=61"></script>
-  <script src="src/scenes/TitleScene.js?v=61"></script>
-  <script src="src/scenes/GameScene.js?v=61"></script>
-  <script src="src/scenes/GameOverScene.js?v=61"></script>
-  <script src="src/scenes/EndingScene.js?v=61"></script>
-  <script src="src/main.js?v=61"></script>
+  <script src="src/config.js?v=62"></script>
+  <script src="src/engine/Draw.js?v=62"></script>
+  <script src="src/engine/Assets.js?v=62"></script>
+  <script src="src/engine/Sprite.js?v=62"></script>
+  <script src="src/engine/ParticleSystem.js?v=62"></script>
+  <script src="src/engine/AudioManager.js?v=62"></script>
+  <script src="src/engine/InputManager.js?v=62"></script>
+  <script src="src/engine/TouchControls.js?v=62"></script>
+  <script src="src/engine/Camera.js?v=62"></script>
+  <script src="src/engine/Collision.js?v=62"></script>
+  <script src="src/engine/Records.js?v=62"></script>
+  <script src="src/engine/DuelMusic.js?v=62"></script>
+  <script src="src/levels/BatukChart.js?v=62"></script>
+  <script src="src/engine/TrackMusic.js?v=62"></script>
+  <script src="src/engine/SceneManager.js?v=62"></script>
+  <script src="src/engine/Game.js?v=62"></script>
+  <script src="src/entities/Entity.js?v=62"></script>
+  <script src="src/entities/Player.js?v=62"></script>
+  <script src="src/entities/Trino.js?v=62"></script>
+  <script src="src/entities/VoidharFinale.js?v=62"></script>
+  <script src="src/entities/BatukBoss.js?v=62"></script>
+  <script src="src/entities/enemies/Enemy.js?v=62"></script>
+  <script src="src/entities/enemies/Silenciador.js?v=62"></script>
+  <script src="src/entities/enemies/RexVane.js?v=62"></script>
+  <script src="src/levels/PuddleData.js?v=62"></script>
+  <script src="src/levels/Level.js?v=62"></script>
+  <script src="src/levels/Atmosphere.js?v=62"></script>
+  <script src="src/levels/Level01.js?v=62"></script>
+  <script src="src/levels/Level02.js?v=62"></script>
+  <script src="src/levels/Level04.js?v=62"></script>
+  <script src="src/levels/Level07.js?v=62"></script>
+  <script src="src/ui/HUD.js?v=62"></script>
+  <script src="src/ui/Modal.js?v=62"></script>
+  <script src="src/ui/Dialogue.js?v=62"></script>
+  <script src="src/ui/DefeatCard.js?v=62"></script>
+  <script src="src/ui/RhythmDuel.js?v=62"></script>
+  <script src="src/scenes/TitleScene.js?v=62"></script>
+  <script src="src/scenes/IntroScene.js?v=62"></script>
+  <script src="src/scenes/GameScene.js?v=62"></script>
+  <script src="src/scenes/GameOverScene.js?v=62"></script>
+  <script src="src/scenes/EndingScene.js?v=62"></script>
+  <script src="src/main.js?v=62"></script>
 </body>
 </html>

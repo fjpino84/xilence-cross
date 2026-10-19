@@ -2,6 +2,7 @@
 const game = new Game(document.getElementById('game-canvas'), document.getElementById('modal-root'));
 
 game.scenes.register('title', new TitleScene(game));
+game.scenes.register('intro', new IntroScene(game));
 game.scenes.register('game', new GameScene(game));
 game.scenes.register('gameover', new GameOverScene(game));
 game.scenes.register('ending', new EndingScene(game));

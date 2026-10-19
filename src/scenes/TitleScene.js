@@ -34,8 +34,10 @@ class TitleScene {
     this.game.canvas.removeEventListener('click', this.onCanvasClick);
   }
 
+  // Pulsar ENTER abre el video de inicio y, al terminar, empieza la partida (?skipintro=1 lo salta, para pruebas)
   start() {
-    this.game.scenes.change('game');
+    const skip = /[?&]skipintro=1/.test(window.location.search || '');
+    this.game.scenes.change(skip ? 'game' : 'intro');
   }
 
   // Chispas que suben por el lado del título
