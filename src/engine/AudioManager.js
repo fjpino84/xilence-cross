@@ -25,6 +25,7 @@ class AudioManager {
     this.musicPlayingSince = 0;
     this.triedBlobFallback = false;
     this.sfxFilter = null;
+    this.sfxLevel = 1;
     this.sfx = null; // hoja de sonidos grabados ya decodificada
     this.lastPick = {};
     this.chargeVoice = null;
@@ -268,7 +269,7 @@ class AudioManager {
     this.context = context;
     this.loadSamples();
     this.master = context.createGain();
-    this.master.gain.value = this.muted ? 0 : AudioManager.MASTER_VOLUME;
+    this.master.gain.value = this.muted ? 0 : AudioManager.MASTER_VOLUME * this.sfxLevel;
 
     // Compresor/limitador: deja apilar capas fuertes sin que sature
     this.compressor = context.createDynamicsCompressor();
@@ -404,9 +405,15 @@ class AudioManager {
     try { voice.source.stop(now + seconds + 0.02); } catch (error) { /* ya terminó */ }
   }
 
+  // Nivel de los efectos (1 = normal). En el duelo bajan para que la canción sea lo principal
+  setSfxLevel(level) {
+    this.sfxLevel = level;
+    if (this.master) this.master.gain.value = this.muted ? 0 : AudioManager.MASTER_VOLUME * level;
+  }
+
   toggleMute() {
     this.muted = !this.muted;
-    if (this.master) this.master.gain.value = this.muted ? 0 : AudioManager.MASTER_VOLUME;
+    if (this.master) this.master.gain.value = this.muted ? 0 : AudioManager.MASTER_VOLUME * this.sfxLevel;
     if (this.music) this.music.muted = this.muted;
     return this.muted;
   }
@@ -701,6 +708,16 @@ AudioManager.RECORDED = {
   rexCharge: (a, { kind = 'bolt', enraged = false }) => {
     a.sample(kind === 'ray' ? 'rexRay' : 'rexBolt', { count: 0, volume: 0.9, jitter: 0, name: (kind === 'ray' ? 'rexRay' : 'rexBolt') + (enraged ? 2 : 1) });
   },
+  // Duelo: nota acertada (el tono sube con el carril), fallo corto y suave, racha de 10 y ataque de Batuk
+  duelNote: (a, { lane = 0, perfect = false }) => { a.sample('duelNote', { volume: perfect ? 0.6 : 0.45, rate: [0.9, 1.0, 1.12, 1.26][lane] || 1, jitter: 0.01 }); },
+  duelBad: (a) => {
+    const now = a.context.currentTime;
+    if (now - (a.lastDuelBad ?? -9) < 0.25) return; // los fallos seguidos no se apilan sobre la música
+    a.lastDuelBad = now;
+    a.sample('duelErr', { count: 4, volume: 0.45, jitter: 0.03 });
+  },
+  duelStreak: (a) => { a.sample('rayFire', { volume: 0.9, jitter: 0.02 }); },
+  batukAttack: (a) => { a.sample('batukHit', { count: 4, volume: 0.9, jitter: 0.03 }); },
   // Trino: el láser grabado (el sonido de carga sigue siendo sintético); Batuk: el retumbar de su llegada
   trinoFire: (a) => { a.sample('trinoLaser', { count: 4, volume: 0.8, jitter: 0.04 }); },
   batukArrive: (a) => { a.sample('batukArrive', { volume: 0.9, jitter: 0 }); },

@@ -26,6 +26,8 @@ const F = {
   superFin: 'sonido super poder.mp3',
   laser: 'Laser Trino.mp3',
   batukLlega: '@Batuk/llegada batuk.mp3',
+  errores: 'Errores batalla.mp3',
+  golpeBatuk: '@Batuk/Golpe Batuk.mp3',
   // Rex Vane (carpeta "Subjefe level 2"; el prefijo @ indica una ruta desde src/levels)
   rexArr: '@Subjefe level 2/ES_Creatures, Ethereal, Possessed, Creepy, Evil, Dark 03 - Epidemic Sound.mp3',
   rexVoz: '@Subjefe level 2/ES_Voices, Alien, Grey, Vocalization 02 - Epidemic Sound.mp3',
@@ -58,6 +60,10 @@ const CLIPS = {
   // El láser de Trino: cuatro disparos de la misma grabación; la llegada de Batuk con el pico (2,2 s) cayendo cuando termina de entrar (~2 s)
   trinoLaser1: [F.laser, 0, 1.3, 0.45], trinoLaser2: [F.laser, 3.25, 1.3, 0.45], trinoLaser3: [F.laser, 6.25, 1.3, 0.45], trinoLaser4: [F.laser, 10.05, 1.3, 0.45],
   batukArrive: [F.batukLlega, 0.2, 5.0, 1.5],
+  // Duelo: la nota acertada (el arranque de "Sonidos de notas"), los fallos (cuatro, cortos) y el ataque de Batuk (golpes sueltos y dobles de su grabación de tambor)
+  duelNote: [F.superIni, 0, 0.32, 0.12],
+  duelErr1: [F.errores, 0, 0.4, 0.2], duelErr2: [F.errores, 1.85, 0.4, 0.2], duelErr3: [F.errores, 3.7, 0.4, 0.2], duelErr4: [F.errores, 5.6, 0.4, 0.2],
+  batukHit1: [F.golpeBatuk, 27.74, 0.5, 0.2], batukHit2: [F.golpeBatuk, 51.77, 0.5, 0.2], batukHit3: [F.golpeBatuk, 33.29, 0.8, 0.25], batukHit4: [F.golpeBatuk, 44.39, 0.8, 0.25],
   rexArrive: [F.rexArr, 0, 3.2, 1.2],
   rexBolt1: [F.rexPod1, 0.6, 2.4, 1.0], rexBolt2: [F.rexPod1, 0.9, 2.2, 1.0],
   rexRay1: [F.rexPod2, 4.3, 2.4, 0.9], rexRay2: [F.rexPod2, 4.55, 2.2, 0.9],

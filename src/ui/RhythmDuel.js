@@ -45,7 +45,9 @@ class RhythmDuel {
     this.lastBeat = -1;
     this.reset();
     this.game.audio.pauseMusic(true); // la música del juego calla: ahora suena la del duelo
-    this.game.audio.setSfxFilter(null); // los efectos del duelo suenan sobre la canción: el rayo de las rachas, los instrumentos y tambores de Batuk, los fallos
+    this.game.audio.setSfxFilter(null);
+    // La canción es lo principal: los efectos (notas, fallos, rachas, tambores de Batuk) suenan a la mitad
+    this.game.audio.setSfxLevel(this.song === TrackMusic ? 0.5 : 1);
   }
 
   get active() { return !this.done; }
@@ -99,6 +101,7 @@ class RhythmDuel {
     this.done = true;
     this.setPaused(false);
     this.game.audio.setSfxFilter(null);
+    this.game.audio.setSfxLevel(1);
     // Con la canción del jefe la música de la etapa NO vuelve al terminar el duelo (se libera al volver al menú)
     if (this.song !== TrackMusic) this.game.audio.pauseMusic(false);
   }
@@ -195,6 +198,7 @@ class RhythmDuel {
     this.score += (perfect ? 100 : 50) * this.multiplier;
     this.meter = Math.min(1, this.meter + RhythmDuel.GAIN[perfect ? 'perfect' : 'good']);
     this.music.playLead(lane);
+    this.game.audio.play('duelNote', { lane, perfect });
     if (perfect) this.music.playSparkle(lane);
     this.hitEffects(lane, perfect);
     this.addPop(perfect ? 'PERFECTO' : 'BIEN', perfect ? '#ffffff' : RhythmDuel.LANE_COLORS[1], lane);
@@ -269,7 +273,7 @@ class RhythmDuel {
     const world = this.scene.world;
     const length = Math.max(200, this.boss.x - this.player.x - 70);
     world.beam({ facing: 1, owner: this.player, dx: 46, dy: -94, length, duration: 0.4, power: 2, thickness: 0.9 });
-    world.audio.play('rayFire');
+    world.audio.play('duelStreak'); // el sonido de la racha de 10 aciertos
     world.shake(7, 0.25);
     this.boss.squash = 0.22;
     if (this.boss.react) this.boss.react('streak', world);
@@ -282,6 +286,7 @@ class RhythmDuel {
     this.setState('lost');
     if (this.song === TrackMusic) this.game.audio.pauseBoss(true);
     this.game.audio.play('duelFail');
+    setTimeout(() => this.game.audio.setSfxLevel(1), 2500);
     this.scene.world.shake(12, 0.5);
     this.scene.world.flash(0.35, '#ff2a55');
     this.game.modal.show({
@@ -304,6 +309,7 @@ class RhythmDuel {
     world.callout('¡LA NOTA FINAL!', 2.4, { y: 96, colors: ['#ffffff', '#00f5ff', '#005e8a'], glow: '#00f5ff', rim: '#00323f' });
     world.beam({ facing: 1, owner: this.player, dx: 46, dy: -94, length: Math.max(260, this.boss.x - this.player.x - 60), duration: 0.9, power: 3, thickness: 1.5, dim: true });
     world.audio.play('rayFire');
+    setTimeout(() => this.game.audio.setSfxLevel(1), 2500); // los efectos recuperan su nivel pasado el golpe final
     this.boss.squash = 0.5;
     this.scene.particles.burst({ x: this.boss.x, y: this.boss.y - 140, count: 60, speed: [200, 900], life: [0.4, 1.1], size: [2.5, 6], colors: ['#ffffff', '#00f5ff', '#a066ff', '#ff2a55'], type: 'spark', drag: 1.6 });
     this.scene.particles.add({ type: 'ring', x: this.boss.x, y: this.boss.y - 120, size: 20, sizeEnd: 520, life: 0.8, color: '#00f5ff', width: 12, flat: 0.9 });

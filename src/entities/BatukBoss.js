@@ -241,6 +241,7 @@ class BatukBoss {
     if (kind === 'miss') {
       // Contraataque: embiste hacia ECO y lanza un instrumento contra él
       this.lunge = 1;
+      world.audio.play('batukAttack');
       this.powerPose = 0.55; // pose de poder con tambores flotando
       this.ejectInstrument(world, true);
     } else if (kind === 'tier') {
