@@ -67,6 +67,15 @@ class Player extends Entity {
   static MIX_SCALE = 0.55;
   static LOW_KICK_TRACK = [[0, 'ecoPuno2'], [0.22, 'ecoMix2'], [0.72, 'ecoPuno6']];
   static HIGH_KICK_TRACK = [[0, 'ecoPatada2'], [0.2, 'ecoMix3'], [0.36, 'ecoMix4'], [0.78, 'ecoPatada6']];
+  // Golpes del video "video golpes" (guitarra en las manos, como al caminar): puño (golpes 1 y 3), patada frontal (2) y patada
+  // giratoria con estela (4). g = px de juego por px de imagen (igual para todos: el personaje mide lo mismo en el video).
+  static VIDEO_G = 0.477;
+  static VIDEO_SETS = {
+    puno: { key: 'ecoVPuno', anchor: 0.3985, feet: 0.9902, track: [[0, 1], [0.1, 2], [0.22, 3], [0.42, 4], [0.55, 5], [0.7, 6], [0.85, 7]] },
+    patada: { key: 'ecoVPatada', anchor: 0.4191, feet: 0.9917, track: [[0, 1], [0.1, 2], [0.22, 3], [0.34, 4], [0.5, 5], [0.62, 6], [0.78, 7], [0.9, 8]] },
+    giro: { key: 'ecoVGiro', anchor: 0.474, feet: 0.9836, track: [[0, 1], [0.08, 2], [0.16, 3], [0.24, 4], [0.32, 5], [0.4, 6], [0.46, 7], [0.52, 8], [0.62, 9], [0.72, 10], [0.82, 11], [0.92, 12]] },
+  };
+  static VIDEO_BY_STEP = { 1: 'puno', 2: 'patada', 3: 'puno', 4: 'giro' };
   static AIR_KICK_TRACK = [[0, 3], [0.07, 4], [0.30, 5], [0.38, 6]];
   static AIR_KICK = { duration: 0.46, hitStart: 0.07, hitEnd: 0.32, multiplier: 1.4, range: 124, knock: 210, power: 2, reachZ: 170 }; // alcanza a enemigos en el suelo desde lo alto del salto
   // Rayo mejorado (K): 9 cuadros → carga, esfera de energía, disparo, rayo completo, avance y recuperación
@@ -96,10 +105,10 @@ class Player extends Entity {
   // Combo de 5 golpes: el multiplicador de daño crece con cada eslabón.
   // power: intensidad del efecto (1 ligero, 2 fuerte, 3 final). launch: lanza al enemigo por el aire.
   static ATTACKS = [
-    { duration: 0.32, hitStart: 0.10, hitEnd: 0.20, multiplier: 1.0, range: 112, knock: 120, power: 1 }, // puño
-    { duration: 0.36, hitStart: 0.10, hitEnd: 0.22, multiplier: 1.0, range: 118, knock: 130, power: 1 }, // patada baja
-    { duration: 0.36, hitStart: 0.11, hitEnd: 0.22, multiplier: 1.25, range: 114, knock: 150, power: 2 }, // puño cruzado
-    { duration: 0.44, hitStart: 0.13, hitEnd: 0.27, multiplier: 1.5, range: 122, knock: 190, power: 2 }, // patada alta
+    { duration: 0.44, hitStart: 0.10, hitEnd: 0.22, multiplier: 1.0, range: 118, knock: 120, power: 1 }, // puño
+    { duration: 0.50, hitStart: 0.17, hitEnd: 0.28, multiplier: 1.0, range: 124, knock: 130, power: 1 }, // patada frontal
+    { duration: 0.44, hitStart: 0.10, hitEnd: 0.22, multiplier: 1.25, range: 120, knock: 150, power: 2 }, // puño cruzado
+    { duration: 0.78, hitStart: 0.34, hitEnd: 0.50, multiplier: 1.6, range: 138, knock: 200, power: 2 }, // patada giratoria
     { duration: 0.52, hitStart: 0.18, hitEnd: 0.30, multiplier: 2.5, range: 300, knock: 380, power: 3, launch: true },
   ];
 
@@ -631,6 +640,21 @@ class Player extends Entity {
     return { image: current, height: Player.IDLE_HEIGHT, anchorX: Player.IDLE_ANCHOR, blendImage: next, blend: next ? eased : 0, drop: (1 - Player.IDLE_FEET) * Player.IDLE_HEIGHT };
   }
 
+  // Cuadro del video para los golpes 1 a 4 (null si no toca o las imágenes no cargaron)
+  videoFrame() {
+    if (this.airKick) return null;
+    const name = Player.VIDEO_BY_STEP[this.attackStep];
+    if (!name) return null;
+    const set = Player.VIDEO_SETS[name];
+    const progress = this.stateTime / Player.ATTACKS[this.attackStep - 1].duration;
+    let number = set.track[0][1];
+    for (const [from, frame] of set.track) if (progress >= from) number = frame;
+    const image = Assets.image(set.key + number);
+    if (!image) return null;
+    const height = image.height * Player.VIDEO_G;
+    return { image, height, anchorX: set.anchor, drop: (1 - set.feet) * height };
+  }
+
   // Cuadro del puño (golpes 1 y 3)
   punchFrame() {
     if (this.airKick || (this.attackStep !== 1 && this.attackStep !== 3)) return null;
@@ -696,7 +720,7 @@ class Player extends Entity {
       const idle = this.idleFrame();
       if (idle) return idle;
     } else if (this.state === 'attack') {
-      const kick = this.mixFrame() || this.kickFrame() || this.punchFrame();
+      const kick = this.videoFrame() || this.mixFrame() || this.kickFrame() || this.punchFrame();
       if (kick) return kick;
       const attack = Player.ATTACKS[this.attackStep - 1];
       const finisher = this.attackStep >= Player.ATTACKS.length;

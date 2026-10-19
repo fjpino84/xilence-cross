@@ -90,6 +90,9 @@ const CONFIG = Object.freeze({
     ...frameAssets('ecoPatada', 'eco', 'patada', 6),
     ...frameAssets('ecoPuno', 'eco', 'puno', 6),
     ...frameAssets('ecoIdle', 'eco', 'idle', 3),
+    ...frameAssets('ecoVPuno', 'eco', 'vpuno', 7), // golpes sacados del video "video golpes"
+    ...frameAssets('ecoVPatada', 'eco', 'vpatada', 8),
+    ...frameAssets('ecoVGiro', 'eco', 'vgiro', 12),
     ecoMix2: 'assets/sprites/eco/mix_2.png',
     ecoMix3: 'assets/sprites/eco/mix_3.png',
     ecoMix4: 'assets/sprites/eco/mix_4.png',
