@@ -333,6 +333,16 @@ class Player extends Entity {
     world.audio.play('rayCharge');
   }
 
+  // Pose del Thunder Riff (disparo y regreso) sin rayo propio: la usa el duelo con Batuk, que pone su propio rayo hasta el jefe
+  playRiffPose() {
+    this.setState('specialAttack');
+    this.specialFired = true;
+    this.chargeTime = Player.CHARGE_MAX;
+    this.chargeLevel = 1;
+    this.releaseTime = 0;
+    this.vx = 0;
+  }
+
   // Mientras se mantiene K: carga (0 → 1). Al soltar: dispara un rayo proporcional a la carga.
   updateSpecial(dt, input, world) {
     this.vx = 0;

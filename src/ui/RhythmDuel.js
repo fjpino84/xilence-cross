@@ -17,7 +17,7 @@ class RhythmDuel {
   static STRAY_PENALTY = 0.015;
   static MISS_PENALTY = 0.07;
   static GAIN = { perfect: 0.035, good: 0.022 };
-  static STREAK_EVERY = 10; // cada tantos aciertos seguidos, ECO dispara un rayo al jefe
+  static STREAK_EVERY = 10; // cada tantos aciertos (buenos o perfectos), ECO dispara el Thunder Riff al jefe
 
   // scene: GameScene; boss: el jefe en pantalla (VoidharFinale); onWin: se llama al cerrar la pantalla de resultados
   constructor(scene, boss, onWin, { travel = RhythmDuel.TRAVEL } = {}) {
@@ -202,7 +202,8 @@ class RhythmDuel {
     if (perfect) this.music.playSparkle(lane);
     this.hitEffects(lane, perfect);
     this.addPop(perfect ? 'PERFECTO' : 'BIEN', perfect ? '#ffffff' : RhythmDuel.LANE_COLORS[1], lane);
-    if (this.combo % RhythmDuel.STREAK_EVERY === 0) this.streakBeam();
+    // Cada 10 notas buenas (perfectas o buenas, aunque haya fallos de por medio) ECO lanza el Thunder Riff
+    if ((this.counts.perfect + this.counts.good) % RhythmDuel.STREAK_EVERY === 0) this.streakBeam();
   }
 
   miss(note) {
@@ -273,12 +274,13 @@ class RhythmDuel {
     const world = this.scene.world;
     const length = Math.max(200, this.boss.x - this.player.x - 70);
     world.beam({ facing: 1, owner: this.player, dx: 46, dy: -94, length, duration: 0.4, power: 2, thickness: 0.9 });
+    this.player.playRiffPose(); // ECO hace la animación del Thunder Riff
     world.audio.play('duelStreak'); // el sonido de la racha de 10 aciertos
     world.shake(7, 0.25);
     this.boss.squash = 0.22;
     if (this.boss.react) this.boss.react('streak', world);
     this.scene.particles.burst({ x: this.boss.x - 30, y: this.boss.y - 130, count: 18, speed: [160, 520], life: [0.2, 0.5], size: [2.4, 5], colors: ['#ffffff', '#00f5ff', '#a066ff'], type: 'spark', drag: 2 });
-    this.addPop(`¡RACHA ${this.combo}!`, '#00f5ff', 1.5);
+    this.addPop('¡THUNDER RIFF!', '#00f5ff', 1.5);
   }
 
   lose() {
