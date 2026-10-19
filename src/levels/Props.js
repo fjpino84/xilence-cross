@@ -4,7 +4,7 @@
 //  · plano delantero ('front'): objetos grandes y oscuros pegados al borde inferior, delante de los personajes, con más parallax.
 // La colocación sale de una semilla fija por escenario: es la misma en cada partida y no depende del azar de los fondos.
 class Props {
-  static FRONT_PARALLAX = 1.0; // pegados a la unión: se mueven exactamente con el escenario
+  static FRONT_PARALLAX = 1.14; // algo más rápidos que el fondo (más cerca de la cámara); en el centro de la pantalla siguen tapando la unión
   // h: altura en pantalla (px). lights: [fracción x, fracción y, color, radio] de luces que laten. flicker: parpadeo del cartel
   static DEFS = {
     torre: { h: 190, lights: [[0.20, 0.72, '#ff3a3a', 26, 1.1]] },
@@ -84,14 +84,15 @@ class Props {
   // Si ECO está justo detrás, el objeto se vuelve translúcido para no taparlo del todo.
   renderFront(ctx, camera, player) {
     for (const item of this.front) {
-      const sx = item.x - camera.x;
+      // Parallax respecto al centro de la pantalla: lejos del centro se adelantan un poco al fondo
+      const sx = CONFIG.WIDTH / 2 + (item.x - camera.x - CONFIG.WIDTH / 2) * Props.FRONT_PARALLAX;
       if (sx < -360 || sx > CONFIG.WIDTH + 360) continue;
       const def = Props.DEFS[item.name];
       const image = Assets.image('prop_' + item.name);
       const halfWidth = image ? (image.width / image.height) * def.h * 0.5 : 200;
       let alpha = 0.97;
       if (player) {
-        const near = Math.abs(player.x - item.x) < halfWidth * 0.8;
+        const near = Math.abs(player.x - camera.x - sx) < halfWidth * 0.8; // comparado en pantalla, ya con el parallax
         item.fade = (item.fade === undefined ? 1 : item.fade) + ((near ? 0.42 : 1) - (item.fade === undefined ? 1 : item.fade)) * 0.12;
         alpha *= item.fade;
       }
