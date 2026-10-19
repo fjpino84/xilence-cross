@@ -45,10 +45,9 @@ class Level01 extends Level {
       used.set(pick, used.get(pick) + 1);
       keys.push(pick);
     }
-    return keys.map((key, index) => {
-      const special = key === Level01.SUB_BOSS || key === Level01.BOSS;
-      return { key, flip: !special && index > 0 && Math.random() < 0.5 };
-    });
+    // Sin giros en espejo: al girar un escenario, su borde se encontraba con su propio reflejo en la unión con el siguiente y se veía
+    // una simetría falsa. Sin girar, cada unión es el borde derecho de uno con el borde izquierdo del otro, como se dibujaron.
+    return keys.map((key) => ({ key, flip: false }));
   }
 
   constructor() {

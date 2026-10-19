@@ -51,6 +51,11 @@ class Level {
         const poly = item.poly.map(([fx, fy]) => [originX + (tile.flip ? 1 - fx : fx) * Level.TILE_WIDTH, fy * CONFIG.HEIGHT]);
         const xs = poly.map((point) => point[0]);
         const ys = poly.map((point) => point[1]);
+        // En las uniones entre escenarios el fondo se funde entre dos ilustraciones: un objeto de borde dibujado encima de un personaje se vería
+        // a medio fundir (fantasma). Esos objetos (tubería izquierda, puntal derecho) solo se usan en el primer y último escenario.
+        const centerX = (Math.min(...xs) + Math.max(...xs)) / 2 - originX;
+        const last = index === this.config.backgroundSequence.length - 1;
+        if ((index > 0 && centerX < Level.TILE_OVERLAP) || (!last && centerX > Level.TILE_WIDTH - Level.TILE_OVERLAP)) continue;
         list.push({ poly, base: item.base * CONFIG.HEIGHT, minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) });
       }
     });
