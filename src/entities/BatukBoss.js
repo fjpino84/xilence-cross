@@ -202,8 +202,26 @@ class BatukBoss {
           world.audio.play('instrumentHit');
         }
       } else {
-        // Despedido: vuela, cae y se desvanece (al caer derrotado también se esparcen)
         item.life += dt;
+        if (item.drift) {
+          // Derrotado: los instrumentos descienden lentamente, meciéndose, hasta posarse en el suelo; luego se desvanecen
+          item.vy = Math.min(item.vy + 260 * dt, 95);
+          item.vx *= Math.max(0, 1 - dt * 1.2);
+          item.x += (item.vx + Math.sin(item.life * 1.8 + item.index) * 14) * dt;
+          item.y += item.vy * dt;
+          const rest = this.y + 10 + item.restOffset;
+          if (item.y >= rest) {
+            item.y = rest;
+            item.vy = 0;
+            item.vx = 0;
+            item.spin *= Math.max(0, 1 - dt * 5);
+            if (item.landedAt === undefined) item.landedAt = item.life;
+          }
+          const fadeFrom = item.landedAt === undefined ? Infinity : item.landedAt + 1.8;
+          item.alpha = Math.max(0, 1 - Math.max(0, item.life - fadeFrom) / 1.0);
+          return;
+        }
+        // Despedido: vuela, cae y se desvanece
         item.vy += 1400 * dt;
         item.x += item.vx * dt;
         item.y += item.vy * dt;
@@ -267,11 +285,13 @@ class BatukBoss {
       if (item.state === 'out') continue;
       item.state = 'out';
       item.life = 0;
-      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 2.4;
-      const speed = 300 + Math.random() * 420;
-      item.vx = Math.cos(angle) * speed;
-      item.vy = Math.sin(angle) * speed - 200;
-      item.spin = (Math.random() < 0.5 ? -1 : 1) * (5 + Math.random() * 6);
+      // No salen disparados: se sueltan y bajan despacio, con un giro suave
+      item.drift = true;
+      item.vx = (Math.random() - 0.5) * 36;
+      item.vy = -30 - Math.random() * 40;
+      item.spin = (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 0.9);
+      item.restOffset = -16 + Math.random() * 38;
+      item.landedAt = undefined;
     }
     world.audio.play('drumBoom');
     world.shake(16, 0.6);
