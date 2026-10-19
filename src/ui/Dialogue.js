@@ -272,6 +272,7 @@ class Dialogue {
     const lineHeight = size + 9;
     const startY = panelY + (hasPortrait ? 62 : 70) + (lines.length < 3 ? 8 : 0);
     ctx.font = font;
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
     lines.forEach((text, i) => {
       const part = text.slice(0, Math.max(0, remaining));
@@ -279,6 +280,8 @@ class Dialogue {
       if (!part) return;
       ctx.save();
       ctx.font = font;
+      ctx.textAlign = 'left'; // otros dibujos pueden haber dejado el lienzo alineado a la derecha o al centro
+      ctx.textBaseline = 'alphabetic';
       ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
       ctx.shadowBlur = 4;
       ctx.shadowOffsetY = 2;
