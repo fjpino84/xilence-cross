@@ -701,6 +701,9 @@ AudioManager.RECORDED = {
   rexCharge: (a, { kind = 'bolt', enraged = false }) => {
     a.sample(kind === 'ray' ? 'rexRay' : 'rexBolt', { count: 0, volume: 0.9, jitter: 0, name: (kind === 'ray' ? 'rexRay' : 'rexBolt') + (enraged ? 2 : 1) });
   },
+  // Trino: el láser grabado (el sonido de carga sigue siendo sintético); Batuk: el retumbar de su llegada
+  trinoFire: (a) => { a.sample('trinoLaser', { count: 4, volume: 0.8, jitter: 0.04 }); },
+  batukArrive: (a) => { a.sample('batukArrive', { volume: 0.9, jitter: 0 }); },
   rexDie: (a) => { a.sample('rexDie', { volume: 0.95, jitter: 0 }); },
   rexRoar: (a) => { a.sample('rexRoar', { volume: 0.9, jitter: 0.02 }); },
   rexHurt: (a) => {

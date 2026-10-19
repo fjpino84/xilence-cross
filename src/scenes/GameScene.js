@@ -915,6 +915,7 @@ class GameScene {
       finale.boss = new BatukBoss(this.camera.right + 200, 462);
       finale.boss.targetX = Math.min(this.player.x + 330, this.camera.right - 150);
       this.game.audio.startBoss(); // su música empieza en cuanto aparece Batuk
+      this.game.audio.play('batukArrive'); // retumbar de su llegada: el pico coincide con el pisotón final
     }
 
     const boss = finale.boss;

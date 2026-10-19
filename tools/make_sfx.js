@@ -24,6 +24,8 @@ const F = {
   disparo: 'disparo rayo.mp3',
   superIni: 'sonido inicial super poder.mp3',
   superFin: 'sonido super poder.mp3',
+  laser: 'Laser Trino.mp3',
+  batukLlega: '@Batuk/llegada batuk.mp3',
   // Rex Vane (carpeta "Subjefe level 2"; el prefijo @ indica una ruta desde src/levels)
   rexArr: '@Subjefe level 2/ES_Creatures, Ethereal, Possessed, Creepy, Evil, Dark 03 - Epidemic Sound.mp3',
   rexVoz: '@Subjefe level 2/ES_Voices, Alien, Grey, Vocalization 02 - Epidemic Sound.mp3',
@@ -53,6 +55,9 @@ const CLIPS = {
   superStart: [F.superIni, 0, 1.0, 0.1], superBlast: [F.superFin, 0, 6.5, 1.5],
   // Rex Vane: llegada (el pico cae al aterrizar, a 1,8 s), cargas con el pico al final de la espera (rayos 1,2 s / 0,9 s; haz 1,0 s / 0,75 s),
   // muerte, voz de fondo del diálogo, rugido al enfurecerse y quejidos
+  // El láser de Trino: cuatro disparos de la misma grabación; la llegada de Batuk con el pico (2,2 s) cayendo cuando termina de entrar (~2 s)
+  trinoLaser1: [F.laser, 0, 1.3, 0.45], trinoLaser2: [F.laser, 3.25, 1.3, 0.45], trinoLaser3: [F.laser, 6.25, 1.3, 0.45], trinoLaser4: [F.laser, 10.05, 1.3, 0.45],
+  batukArrive: [F.batukLlega, 0.2, 5.0, 1.5],
   rexArrive: [F.rexArr, 0, 3.2, 1.2],
   rexBolt1: [F.rexPod1, 0.6, 2.4, 1.0], rexBolt2: [F.rexPod1, 0.9, 2.2, 1.0],
   rexRay1: [F.rexPod2, 4.3, 2.4, 0.9], rexRay2: [F.rexPod2, 4.55, 2.2, 0.9],
