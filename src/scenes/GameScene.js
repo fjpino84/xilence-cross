@@ -125,7 +125,8 @@ class GameScene {
       audio: this.game.audio,
       addEffect: (effect) => this.effects.push(effect),
       addText: (x, y, z, text, options) => this.effects.push({ type: 'text', x, y, z, text, age: 0, duration: 0.7, ...options }),
-      flash: (duration, color = CONFIG.COLORS.CYAN) => { this.flashTime = duration; this.flashColor = color; },
+      flash: (duration, color = CONFIG.COLORS.CYAN, strength = 0.28) => { this.flashTime = duration; this.flashColor = color; this.flashMax = strength; },
+      superBolt: (x) => this.superBolt(x),
       hitStop: (duration) => { this.hitStopTime = Math.max(this.hitStopTime, duration); },
       slowMo: (factor, duration) => { this.slowFactor = factor; this.slowTime = duration; },
       shake: (power, duration) => this.camera.shake(power, duration),
@@ -1441,14 +1442,38 @@ class GameScene {
     else this.hud.render(ctx, this.player, this.level, this.trino);
     if (this.duel) this.duel.render(ctx);
     this.renderFinaleOverlay(ctx);
+    this.renderSuperVeil(ctx);
 
     if (this.flashTime > 0) {
       ctx.save();
-      ctx.globalAlpha = Math.min(0.28, this.flashTime * 1.2);
+      ctx.globalAlpha = Math.min(this.flashMax ?? 0.28, this.flashTime * 1.2);
       ctx.fillStyle = this.flashColor;
       ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
       ctx.restore();
     }
+  }
+
+  // Power Chord: un velo de luz cian y dorada late sobre toda la pantalla mientras caen los rayos y salen los anillos
+  renderSuperVeil(ctx) {
+    const player = this.player;
+    if (!player || player.state !== 'superAttack' || !Assets.image('ecoPc1')) return;
+    const t = player.stateTime;
+    let strength;
+    if (t < Player.PC_FIRE) strength = 0.12 * (t / Player.PC_FIRE); // se va cargando de energía
+    else strength = Math.max(0, 1 - (t - Player.PC_FIRE) / (Player.PC_END - Player.PC_FIRE)) * (0.55 + 0.25 * Math.sin(t * 38));
+    if (strength <= 0.01) return;
+    const screenX = player.x - this.camera.x;
+    const gradient = ctx.createRadialGradient(screenX, player.y - 60, 20, screenX, player.y - 60, CONFIG.WIDTH * 0.75);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+    gradient.addColorStop(0.25, 'rgba(255, 220, 90, 0.32)');
+    gradient.addColorStop(0.6, 'rgba(0, 235, 255, 0.2)');
+    gradient.addColorStop(1, 'rgba(0, 60, 120, 0)');
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = Math.min(1, strength);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
+    ctx.restore();
   }
 
   // Destello rojo en el borde de la pantalla por donde entra un enemigo atacando
@@ -1542,12 +1567,64 @@ class GameScene {
     ctx.restore();
   }
 
+  // Rayo del Power Chord: cae del cielo hasta el suelo con un destello, un anillo y chispas en el impacto
+  superBolt(x) {
+    const groundY = CONFIG.GROUND_TOP + 10 + Math.random() * (CONFIG.GROUND_BOTTOM - CONFIG.GROUND_TOP - 10);
+    const points = [{ x, y: -30 }];
+    let px = x;
+    const steps = 9;
+    for (let i = 1; i <= steps; i++) {
+      px += (Math.random() - 0.5) * 110;
+      points.push({ x: i === steps ? x + (Math.random() - 0.5) * 40 : px, y: -30 + ((groundY + 30) * i) / steps });
+    }
+    this.effects.push({ type: 'superbolt', x, y: groundY, z: 0, points, age: 0, duration: 0.5, hue: Math.random() < 0.5 ? 'cyan' : 'gold' });
+    const end = points[points.length - 1];
+    this.particles.add({ type: 'ring', x: end.x, y: groundY, size: 10, sizeEnd: 190, life: 0.45, color: '#ffffff', width: 10, flat: 0.3 });
+    this.particles.add({ type: 'ring', x: end.x, y: groundY, size: 6, sizeEnd: 120, life: 0.35, color: CONFIG.COLORS.CYAN, width: 6, flat: 0.3 });
+    this.particles.burst({ x: end.x, y: groundY - 8, count: 22, speed: [180, 640], angle: [-2.9, -0.25], life: [0.3, 0.8], size: [2.5, 5], colors: [CONFIG.COLORS.CYAN, '#ffffff', CONFIG.COLORS.YELLOW], type: 'spark', drag: 1.6, gravity: 500 });
+    this.landDust(end.x, groundY, 6);
+    this.game.audio.play('zap');
+  }
+
+  renderSuperBolt(ctx, effect) {
+    const progress = effect.age / effect.duration;
+    const fade = Math.max(0, 1 - progress);
+    const flicker = 0.7 + 0.3 * Math.sin(effect.age * 90);
+    const gold = effect.hue === 'gold';
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    const trace = (width, color, alpha) => {
+      ctx.lineWidth = width;
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = alpha * fade * flicker;
+      ctx.beginPath();
+      effect.points.forEach((point, i) => (i ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y)));
+      ctx.stroke();
+    };
+    trace(34, gold ? '#ffb000' : '#00a8ff', 0.28);
+    trace(16, gold ? '#ffe600' : '#00f5ff', 0.55);
+    trace(6, '#ffffff', 0.95);
+    // destello de luz en el punto de impacto
+    const end = effect.points[effect.points.length - 1];
+    const glow = ctx.createRadialGradient(end.x, end.y, 4, end.x, end.y, 150);
+    glow.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+    glow.addColorStop(0.3, gold ? 'rgba(255, 220, 90, 0.5)' : 'rgba(0, 235, 255, 0.5)');
+    glow.addColorStop(1, 'rgba(0, 245, 255, 0)');
+    ctx.globalAlpha = fade;
+    ctx.fillStyle = glow;
+    ctx.fillRect(end.x - 150, end.y - 150, 300, 300);
+    ctx.restore();
+  }
+
   renderEffect(ctx, effect) {
     if (effect.age < 0) return; // arcos con retardo aún no empiezan
     if (effect.type === 'crack') { this.renderCrack(ctx, effect); return; }
     if (effect.type === 'whirl') { this.renderWhirl(ctx, effect); return; }
     if (effect.type === 'starburst') { this.renderStarburst(ctx, effect); return; }
     if (effect.type === 'zap') { this.renderZap(ctx, effect); return; }
+    if (effect.type === 'superbolt') { this.renderSuperBolt(ctx, effect); return; }
     const progress = effect.age / effect.duration;
     const screenY = effect.y - effect.z;
     ctx.save();

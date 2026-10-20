@@ -98,7 +98,8 @@ class Player extends Entity {
   // Power Chord con los cuadros del video: sube la guitarra, golpea el suelo dos veces, caen los rayos (SUPER_FIRE_PC: el segundo
   // golpe), salen los anillos de choque con polvo y se recupera. [segundo desde el inicio, cuadro (1-56, con decimales)]
   static PC_COUNT = 56;
-  static PC_G = 0.48; // px de juego por px de imagen
+  static PC_G = 0.58; // px de juego por px de imagen (ECO se ve algo más grande en su momento más poderoso)
+  static PC_BOLTS = [0.84, 0.9, 0.98, 1.06, 1.15, 1.26, 1.38, 1.52]; // instantes en que cae un rayo más
   static PC_ANCHOR = 0.45;
   static PC_FEET = 0.942;
   static PC_WARP = [[0, 1], [0.1, 3], [0.18, 5], [0.24, 6], [0.30, 10], [0.36, 12], [0.40, 13], [0.50, 17], [0.50, 18], [0.60, 21], [0.66, 22], [0.70, 24],
@@ -459,6 +460,7 @@ class Player extends Entity {
   startSuper(world) {
     this.setState('superAttack');
     this.superFired = false;
+    this.superBoltIndex = 0;
     this.energy = 0;
     this.invulnerable = Assets.image('ecoPc1') ? Player.PC_END + 0.1 : 1.4;
     this.vx = 0;
@@ -473,23 +475,33 @@ class Player extends Entity {
     if (!this.superFired) this.emitChargeSparks(world);
 
     const withFrames = !!Assets.image('ecoPc1');
+    // rayos que siguen cayendo durante la animación, cada uno con su destello y su temblor
+    if (withFrames && this.superFired && this.superBoltIndex < Player.PC_BOLTS.length && this.stateTime >= Player.PC_BOLTS[this.superBoltIndex]) {
+      this.superBoltIndex++;
+      const spread = world.camera.right - world.camera.left;
+      world.superBolt(world.camera.left + 60 + Math.random() * (spread - 120));
+      world.flash(0.22, Math.random() < 0.5 ? '#ffffff' : '#bff8ff', 0.5);
+      world.shake(10, 0.25);
+    }
     if (!this.superFired && this.stateTime >= (withFrames ? Player.PC_FIRE : 0.25)) {
       this.superFired = true;
       world.cinematic(false);
-      world.flash(0.45);
-      world.shake(22, 0.7);
-      world.camera.punch(0.12);
+      world.flash(0.7, '#ffffff', 0.85);
+      world.shake(36, 1.4);
+      world.camera.punch(0.16);
+      // tres rayos caen de golpe sobre ECO y sus lados
+      for (const dx of [0, -190, 190]) world.superBolt(Math.max(world.camera.left + 40, Math.min(world.camera.right - 40, this.x + dx)));
       world.hitStop(0.1);
       world.slowMo(0.35, 0.7);
       world.audio.play('super');
 
       // Tres ondas de choque planas recorren el suelo
-      // Los anillos del video ya salen en la animación: aquí solo dos ondas finas recorren el suelo para marcar el daño
-      [CONFIG.COLORS.CYAN, CONFIG.COLORS.YELLOW].forEach((color, index) => {
-        world.particles.add({ type: 'ring', x: this.x, y: this.y, size: 10, sizeEnd: 1100, life: 0.7 + index * 0.12, color, width: 9, flat: 0.28 });
+      // Ondas de choque que recorren todo el suelo, además de los anillos de la animación
+      [CONFIG.COLORS.CYAN, '#ffffff', CONFIG.COLORS.YELLOW, '#a066ff'].forEach((color, index) => {
+        world.particles.add({ type: 'ring', x: this.x, y: this.y, size: 10, sizeEnd: 1300, life: 0.75 + index * 0.12, color, width: 18 - index * 2, flat: 0.28 });
       });
-      world.particles.burst({ x: this.x, y: this.y - 70, count: 36, speed: [250, 750], life: [0.4, 0.9], size: [3, 6], colors: [CONFIG.COLORS.CYAN, '#ffffff', CONFIG.COLORS.YELLOW], type: 'spark', drag: 1.5 });
-      world.shards(this.x, this.y - 90, 44, [CONFIG.COLORS.CYAN, CONFIG.COLORS.YELLOW, CONFIG.COLORS.PURPLE, '#ffffff'], true);
+      world.particles.burst({ x: this.x, y: this.y - 70, count: 110, speed: [250, 1000], life: [0.5, 1.3], size: [3, 7], colors: [CONFIG.COLORS.CYAN, '#ffffff', CONFIG.COLORS.YELLOW], type: 'spark', drag: 1.3 });
+      world.shards(this.x, this.y - 90, 90, [CONFIG.COLORS.CYAN, CONFIG.COLORS.YELLOW, CONFIG.COLORS.PURPLE, '#ffffff'], true);
 
       for (const enemy of world.enemies) {
         const onScreen = enemy.x > world.camera.left - 40 && enemy.x < world.camera.right + 40;
@@ -935,6 +947,7 @@ class Player extends Entity {
     if (flicker && this.isAlive) return;
 
     if (sprite) {
+      this.renderSuperAura(ctx);
       this.renderSprite(ctx, sprite);
       return;
     }
@@ -950,6 +963,31 @@ class Player extends Entity {
         silhouetteColor: ghost.color, additive: true, alpha: 0.45 * fade * ghost.pose.alpha,
       });
     }
+  }
+
+  // Power Chord: resplandor cian y dorado que crece mientras sube la guitarra y estalla con el segundo golpe
+  renderSuperAura(ctx) {
+    if (this.state !== 'superAttack' || !Assets.image('ecoPc1')) return;
+    const t = this.stateTime;
+    const charge = Math.min(1, t / Player.PC_FIRE);
+    const after = t >= Player.PC_FIRE ? Math.max(0, 1 - (t - Player.PC_FIRE) / (Player.PC_END - Player.PC_FIRE)) : 0;
+    const strength = t < Player.PC_FIRE ? 0.25 + 0.55 * charge : 0.35 + 0.65 * after;
+    const radius = (t < Player.PC_FIRE ? 90 + 120 * charge : 210 + 200 * (1 - after)) * (1 + 0.06 * Math.sin(this.age * 28));
+    const cx = this.x;
+    const cy = this.y - this.z - 60;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const gradient = ctx.createRadialGradient(cx, cy, 6, cx, cy, radius);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+    gradient.addColorStop(0.25, 'rgba(255, 230, 110, 0.55)');
+    gradient.addColorStop(0.6, 'rgba(0, 235, 255, 0.3)');
+    gradient.addColorStop(1, 'rgba(0, 120, 255, 0)');
+    ctx.globalAlpha = Math.min(1, strength);
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, radius, radius * 0.85, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
   renderSprite(ctx, sprite) {
