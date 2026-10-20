@@ -89,6 +89,8 @@ class Level {
 
   // Charco bajo los pies en (x, y), o null
   puddleAt(x, y) {
+    // el líquido detectado en la ilustración (con su forma real) también cuenta como charco
+    if (this.liquid && this.liquid.at(x, y) > 0.45) return { x, y, rx: 40, ry: 12, color: '#3fe0b0' };
     for (const puddle of this.puddles) {
       const dx = (x - puddle.x) / puddle.rx;
       const dy = (y - puddle.y) / puddle.ry;

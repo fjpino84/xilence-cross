@@ -59,6 +59,7 @@ class GameScene {
     this.atmosphere = new Atmosphere(this.level);
     this.foreground = new Foreground();
     this.live = new LiveBackground(this.level);
+    this.liquid = new Liquid(this.level); // el líquido verde del suelo: brillo, reflejos, ondas, burbujas
     this.props = new Props(this.level);
     this.ambientBack = new ParticleSystem(); // lluvia lejana: por detrás de los personajes
     this.atmosphereHooks = {
@@ -1085,6 +1086,7 @@ class GameScene {
     if (this.level.config.ambient === 'rain') this.rainRipples(scaled);
     this.updateAmbient(scaled);
     this.live.update(scaled);
+    this.liquid.update(scaled, [this.player, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : [])], this.camera);
     this.props.update(scaled);
     this.atmosphere.update(scaled, this.camera, this.atmosphereHooks);
     this.maxCombo = Math.max(this.maxCombo, this.player.comboHits);
@@ -1391,6 +1393,7 @@ class GameScene {
     this.camera.applyZoom(ctx);
     this.level.renderBackground(ctx, this.camera);
     this.live.render(ctx, this.camera); // telas, cadenas, cables, carteles y generador animados
+    this.liquid.renderShimmer(ctx, this.camera); // destellos y brillo del líquido del suelo
     this.atmosphere.renderBack(ctx, this.camera);
     this.live.renderFog(ctx, this.camera, 'far'); // niebla del fondo y del plano medio, por detrás de los personajes
     this.props.renderBack(ctx, this.camera); // objetos del plano trasero, bajo la niebla media
@@ -1408,6 +1411,7 @@ class GameScene {
     for (const enemy of this.enemies) if (enemy.renderHazards) enemy.renderHazards(ctx); // rayos y avisos del jefe
     for (const effect of this.effects) if (effect.ground) this.renderEffect(ctx, effect); // grietas bajo los personajes
     const walkers = [this.player, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : [])];
+    this.liquid.renderWorld(ctx, this.camera, walkers); // ondas, reflejos, burbujas y vapor, bajo los personajes
     const drawables = [this.player, this.trino, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : []), ...this.activeOccluders(walkers), ...this.props.worldDrawables(this.camera, this.player)]
       .sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
     // Perspectiva: los personajes crecen un poco al acercarse a la cámara (bajar por el suelo) y se encogen al alejarse
