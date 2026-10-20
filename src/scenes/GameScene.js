@@ -64,7 +64,7 @@ class GameScene {
     this.atmosphereHooks = {
       thunder: () => this.game.audio.play('thunder'),
       zap: () => this.game.audio.play('zap'),
-      helicopter: (level, dt) => this.game.audio.setHelicopter(level, dt),
+      helicopter: (level, dt) => this.game.audio.setHelicopter(this.duel ? 0 : level, dt), // en el duelo no suena el helicóptero
       shake: (power, duration) => this.camera.shake(power, duration),
     };
     this.ambientBudget = 0;

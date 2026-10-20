@@ -17,6 +17,7 @@ class RhythmDuel {
   static STRAY_PENALTY = 0.015;
   static MISS_PENALTY = 0.07;
   static GAIN = { perfect: 0.035, good: 0.022 };
+  static QUIET_SFX = ['duelNote', 'duelBad', 'duelStreak', 'duelFail', 'batukAttack', 'drumBoom', 'drumStomp', 'instrumentIn', 'instrumentHit'];
   static STREAK_EVERY = 10; // cada tantos aciertos (buenos o perfectos), ECO dispara el Thunder Riff al jefe
 
   // scene: GameScene; boss: el jefe en pantalla (VoidharFinale); onWin: se llama al cerrar la pantalla de resultados
@@ -45,9 +46,10 @@ class RhythmDuel {
     this.lastBeat = -1;
     this.reset();
     this.game.audio.pauseMusic(true); // la música del juego calla: ahora suena la del duelo
-    this.game.audio.setSfxFilter(null);
-    // La canción es lo principal: los efectos (notas, fallos, rachas, tambores de Batuk) suenan casi de fondo (8 %)
-    this.game.audio.setSfxLevel(this.song === TrackMusic ? 0.08 : 1);
+    // La canción es lo principal: solo suenan los efectos del duelo (notas, fallos, racha de 10, tambores y ataque de Batuk), muy bajos,
+    // y se callan los ruidos ambientales (truenos, descargas eléctricas, helicóptero…)
+    this.game.audio.setSfxFilter(this.song === TrackMusic ? RhythmDuel.QUIET_SFX : null);
+    this.game.audio.setSfxLevel(this.song === TrackMusic ? 0.04 : 1);
   }
 
   get active() { return !this.done; }
