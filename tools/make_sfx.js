@@ -32,6 +32,7 @@ const F = {
   electricidad: '@level 2/Sonidos de electricidad.mp3',
   x10: '@Batuk/X10.mp3',
   notaNueva: '@Batuk/Sonido por Nota.mp3',
+  letsRock: '@level 2/Lets rock.mp3',
   golpeBatuk: '@Batuk/Golpe Batuk.mp3',
   // Rex Vane (carpeta "Subjefe level 2"; el prefijo @ indica una ruta desde src/levels)
   rexArr: '@Subjefe level 2/ES_Creatures, Ethereal, Possessed, Creepy, Evil, Dark 03 - Epidemic Sound.mp3',
@@ -67,6 +68,8 @@ const CLIPS = {
   batukArrive: [F.batukLlega, 0.2, 5.0, 1.5],
   // Duelo: la nota acertada (el arranque de "Sonidos de notas"), los fallos (cuatro, cortos) y el ataque de Batuk (golpes sueltos y dobles de su grabación de tambor)
   duelNote: [F.notaNueva, 0, 0.4, 0.15], duelX10: [F.x10, 0, 3.6, 1.5],
+  // Botón "LET'S ROCK!!" del título
+  letsRock: [F.letsRock, 0, 1.0, 0.25],
   // Ambiente del nivel: helicóptero (12 s en bucle, con fundido en los extremos), trueno (dos largos) y corrientes eléctricas (tres)
   heli: [F.helicoptero, 40, 12, 0.8, 0.8],
   thunder1: [F.trueno, 0.2, 7.2, 2.0], thunder2: [F.trueno, 0.2, 4.6, 1.5],

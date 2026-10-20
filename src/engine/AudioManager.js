@@ -255,6 +255,15 @@ class AudioManager {
 
   get ready() { return this.context !== null && !this.muted; }
 
+  // Crea el contexto de audio (suspendido) y empieza a cargar los sonidos grabados ya al abrir la página, para que estén listos
+  // cuando llegue el primer gesto del jugador (el botón del título suena al pulsarlo)
+  prepare() {
+    if (this.context) return;
+    const AudioContextClass = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
+    if (!AudioContextClass) return;
+    try { this.setup(new AudioContextClass()); } catch (error) { /* se creará con el primer gesto */ }
+  }
+
   unlock() {
     this.startMusic();
     if (!this.context) {
@@ -727,6 +736,8 @@ AudioManager.RECORDED = {
   superCharge: (a) => { a.sample('superStart', { volume: 0.9, jitter: 0 }); },
   super: (a) => { a.sample('superBlast', { volume: 1, jitter: 0 }); },
   hurt: (a) => { a.fadeVoice(a.chargeVoice, 0.08); a.chargeVoice = null; return true; },
+  // Botón "LET'S ROCK!!" del título
+  letsRock: (a) => { a.sample('letsRock', { volume: 0.9, jitter: 0 }); },
   // Rex Vane: la llegada, las cargas (el pico del sonido coincide con el final de la espera), su muerte, rugido y quejidos
   rexArrive: (a) => { a.sample('rexArrive', { volume: 0.85, jitter: 0 }); },
   rexCharge: (a, { kind = 'bolt', enraged = false }) => {

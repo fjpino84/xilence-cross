@@ -36,6 +36,7 @@ class TitleScene {
 
   // Pulsar ENTER abre el video de inicio y, al terminar, empieza la partida (?skipintro=1 lo salta, para pruebas)
   start() {
+    this.game.audio.play("letsRock"); // el sonido del botón
     const skip = /[?&]skipintro=1/.test(window.location.search || '');
     this.game.scenes.change(skip ? 'game' : 'intro');
   }

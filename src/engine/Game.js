@@ -7,6 +7,7 @@ class Game {
     if (this.ctx) { this.ctx.imageSmoothingEnabled = true; this.ctx.imageSmoothingQuality = 'high'; }
     this.input = new InputManager();
     this.audio = new AudioManager();
+    this.audio.prepare();
     this.modal = new Modal(modalRoot);
     this.scenes = new SceneManager();
     this.touch = new TouchControls(this.input, document.body);
