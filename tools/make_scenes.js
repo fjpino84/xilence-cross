@@ -73,6 +73,25 @@ function components(mask, w, h) {
   return { label, infos };
 }
 
+// Dilata una máscara (radio r) con una pasada horizontal y otra vertical
+function dilate(ink, w, h, radius) {
+  const tmp = new Uint8Array(w * h), dil = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) { let last = -1e9; for (let xx = 0; xx < w; xx++) { if (ink[y * w + xx]) last = xx; if (xx - last <= radius) tmp[y * w + xx] = 1; } last = 1e9; for (let xx = w - 1; xx >= 0; xx--) { if (ink[y * w + xx]) last = xx; if (last - xx <= radius) tmp[y * w + xx] = 1; } }
+  for (let xx = 0; xx < w; xx++) { let last = -1e9; for (let y = 0; y < h; y++) { if (tmp[y * w + xx]) last = y; if (y - last <= radius) dil[y * w + xx] = 1; } last = 1e9; for (let y = h - 1; y >= 0; y--) { if (tmp[y * w + xx]) last = y; if (last - y <= radius) dil[y * w + xx] = 1; } }
+  return dil;
+}
+// Deja solo el objeto principal: borra los fragmentos de objetos vecinos que quedaron dentro del recorte (llantas cortadas, cables sueltos…)
+function keepMain(image, radius) {
+  const { width: w, height: h, data } = image;
+  const ink = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) ink[i] = data[i * 4 + 3] > 40 ? 1 : 0;
+  const { label, infos } = components(dilate(ink, w, h, radius), w, h);
+  if (!infos.length) return image;
+  const main = infos.reduce((best, info) => (info.area > best.area ? info : best)).id;
+  for (let i = 0; i < w * h; i++) if (label[i] !== main) data[i * 4 + 3] = 0;
+  return image;
+}
+
 // Quita el fondo blanco de una imagen (ImageData) dejando el borde con transparencia progresiva y sin halo claro.
 // keep(info) decide qué componentes blancos se eliminan.
 function keyWhite(image, remove) {
@@ -172,7 +191,7 @@ function keyWhite(image, remove) {
         const sx = Math.max(0, info.minX - pad), sy = Math.max(0, info.minY - pad);
         const sw = Math.min(w, info.maxX + pad) - sx, sh = Math.min(h, info.maxY + pad) - sy;
         const piece = x.getImageData(sx, sy, sw, sh);
-        const keyed = keyWhite(piece, (i) => i.touchTop || i.touchEdge || i.area >= 150);
+        const keyed = keepMain(keyWhite(piece, (i) => i.touchTop || i.touchEdge || i.area >= 150), group === 'fg' ? 22 : 14);
         const scale = Math.min(1, (group === 'fg' ? 900 : 420) / Math.max(sw, sh));
         const tw = Math.max(8, Math.round(sw * scale)), th = Math.max(8, Math.round(sh * scale));
         const full = canvasOf(sw, sh); full.getContext('2d').putImageData(keyed, 0, 0);

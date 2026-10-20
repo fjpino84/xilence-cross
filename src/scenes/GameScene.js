@@ -1405,7 +1405,7 @@ class GameScene {
     for (const enemy of this.enemies) if (enemy.renderHazards) enemy.renderHazards(ctx); // rayos y avisos del jefe
     for (const effect of this.effects) if (effect.ground) this.renderEffect(ctx, effect); // grietas bajo los personajes
     const walkers = [this.player, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : [])];
-    const drawables = [this.player, this.trino, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : []), ...this.activeOccluders(walkers), ...this.props.worldDrawables(this.camera)]
+    const drawables = [this.player, this.trino, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : []), ...this.activeOccluders(walkers), ...this.props.worldDrawables(this.camera, this.player)]
       .sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
     // Perspectiva: los personajes crecen un poco al acercarse a la cámara (bajar por el suelo) y se encogen al alejarse
     for (const entity of drawables) {

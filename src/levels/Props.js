@@ -12,16 +12,18 @@ class Props {
   // Objetos del suelo: h = altura en pantalla (px) a escala 1; lights = [fracción x, fracción y, color, radio, ritmo] de luces que laten
   static WORLD = {
     // carteles sobre poste
-    obj1_7: { h: 132 }, obj1_8: { h: 132 }, obj1_9: { h: 132 }, obj1_10: { h: 138 },
-    obj3_6: { h: 130 }, obj3_7: { h: 128 }, obj3_8: { h: 132 }, obj3_9: { h: 134 }, obj4_4: { h: 138 },
+    obj1_7: { h: 100 }, obj1_8: { h: 100 }, obj1_9: { h: 100 }, obj1_10: { h: 104 },
+    obj3_6: { h: 98 }, obj3_7: { h: 96 }, obj3_8: { h: 100 }, obj3_9: { h: 102 }, obj4_4: { h: 104 },
     // escombros, cajas, barriles y máquinas
     obj1_4: { h: 78 }, obj1_5: { h: 50 }, obj1_12: { h: 74 }, obj1_13: { h: 82 }, obj1_14: { h: 94, lights: [[0.82, 0.38, '#35e8ff', 14, 2.2]] },
     obj1_15: { h: 58 }, obj2_10: { h: 56 }, obj2_11: { h: 52 },
-    obj3_1: { h: 86, lights: [[0.62, 0.3, '#35e8ff', 14, 2.6]] }, obj3_2: { h: 48 }, obj3_3: { h: 76 }, obj3_4: { h: 48 }, obj3_5: { h: 80 },
+    obj3_1: { h: 86, lights: [[0.62, 0.3, '#35e8ff', 14, 2.6]] }, obj3_3: { h: 76 }, obj3_4: { h: 48 }, obj3_5: { h: 80 },
     obj3_10: { h: 86, lights: [[0.45, 0.3, '#35e8ff', 14, 2.0]] }, obj3_13: { h: 92 }, obj4_3: { h: 96 }, obj4_5: { h: 80 },
   };
+  // Piezas con texto: nunca se giran en espejo
+  static NO_FLIP = new Set(['obj1_7', 'obj1_8', 'obj1_9', 'obj1_10', 'obj3_6', 'obj3_7', 'obj3_8', 'obj3_9', 'obj4_4', 'obj2_10', 'obj2_11', 'fgS_1', 'fgS_2', 'fgS_3']);
   static SIGNS = ['obj1_7', 'obj1_8', 'obj1_9', 'obj1_10', 'obj3_6', 'obj3_7', 'obj3_8', 'obj3_9', 'obj4_4'];
-  static DEBRIS = ['obj1_4', 'obj1_5', 'obj1_12', 'obj1_13', 'obj1_14', 'obj1_15', 'obj2_10', 'obj2_11', 'obj3_1', 'obj3_2', 'obj3_3',
+  static DEBRIS = ['obj1_4', 'obj1_5', 'obj1_12', 'obj1_13', 'obj1_14', 'obj1_15', 'obj2_10', 'obj2_11', 'obj3_1', 'obj3_3',
     'obj3_4', 'obj3_5', 'obj3_10', 'obj3_13', 'obj4_3', 'obj4_5'];
 
   // Primeros planos de abajo (h = altura en pantalla; el pie queda un poco fuera de la pantalla)
@@ -75,7 +77,7 @@ class Props {
         const chosen = candidates[Math.floor(Math.random() * candidates.length)];
         used.add(chosen);
         const y = CONFIG.GROUND_TOP + 14 + Math.random() * (CONFIG.GROUND_BOTTOM - CONFIG.GROUND_TOP - 22);
-        this.world.push({ name: chosen, x, y, flip: Math.random() < 0.5, phase: Math.random() * 6.28 });
+        this.world.push({ name: chosen, x, y, flip: !Props.NO_FLIP.has(chosen) && Math.random() < 0.5, phase: Math.random() * 6.28 });
       }
     }
 
@@ -85,13 +87,13 @@ class Props {
     let previous = '';
     for (let index = 1; index < scenes; index++) {
       previous = pickWeighted(names, Props.BOTTOM, previous);
-      this.front.push({ name: previous, x: index * stride + overlap / 2 + (Math.random() - 0.5) * 40, flip: Math.random() < 0.5, phase: Math.random() * 6.28 });
+      this.front.push({ name: previous, x: index * stride + overlap / 2 + (Math.random() - 0.5) * 40, flip: !Props.NO_FLIP.has(previous) && Math.random() < 0.5, phase: Math.random() * 6.28 });
     }
     for (let index = 0; index < scenes; index++) {
       if (bossScenes.has(index) || Math.random() > 0.3) continue;
       previous = pickWeighted(names, Props.BOTTOM, previous);
       const x = index * stride + overlap + 150 + Math.random() * (Level.TILE_WIDTH - 2 * overlap - 300);
-      this.front.push({ name: previous, x, flip: Math.random() < 0.5, phase: Math.random() * 6.28 });
+      this.front.push({ name: previous, x, flip: !Props.NO_FLIP.has(previous) && Math.random() < 0.5, phase: Math.random() * 6.28 });
     }
 
     // Primeros planos de arriba: desactivados (no gustaron); el código queda por si se quieren recuperar con TOP_ENABLED
@@ -126,7 +128,8 @@ class Props {
   }
 
   // Objetos del suelo que están en pantalla, como "dibujables" para ordenarlos junto a los personajes por su línea de profundidad
-  worldDrawables(camera) {
+  // Si el objeto está por delante de ECO y lo tapa, se vuelve translúcido para no esconderlo
+  worldDrawables(camera, player) {
     const list = [];
     for (const item of this.world) {
       if (item.x < camera.left - 160 || item.x > camera.right + 160) continue;
@@ -139,8 +142,10 @@ class Props {
           const t = (item.y - CONFIG.GROUND_TOP) / (CONFIG.GROUND_BOTTOM - CONFIG.GROUND_TOP);
           const height = def.h * (0.92 + 0.16 * Math.max(0, Math.min(1, t)));
           const width = (image.width / image.height) * height;
-          Sprite.draw(ctx, image, { x: item.x, y: item.y, height, anchorX: 0.5, facing: item.flip ? -1 : 1, tint: { color: '#0a0618', alpha: 0.14 } });
-          this.glows(ctx, item, def, item.x, item.y, width, height, 1);
+          const covers = player && item.y > player.y && Math.abs(player.x - item.x) < width * 0.5 + 40;
+          item.fade = (item.fade === undefined ? 1 : item.fade) + ((covers ? 0.35 : 1) - (item.fade === undefined ? 1 : item.fade)) * 0.15;
+          Sprite.draw(ctx, image, { x: item.x, y: item.y, height, anchorX: 0.5, facing: item.flip ? -1 : 1, alpha: item.fade, tint: { color: '#0a0618', alpha: 0.14 } });
+          this.glows(ctx, item, def, item.x, item.y, width, height, item.fade);
         },
       });
     }
