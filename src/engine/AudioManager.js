@@ -30,6 +30,7 @@ class AudioManager {
     this.lastPick = {};
     this.chargeVoice = null;
     this.talkVoice = null;
+    this.heliVoice = null;
     this.musicHeld = false;
     this.boss = null;
     this.bossError = false;
@@ -373,7 +374,7 @@ class AudioManager {
 
   // Reproduce un recorte (o uno al azar de una serie: 'ecoStep' + 1..count) y devuelve su voz para poder apagarla
   sample(name, options = {}) {
-    const { count = 0, volume = 1, rate = 1, jitter = 0.05, pan = 0, wet = 0 } = options;
+    const { count = 0, volume = 1, rate = 1, jitter = 0.05, pan = 0, wet = 0, loop = false } = options;
     if (!this.sfx || !this.ready) return null;
     let key = options.name || name;
     if (count > 0) {
@@ -391,8 +392,31 @@ class AudioManager {
     gain.gain.value = volume;
     source.connect(gain);
     this.out(gain, { pan, wet });
-    source.start(this.context.currentTime, clip[0], clip[1]);
+    if (loop) {
+      source.loop = true;
+      source.loopStart = clip[0];
+      source.loopEnd = clip[0] + clip[1];
+      source.start(this.context.currentTime, clip[0]);
+    } else {
+      source.start(this.context.currentTime, clip[0], clip[1]);
+    }
     return { source, gain };
+  }
+
+  // Helicóptero del reflector: suena en bucle mientras la luz está cerca de la pantalla (level 0-1) y se apaga solo si se aleja
+  setHelicopter(level, dt = 1 / 60) {
+    if (!this.sfx || !this.ready) return;
+    const target = Math.max(0, Math.min(1, level)) * 0.16;
+    if (target > 0.004 && !this.heliVoice) this.heliVoice = this.sample('heli', { loop: true, volume: 0, jitter: 0 });
+    const voice = this.heliVoice;
+    if (!voice) return;
+    voice.gain.gain.setTargetAtTime(target, this.context.currentTime, 0.6); // sube y baja con suavidad
+    this.heliQuiet = target > 0.004 ? 0 : (this.heliQuiet || 0) + dt;
+    if (this.heliQuiet > 4) {
+      try { voice.source.stop(this.context.currentTime + 0.05); } catch (error) { /* ya parado */ }
+      this.heliVoice = null;
+      this.heliQuiet = 0;
+    }
   }
 
   // Apaga una voz con un fundido corto
@@ -716,7 +740,10 @@ AudioManager.RECORDED = {
     a.lastDuelBad = now;
     a.sample('duelErr', { count: 4, volume: 0.45, jitter: 0.03 });
   },
-  duelStreak: (a) => { a.sample('rayFire', { volume: 0.9, jitter: 0.02 }); },
+  duelStreak: (a) => { a.sample('duelX10', { volume: 0.9, jitter: 0.01 }); },
+  // Ambiente: el trueno de los relámpagos del fondo y las corrientes eléctricas (cortocircuitos y rayos del Power Chord)
+  thunder: (a) => { a.sample('thunder', { count: 2, volume: 0.5, jitter: 0.07 }); },
+  zap: (a) => { a.sample('zap', { count: 3, volume: 0.45, jitter: 0.08 }); },
   batukAttack: (a) => { a.sample('batukHit', { count: 4, volume: 0.9, jitter: 0.03 }); },
   // Trino: el láser grabado (el sonido de carga sigue siendo sintético); Batuk: el retumbar de su llegada
   trinoFire: (a) => { a.sample('trinoLaser', { count: 4, volume: 0.8, jitter: 0.04 }); },

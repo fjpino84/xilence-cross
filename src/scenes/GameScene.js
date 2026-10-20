@@ -64,6 +64,7 @@ class GameScene {
     this.atmosphereHooks = {
       thunder: () => this.game.audio.play('thunder'),
       zap: () => this.game.audio.play('zap'),
+      helicopter: (level, dt) => this.game.audio.setHelicopter(level, dt),
       shake: (power, duration) => this.camera.shake(power, duration),
     };
     this.ambientBudget = 0;
@@ -1366,6 +1367,7 @@ class GameScene {
   togglePause() {
     this.paused = !this.paused;
     this.game.audio.duckMusic(this.paused);
+    if (this.paused) this.game.audio.setHelicopter(0, 10); // el helicóptero calla durante la pausa
     if (this.finale && this.finale.boss && !this.duel) this.game.audio.pauseBoss(this.paused);
     if (this.duel) this.duel.setPaused(this.paused);
     if (this.paused) {

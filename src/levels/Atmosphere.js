@@ -192,6 +192,15 @@ class Atmosphere {
   update(dt, camera, hooks) {
     this.time += dt;
     this.updateStorm(dt, camera, hooks);
+    // Helicóptero del reflector: cuanto más cerca del centro de la pantalla está su luz, más se oye
+    if (hooks.helicopter) {
+      let near = 0;
+      for (const light of this.searchlights) {
+        const spotX = light.cx + Math.sin(this.time * light.speed + light.phase) * light.sweep;
+        near = Math.max(near, 1 - Math.abs(spotX - (camera.x + CONFIG.WIDTH / 2)) / (CONFIG.WIDTH * 0.95));
+      }
+      hooks.helicopter(Math.max(0, near), dt);
+    }
     const left = camera.x - 160;
     const right = camera.x + CONFIG.WIDTH + 160;
 

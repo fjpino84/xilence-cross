@@ -27,6 +27,11 @@ const F = {
   laser: 'Laser Trino.mp3',
   batukLlega: '@Batuk/llegada batuk.mp3',
   errores: 'Errores batalla.mp3',
+  helicoptero: '@level 2/Helicopter.mp3',
+  trueno: '@level 2/Trueno.mp3',
+  electricidad: '@level 2/Sonidos de electricidad.mp3',
+  x10: '@Batuk/X10.mp3',
+  notaNueva: '@Batuk/Sonido por Nota.mp3',
   golpeBatuk: '@Batuk/Golpe Batuk.mp3',
   // Rex Vane (carpeta "Subjefe level 2"; el prefijo @ indica una ruta desde src/levels)
   rexArr: '@Subjefe level 2/ES_Creatures, Ethereal, Possessed, Creepy, Evil, Dark 03 - Epidemic Sound.mp3',
@@ -61,7 +66,11 @@ const CLIPS = {
   trinoLaser1: [F.laser, 0, 1.3, 0.45], trinoLaser2: [F.laser, 3.25, 1.3, 0.45], trinoLaser3: [F.laser, 6.25, 1.3, 0.45], trinoLaser4: [F.laser, 10.05, 1.3, 0.45],
   batukArrive: [F.batukLlega, 0.2, 5.0, 1.5],
   // Duelo: la nota acertada (el arranque de "Sonidos de notas"), los fallos (cuatro, cortos) y el ataque de Batuk (golpes sueltos y dobles de su grabación de tambor)
-  duelNote: [F.superIni, 0, 0.32, 0.12],
+  duelNote: [F.notaNueva, 0, 0.4, 0.15], duelX10: [F.x10, 0, 3.6, 1.5],
+  // Ambiente del nivel: helicóptero (12 s en bucle, con fundido en los extremos), trueno (dos largos) y corrientes eléctricas (tres)
+  heli: [F.helicoptero, 40, 12, 0.8, 0.8],
+  thunder1: [F.trueno, 0.2, 7.2, 2.0], thunder2: [F.trueno, 0.2, 4.6, 1.5],
+  zap1: [F.electricidad, 0, 1.5, 0.3], zap2: [F.electricidad, 1.95, 0.45, 0.1], zap3: [F.electricidad, 2.95, 0.45, 0.1],
   duelErr1: [F.errores, 0, 0.4, 0.2], duelErr2: [F.errores, 1.85, 0.4, 0.2], duelErr3: [F.errores, 3.7, 0.4, 0.2], duelErr4: [F.errores, 5.6, 0.4, 0.2],
   batukHit1: [F.golpeBatuk, 27.74, 0.5, 0.2], batukHit2: [F.golpeBatuk, 51.77, 0.5, 0.2], batukHit3: [F.golpeBatuk, 33.29, 0.8, 0.25], batukHit4: [F.golpeBatuk, 44.39, 0.8, 0.25],
   rexArrive: [F.rexArr, 0, 3.2, 1.2],
@@ -82,7 +91,7 @@ const page = `<html><body><script>
   const decode = async (file) => cache[file] || (cache[file] = await ctx.decodeAudioData(await (await fetch(file.startsWith('@') ? '/src/levels/' + file.slice(1).split('/').map(encodeURIComponent).join('/') : '/${SOURCE_DIR}' + encodeURIComponent(file))).arrayBuffer()));
   const parts = [], table = {};
   let cursor = 0;
-  for (const [name, [file, start, dur, fade]] of Object.entries(clips)) {
+  for (const [name, [file, start, dur, fade, fadeIn]] of Object.entries(clips)) {
     const source = await decode(file);
     const length = Math.ceil(dur * rate);
     const off = new OfflineAudioContext(1, length, rate);
@@ -92,7 +101,7 @@ const page = `<html><body><script>
     node.start(0, start, dur);
     const data = (await off.startRendering()).getChannelData(0).slice();
     // fundido de entrada breve y de salida; normalizado al pico
-    const fin = Math.floor(0.004 * rate), fout = Math.floor(fade * rate);
+    const fin = Math.floor((fadeIn || 0.004) * rate), fout = Math.floor(fade * rate);
     let peak = 0;
     for (let i = 0; i < length; i++) {
       let g = 1;
