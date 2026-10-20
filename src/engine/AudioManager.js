@@ -157,7 +157,7 @@ class AudioManager {
 
   // --- Música del jefe (archivo grabado) ---
   static BOSS_MUSIC = 'assets/audio/batuk-battle.mp3';
-  static BOSS_VOLUME = 0.85;
+  static BOSS_VOLUME = 1.0;
 
   // Empieza la canción del jefe desde el principio; la música de fondo normal se apaga con un fundido cruzado
   startBoss() {

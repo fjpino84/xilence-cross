@@ -46,8 +46,8 @@ class RhythmDuel {
     this.reset();
     this.game.audio.pauseMusic(true); // la música del juego calla: ahora suena la del duelo
     this.game.audio.setSfxFilter(null);
-    // La canción es lo principal: los efectos (notas, fallos, rachas, tambores de Batuk) suenan muy bajos (20 %)
-    this.game.audio.setSfxLevel(this.song === TrackMusic ? 0.2 : 1);
+    // La canción es lo principal: los efectos (notas, fallos, rachas, tambores de Batuk) suenan casi de fondo (8 %)
+    this.game.audio.setSfxLevel(this.song === TrackMusic ? 0.08 : 1);
   }
 
   get active() { return !this.done; }
