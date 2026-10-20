@@ -7,6 +7,7 @@
 class Props {
   static FRONT_PARALLAX = 1.14; // los de abajo se mueven algo más rápido que el fondo (más cerca de la cámara)
   static TOP_PARALLAX = 1.2;
+  static TOP_ENABLED = false;
 
   // Objetos del suelo: h = altura en pantalla (px) a escala 1; lights = [fracción x, fracción y, color, radio, ritmo] de luces que laten
   static WORLD = {
@@ -93,11 +94,11 @@ class Props {
       this.front.push({ name: previous, x, flip: Math.random() < 0.5, phase: Math.random() * 6.28 });
     }
 
-    // Primeros planos de arriba: en algunas escenas
+    // Primeros planos de arriba: desactivados (no gustaron); el código queda por si se quieren recuperar con TOP_ENABLED
     const topNames = Object.keys(Props.TOP);
     this.top = [];
     for (let index = 0; index < scenes; index++) {
-      if (Math.random() > 0.35) continue;
+      if (!Props.TOP_ENABLED || Math.random() > 0.35) continue;
       const name = topNames[Math.floor(Math.random() * topNames.length)];
       const x = index * stride + overlap + 120 + Math.random() * (Level.TILE_WIDTH - 2 * overlap - 240);
       this.top.push({ name, x, flip: Math.random() < 0.5, phase: Math.random() * 6.28 });
@@ -138,13 +139,6 @@ class Props {
           const t = (item.y - CONFIG.GROUND_TOP) / (CONFIG.GROUND_BOTTOM - CONFIG.GROUND_TOP);
           const height = def.h * (0.92 + 0.16 * Math.max(0, Math.min(1, t)));
           const width = (image.width / image.height) * height;
-          // sombra en el suelo
-          ctx.save();
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-          ctx.beginPath();
-          ctx.ellipse(item.x, item.y - 2, width * 0.38, Math.max(5, height * 0.07), 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
           Sprite.draw(ctx, image, { x: item.x, y: item.y, height, anchorX: 0.5, facing: item.flip ? -1 : 1, tint: { color: '#0a0618', alpha: 0.14 } });
           this.glows(ctx, item, def, item.x, item.y, width, height, 1);
         },

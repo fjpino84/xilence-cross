@@ -6,6 +6,7 @@ class Foreground {
   static SPEED_TOP = 1.18;
   static BOTTOM_HEIGHT = 150;
   static BOTTOM_ENABLED = false;
+  static TOP_ENABLED = false; // los cables negros que cuelgan de arriba se quitaron (no gustaban)
   static TOP_HEIGHT = 130;
 
   constructor() {
@@ -161,7 +162,7 @@ class Foreground {
       for (let x = offset; x < CONFIG.WIDTH; x += W) ctx.drawImage(strip, Math.round(x), y);
     };
     ctx.save();
-    draw(this.top, Foreground.SPEED_TOP, 0, 0.9);
+    if (Foreground.TOP_ENABLED) draw(this.top, Foreground.SPEED_TOP, 0, 0.9);
     // La tira inferior (montones y neumáticos inventados) se quitó: no encajaba con el dibujo. Los objetos de primer plano de verdad
     // se marcan en OccluderData.js y tapan a los personajes. Para probarla de nuevo: Foreground.BOTTOM_ENABLED = true.
     if (Foreground.BOTTOM_ENABLED) {
