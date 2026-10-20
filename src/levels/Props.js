@@ -8,6 +8,7 @@ class Props {
   static FRONT_PARALLAX = 1.14; // los de abajo se mueven algo más rápido que el fondo (más cerca de la cámara)
   static TOP_PARALLAX = 1.2;
   static TOP_ENABLED = false;
+  static WORLD_ENABLED = false; // objetos sueltos sobre el suelo: desactivados (no gustaron); los primeros planos de abajo siguen
 
   // Objetos del suelo: h = altura en pantalla (px) a escala 1; lights = [fracción x, fracción y, color, radio, ritmo] de luces que laten
   static WORLD = {
@@ -61,7 +62,7 @@ class Props {
     for (let index = 0; index < scenes; index++) {
       const boss = bossScenes.has(index);
       const roll = Math.random();
-      const count = boss ? (roll < 0.5 ? 1 : 0) : (roll < 0.15 ? 0 : roll < 0.6 ? 1 : 2);
+      const count = !Props.WORLD_ENABLED ? 0 : boss ? (roll < 0.5 ? 1 : 0) : (roll < 0.15 ? 0 : roll < 0.6 ? 1 : 2);
       const left = index * stride + (index > 0 ? overlap + 60 : 80);
       const right = index * stride + Level.TILE_WIDTH - (index < scenes - 1 ? overlap + 60 : 80);
       let previousX = -1e9;
