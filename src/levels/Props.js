@@ -18,13 +18,13 @@ class Props {
     obj1_4: { h: 78 }, obj1_5: { h: 50 }, obj1_12: { h: 74 }, obj1_13: { h: 82 }, obj1_14: { h: 94, lights: [[0.82, 0.38, '#35e8ff', 14, 2.2]] },
     obj1_15: { h: 58 }, obj2_10: { h: 56 }, obj2_11: { h: 52 },
     obj3_1: { h: 86, lights: [[0.62, 0.3, '#35e8ff', 14, 2.6]] }, obj3_3: { h: 76 }, obj3_4: { h: 48 }, obj3_5: { h: 80 },
-    obj3_10: { h: 86, lights: [[0.45, 0.3, '#35e8ff', 14, 2.0]] }, obj3_13: { h: 92 }, obj4_3: { h: 96 }, obj4_5: { h: 80 },
+    obj3_10: { h: 86, lights: [[0.45, 0.3, '#35e8ff', 14, 2.0]] }, obj4_3: { h: 96 }, obj4_5: { h: 80 },
   };
   // Piezas con texto: nunca se giran en espejo
   static NO_FLIP = new Set(['obj1_7', 'obj1_8', 'obj1_9', 'obj1_10', 'obj3_6', 'obj3_7', 'obj3_8', 'obj3_9', 'obj4_4', 'obj2_10', 'obj2_11', 'fgS_1', 'fgS_2', 'fgS_3']);
   static SIGNS = ['obj1_7', 'obj1_8', 'obj1_9', 'obj1_10', 'obj3_6', 'obj3_7', 'obj3_8', 'obj3_9', 'obj4_4'];
   static DEBRIS = ['obj1_4', 'obj1_5', 'obj1_12', 'obj1_13', 'obj1_14', 'obj1_15', 'obj2_10', 'obj2_11', 'obj3_1', 'obj3_3',
-    'obj3_4', 'obj3_5', 'obj3_10', 'obj3_13', 'obj4_3', 'obj4_5'];
+    'obj3_4', 'obj3_5', 'obj3_10', 'obj4_3', 'obj4_5'];
 
   // Primeros planos de abajo (h = altura en pantalla; el pie queda un poco fuera de la pantalla)
   static BOTTOM = {

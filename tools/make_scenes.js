@@ -41,25 +41,27 @@ const save = async (name, canvas, quality) => {
 const canvasOf = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 
 // Etiqueta los píxeles "blancos" (fondo de papel) en componentes conexos de 4 vecinos
-function whiteMask(d, w, h, limit) {
+function whiteMask(d, w, h, limit, saturation = 22) {
   const mask = new Uint8Array(w * h);
   for (let i = 0; i < w * h; i++) {
     const r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2];
-    if (Math.min(r, g, b) >= limit && Math.max(r, g, b) - Math.min(r, g, b) <= 22) mask[i] = 1;
+    if (d[i * 4 + 3] > 0 && Math.min(r, g, b) >= limit && Math.max(r, g, b) - Math.min(r, g, b) <= saturation) mask[i] = 1;
   }
   return mask;
 }
-function components(mask, w, h) {
+function components(mask, w, h, d) {
   const label = new Int32Array(w * h), infos = [];
   const stack = new Int32Array(w * h);
   for (let start = 0; start < w * h; start++) {
     if (!mask[start] || label[start]) continue;
     const id = infos.length + 1;
-    let top = 0, area = 0, touchTop = false, touchEdge = false, minX = w, maxX = 0, minY = h, maxY = 0;
+    let top = 0, area = 0, sumMin = 0, sumY = 0, touchTop = false, touchEdge = false, minX = w, maxX = 0, minY = h, maxY = 0;
     stack[top++] = start; label[start] = id;
     while (top) {
       const p = stack[--top], x = p % w, y = (p / w) | 0;
       area++;
+      sumY += y;
+      if (d) sumMin += Math.min(d[p * 4], d[p * 4 + 1], d[p * 4 + 2]);
       if (y === 0) touchTop = true;
       if (x === 0 || x === w - 1 || y === h - 1) touchEdge = true;
       if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
@@ -68,7 +70,7 @@ function components(mask, w, h) {
       if (y > 0 && mask[p - w] && !label[p - w]) { label[p - w] = id; stack[top++] = p - w; }
       if (y < h - 1 && mask[p + w] && !label[p + w]) { label[p + w] = id; stack[top++] = p + w; }
     }
-    infos.push({ id, area, touchTop, touchEdge, minX, maxX, minY, maxY });
+    infos.push({ id, area, sumMin, sumY, touchTop, touchEdge, minX, maxX, minY, maxY });
   }
   return { label, infos };
 }
@@ -94,10 +96,10 @@ function keepMain(image, radius) {
 
 // Quita el fondo blanco de una imagen (ImageData) dejando el borde con transparencia progresiva y sin halo claro.
 // keep(info) decide qué componentes blancos se eliminan.
-function keyWhite(image, remove) {
+function keyWhite(image, remove, limit = 238, saturation = 22) {
   const { width: w, height: h, data: d } = image;
-  const mask = whiteMask(d, w, h, 238);
-  const { label, infos } = components(mask, w, h);
+  const mask = whiteMask(d, w, h, limit, saturation);
+  const { label, infos } = components(mask, w, h, d);
   const gone = new Uint8Array(w * h);
   const drop = new Set(infos.filter(remove).map((i) => i.id));
   for (let i = 0; i < w * h; i++) if (label[i] && drop.has(label[i])) gone[i] = 1;
@@ -152,8 +154,11 @@ function keyWhite(image, remove) {
       const c = canvasOf(W, H), x = c.getContext('2d');
       x.imageSmoothingQuality = 'high';
       x.drawImage(image, 0, 0, W, H);
-      const keyed = keyWhite(x.getImageData(0, 0, W, H), (info) => info.touchTop || info.area >= 45);
-      x.putImageData(keyed, 0, 0);
+      const first = keyWhite(x.getImageData(0, 0, W, H), (info) => info.touchTop || info.area >= 45);
+      const second = keyWhite(first, (info) => info.area >= 20 && info.area <= 6000 && info.sumMin / info.area >= 216 && info.sumY / info.area < H * 0.68, 204, 30);
+      // tercera pasada: celdas diminutas de blanco puro (rejas de malla, andamios) en la mitad alta
+      const third = keyWhite(second, (info) => info.area >= 2 && info.sumY / info.area < H * 0.66, 246, 18);
+      x.putImageData(third, 0, 0);
       await save('nivel1/escena-' + (i + 1) + '.webp', c, 0.86);
       log.push('escena ' + (i + 1));
     }
