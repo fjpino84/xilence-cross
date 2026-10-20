@@ -95,6 +95,16 @@ class Player extends Entity {
   static BEAM_MIN = 170;
   static BEAM_MAX = 560;
   static SUPER_TIMES = [0.25, 0.38, 0.62, 0.85];
+  // Power Chord con los cuadros del video: sube la guitarra, golpea el suelo dos veces, caen los rayos (SUPER_FIRE_PC: el segundo
+  // golpe), salen los anillos de choque con polvo y se recupera. [segundo desde el inicio, cuadro (1-56, con decimales)]
+  static PC_COUNT = 56;
+  static PC_G = 0.48; // px de juego por px de imagen
+  static PC_ANCHOR = 0.45;
+  static PC_FEET = 0.942;
+  static PC_WARP = [[0, 1], [0.1, 3], [0.18, 5], [0.24, 6], [0.30, 10], [0.36, 12], [0.40, 13], [0.50, 17], [0.50, 18], [0.60, 21], [0.66, 22], [0.70, 24],
+    [0.74, 25], [0.78, 26], [0.95, 29], [1.10, 32], [1.20, 34], [1.20, 35], [1.60, 42], [2.0, 50], [2.0, 51], [2.5, 56]];
+  static PC_FIRE = 0.78;
+  static PC_END = 2.5;
 
   static SPRITES = {
     idle: { key: 'spriteEco', height: 140, anchorX: 0.5 },
@@ -450,7 +460,7 @@ class Player extends Entity {
     this.setState('superAttack');
     this.superFired = false;
     this.energy = 0;
-    this.invulnerable = 1.4;
+    this.invulnerable = Assets.image('ecoPc1') ? Player.PC_END + 0.1 : 1.4;
     this.vx = 0;
     world.cinematic(true);
     world.slowMo(0.35, 0.4);
@@ -462,7 +472,8 @@ class Player extends Entity {
     this.vx = 0;
     if (!this.superFired) this.emitChargeSparks(world);
 
-    if (!this.superFired && this.stateTime >= 0.25) {
+    const withFrames = !!Assets.image('ecoPc1');
+    if (!this.superFired && this.stateTime >= (withFrames ? Player.PC_FIRE : 0.25)) {
       this.superFired = true;
       world.cinematic(false);
       world.flash(0.45);
@@ -473,8 +484,9 @@ class Player extends Entity {
       world.audio.play('super');
 
       // Tres ondas de choque planas recorren el suelo
-      [CONFIG.COLORS.CYAN, '#ffffff', CONFIG.COLORS.YELLOW].forEach((color, index) => {
-        world.particles.add({ type: 'ring', x: this.x, y: this.y, size: 10, sizeEnd: 1100, life: 0.7 + index * 0.12, color, width: 16, flat: 0.28 });
+      // Los anillos del video ya salen en la animación: aquí solo dos ondas finas recorren el suelo para marcar el daño
+      [CONFIG.COLORS.CYAN, CONFIG.COLORS.YELLOW].forEach((color, index) => {
+        world.particles.add({ type: 'ring', x: this.x, y: this.y, size: 10, sizeEnd: 1100, life: 0.7 + index * 0.12, color, width: 9, flat: 0.28 });
       });
       world.particles.burst({ x: this.x, y: this.y - 70, count: 36, speed: [250, 750], life: [0.4, 0.9], size: [3, 6], colors: [CONFIG.COLORS.CYAN, '#ffffff', CONFIG.COLORS.YELLOW], type: 'spark', drag: 1.5 });
       world.shards(this.x, this.y - 90, 44, [CONFIG.COLORS.CYAN, CONFIG.COLORS.YELLOW, CONFIG.COLORS.PURPLE, '#ffffff'], true);
@@ -486,7 +498,7 @@ class Player extends Entity {
         }
       }
     }
-    if (this.stateTime >= 1.0) this.setState('idle');
+    if (this.stateTime >= (withFrames ? Player.PC_END : 1.0)) this.setState('idle');
   }
 
   // Chispas que convergen en ECO mientras carga
@@ -621,6 +633,8 @@ class Player extends Entity {
       return image ? { image, height: image.height * Player.RAYO2_SCALE, anchorX: Player.RAYO2_ANCHOR, effect: true } : null;
     }
 
+    if (this.state === 'superAttack' && Assets.image('ecoPc1')) return this.powerChordFrame();
+
     let prefix = null;
     let times = null;
     let scale = 0;
@@ -653,6 +667,29 @@ class Player extends Entity {
     const eased = fraction > 0.7 ? 0.3 * (fraction - 0.7) / 0.3 : 0;
     const height = current.height * (Player.IDLE_HEIGHT / current.height);
     return { image: current, height: Player.IDLE_HEIGHT, anchorX: Player.IDLE_ANCHOR, blendImage: next, blend: next ? eased : 0, drop: (1 - Player.IDLE_FEET) * Player.IDLE_HEIGHT };
+  }
+
+  // Cuadro del Power Chord según el tiempo: el mapa PC_WARP da la posición (con decimales) en la lista de cuadros
+  powerChordFrame() {
+    const warp = Player.PC_WARP;
+    const t = this.stateTime;
+    let position = warp[warp.length - 1][1];
+    for (let i = 1; i < warp.length; i++) {
+      if (t <= warp[i][0]) {
+        const [t0, f0] = warp[i - 1];
+        const [t1, f1] = warp[i];
+        position = t1 > t0 ? f0 + (f1 - f0) * ((t - t0) / (t1 - t0)) : f1;
+        break;
+      }
+    }
+    const index = Math.min(Player.PC_COUNT, Math.max(1, Math.floor(position)));
+    const image = Assets.image('ecoPc' + index);
+    if (!image) return null;
+    const next = Assets.image('ecoPc' + Math.min(Player.PC_COUNT, index + 1));
+    const fraction = index >= Player.PC_COUNT ? 0 : position - Math.floor(position);
+    const height = image.height * Player.PC_G;
+    // mezcla suave con el cuadro siguiente solo en la segunda mitad de cada cuadro (sin duplicar la guitarra)
+    return { image, height, anchorX: Player.PC_ANCHOR, effect: true, drop: (1 - Player.PC_FEET) * height, blendImage: next, blend: next && fraction > 0.5 ? fraction - 0.5 : 0 };
   }
 
   // Cuadro del video para los golpes 1 a 4 (null si no toca o las imágenes no cargaron)

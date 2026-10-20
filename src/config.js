@@ -82,6 +82,8 @@ const CONFIG = Object.freeze({
     ecoRayo3: 'assets/sprites/eco/rayo_3.png',
     ecoRayo4: 'assets/sprites/eco/rayo_4.png',
     ecoRayo5: 'assets/sprites/eco/rayo_5.png',
+    // Power Chord (video "Power Chord.mp4"): 56 cuadros con los rayos, los anillos y el polvo ya dibujados
+    ...Object.fromEntries(Array.from({ length: 56 }, (_, i) => ['ecoPc' + (i + 1), 'assets/sprites/eco/pc_' + (i + 1) + '.webp'])),
     ecoSuper1: 'assets/sprites/eco/super_1.png',
     ecoSuper2: 'assets/sprites/eco/super_2.png',
     ecoSuper3: 'assets/sprites/eco/super_3.png',
