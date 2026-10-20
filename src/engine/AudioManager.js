@@ -159,6 +159,7 @@ class AudioManager {
   // --- Música del jefe (archivo grabado) ---
   static BOSS_MUSIC = 'assets/audio/batuk-battle.mp3';
   static BOSS_VOLUME = 1.0;
+  static BOSS_BOOST = 2.4; // ganancia extra de la canción del jefe (ver boostBoss)
 
   // Empieza la canción del jefe desde el principio; la música de fondo normal se apaga con un fundido cruzado
   startBoss() {
@@ -171,12 +172,35 @@ class AudioManager {
       this.bossError = false;
       this.boss.addEventListener('error', () => { this.bossError = true; });
     }
+    this.boostBoss();
     this.boss.volume = 0;
     this.boss.muted = this.muted;
     try { this.boss.currentTime = 0; } catch (error) { /* aún sin metadatos: empezará desde el principio */ }
     this.boss.play().catch(() => {});
     AudioManager.ramp(this.boss, AudioManager.BOSS_VOLUME, 2.0); // entra poco a poco mientras sale la música de la etapa
     this.bossStamp = performance.now();
+  }
+
+  // La grabación de la canción es floja (la mitad de fuerte que la música de las etapas): se pasa por Web Audio con ganancia y un limitador
+  // para que mande sobre todo lo demás. Solo funciona desde un servidor (http/https); abriendo el archivo desde el disco el navegador lo
+  // impide y suena a su volumen normal.
+  boostBoss() {
+    if (this.bossBoosted || !this.boss || !this.context || typeof location === 'undefined' || !/^https?:$/.test(location.protocol)) return;
+    try {
+      const source = this.context.createMediaElementSource(this.boss);
+      const gain = this.context.createGain();
+      gain.gain.value = AudioManager.BOSS_BOOST;
+      const limiter = this.context.createDynamicsCompressor();
+      limiter.threshold.value = -3;
+      limiter.knee.value = 0;
+      limiter.ratio.value = 20;
+      limiter.attack.value = 0.003;
+      limiter.release.value = 0.1;
+      source.connect(gain);
+      gain.connect(limiter);
+      limiter.connect(this.context.destination);
+      this.bossBoosted = true;
+    } catch (error) { /* sin ganancia extra */ }
   }
 
   // Salta a un instante de la canción y la deja sonando. Devuelve true si hay audio real al que sincronizarse.
