@@ -53,6 +53,30 @@ const LIVE_DATA = {
   ],
 };
 
+
+// Nivel 1 (Nuevo Level 2): zonas que se mueven (grúas, cables), letreros que parpadean y focos que laten
+const LIVE_N_CRANE = (x, y, w, h, base = 0.45) => ({ type: 'crane', x, y, w, h, pivot: [base, 0.88], amp: 0.016, speed: 0.36 + (x % 0.1) });
+Object.assign(LIVE_DATA, {
+  bgN1: [],
+  bgN2: [LIVE_N_CRANE(0.70, 0.30, 0.08, 0.14, 0.5), { type: 'sway', x: 0.2, y: 0.34, w: 0.2, h: 0.1, pivot: [0.5, 0.0], amp: 0.004, speed: 0.8 }],
+  bgN3: [{ type: 'sway', x: 0.05, y: 0.2, w: 0.14, h: 0.2, pivot: [0.5, 0.0], amp: 0.004, speed: 0.7 }],
+  bgN4: [LIVE_N_CRANE(0.36, 0.20, 0.12, 0.26, 0.45), { type: 'sway', x: 0.435, y: 0.22, w: 0.04, h: 0.16, pivot: [0.5, 0.0], amp: 0.02, speed: 1.0 },
+    { type: 'sway', x: 0.62, y: 0.28, w: 0.2, h: 0.12, pivot: [0.5, 0.0], amp: 0.004, speed: 0.8 }],
+  bgN5: [{ type: 'sway', x: 0.5, y: 0.0, w: 0.2, h: 0.28, pivot: [0.5, 0.0], amp: 0.005, speed: 0.8 }, { type: 'sway', x: 0.78, y: 0.0, w: 0.16, h: 0.26, pivot: [0.5, 0.0], amp: 0.004, speed: 0.7 },
+    { type: 'screen', x: 0.63, y: 0.43, w: 0.05, h: 0.07, rate: 6, seed: 11 }, { type: 'screen', x: 0.865, y: 0.5, w: 0.045, h: 0.06, rate: 8, seed: 12 }],
+  bgN6: [LIVE_N_CRANE(0.37, 0.28, 0.1, 0.2, 0.45), { type: 'sway', x: 0.52, y: 0.0, w: 0.18, h: 0.3, pivot: [0.5, 0.0], amp: 0.004, speed: 0.8 },
+    { type: 'screen', x: 0.2, y: 0.47, w: 0.1, h: 0.14, rate: 6, seed: 13 }],
+  bgN7: [LIVE_N_CRANE(0.36, 0.17, 0.1, 0.3, 0.45), { type: 'screen', x: 0.5, y: 0.36, w: 0.1, h: 0.09, rate: 7, seed: 14, soft: true },
+    { type: 'sway', x: 0.6, y: 0.0, w: 0.2, h: 0.25, pivot: [0.5, 0.0], amp: 0.004, speed: 0.7 }],
+  bgN8: [{ type: 'sway', x: 0.55, y: 0.18, w: 0.3, h: 0.14, pivot: [0.5, 0.0], amp: 0.004, speed: 0.8 }, { type: 'sway', x: 0.35, y: 0.0, w: 0.18, h: 0.2, pivot: [0.5, 0.0], amp: 0.004, speed: 0.7 }],
+  bgN9: [{ type: 'screen', x: 0.45, y: 0.31, w: 0.12, h: 0.05, rate: 8, seed: 15, soft: true }, { type: 'light', x: 0.43, y: 0.34, w: 0.14, h: 0.3, rate: 3, seed: 16 },
+    { type: 'sway', x: 0.62, y: 0.0, w: 0.3, h: 0.25, pivot: [0.5, 0.0], amp: 0.004, speed: 0.7 }],
+  bgN10: [{ type: 'sway', x: 0.46, y: 0.0, w: 0.2, h: 0.2, pivot: [0.5, 0.0], amp: 0.004, speed: 0.8 }, { type: 'shake', x: 0.12, y: 0.62, w: 0.1, h: 0.12, amp: 0.9 }],
+  bgN11: [{ type: 'screen', x: 0.1, y: 0.05, w: 0.09, h: 0.07, rate: 7, seed: 17 }, { type: 'sway', x: 0.3, y: 0.0, w: 0.2, h: 0.2, pivot: [0.5, 0.0], amp: 0.004, speed: 0.8 }],
+  bgN12: [{ type: 'screen', x: 0.8, y: 0.2, w: 0.13, h: 0.1, rate: 9, seed: 18, soft: true }, { type: 'light', x: 0.62, y: 0.15, w: 0.12, h: 0.4, rate: 3, seed: 19 },
+    { type: 'light', x: 0.72, y: 0.15, w: 0.12, h: 0.3, rate: 4, seed: 20 }, { type: 'sway', x: 0.2, y: 0.02, w: 0.06, h: 0.2, pivot: [0.5, 0.0], amp: 0.012, speed: 0.9 }],
+});
+
 class LiveBackground {
   static CELL_BUDGET = 90; // celdas máximas por zona y fotograma
 

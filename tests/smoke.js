@@ -57,9 +57,9 @@ const check = (condition, label) => {
 
   // --- Plan del nivel
   const plan = Level01.planScenarios();
-  check(plan.length === 10, 'el nivel tiene 10 escenarios');
-  check(plan[4].key === 'bgLevel01s' && plan[9].key === 'bgLevel01j', 'el 5.º es el sub jefe y el 10.º el jefe');
-  check(plan.every((tile, i) => i === 0 || tile.key !== plan[i - 1].key), 'ningún escenario se repite seguido');
+  check(plan.length === 12, 'el nivel tiene 12 escenarios');
+  check(plan.every((tile, i) => tile.key === 'bgN' + (i + 1)), 'las escenas van en orden: 1, 2, 3 … 12');
+  check(Level01.SUB_BOSS_POSITION === 7 && Level01.BOSS_POSITION === 12, 'la escena 7 es el sub jefe y la 12 el jefe');
 
   // --- Encuentros
   game.scenes.change('game', { levelIndex: 0 });

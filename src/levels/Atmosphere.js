@@ -79,9 +79,71 @@ const ATMOSPHERE_DATA = {
   },
 };
 
+
+// Nivel 1 (Nuevo Level 2): las coordenadas son fracciones de cada ilustración (x, y)
+Object.assign(ATMOSPHERE_DATA, {
+  bgN1: {
+    lamps: [{ x: 0.275, y: 0.355, kind: 'red' }, { x: 0.775, y: 0.36, kind: 'red' }, { x: 0.23, y: 0.74, kind: 'arc' }],
+    smoke: [{ x: 0.42, y: 0.69, w: 0.1, rate: 2 }],
+  },
+  bgN2: {
+    lamps: [{ x: 0.195, y: 0.545, kind: 'cyan' }, { x: 0.375, y: 0.55, kind: 'cyan' }, { x: 0.89, y: 0.38, kind: 'red' }, { x: 0.12, y: 0.37, kind: 'red' }, { x: 0.47, y: 0.69, kind: 'arc' }],
+    smoke: [{ x: 0.62, y: 0.68, w: 0.1, rate: 2 }],
+  },
+  bgN3: {
+    searchlight: { x: 0.55, sweep: 0.3, speed: 0.45 },
+    lamps: [{ x: 0.175, y: 0.25, kind: 'red' }, { x: 0.89, y: 0.24, kind: 'red' }, { x: 0.42, y: 0.56, kind: 'cyan' }, { x: 0.5, y: 0.56, kind: 'cyan' }, { x: 0.2, y: 0.78, kind: 'arc' }],
+    smoke: [{ x: 0.64, y: 0.60, w: 0.12, rate: 2 }],
+    emit: [{ kind: 'mote', x: 0.05, y: 0.55, w: 0.3, h: 0.25, rate: 4 }],
+  },
+  bgN4: {
+    lamps: [{ x: 0.405, y: 0.215, kind: 'red' }, { x: 0.33, y: 0.555, kind: 'cyan' }, { x: 0.375, y: 0.56, kind: 'cyan' }, { x: 0.86, y: 0.38, kind: 'red' }, { x: 0.5, y: 0.71, kind: 'arc' }],
+    smoke: [{ x: 0.285, y: 0.60, w: 0.03, rate: 3, dark: true }, { x: 0.345, y: 0.60, w: 0.03, rate: 3, dark: true }],
+  },
+  bgN5: {
+    searchlight: { x: 0.45, sweep: 0.32, speed: 0.42 },
+    lamps: [{ x: 0.28, y: 0.20, kind: 'red' }, { x: 0.65, y: 0.455, kind: 'cyan' }, { x: 0.885, y: 0.525, kind: 'cyan' }, { x: 0.33, y: 0.505, kind: 'cyan' }, { x: 0.6, y: 0.7, kind: 'arc' }, { x: 0.9, y: 0.86, kind: 'arc' }],
+    smoke: [{ x: 0.55, y: 0.58, w: 0.1, rate: 3, dark: true }],
+    emit: [{ kind: 'spark', x: 0.58, y: 0.45, w: 0.1, h: 0.08, rate: 5, color: '#9ff4ff' }],
+  },
+  bgN6: {
+    lamps: [{ x: 0.73, y: 0.07, kind: 'red' }, { x: 0.43, y: 0.30, kind: 'red' }, { x: 0.25, y: 0.505, kind: 'cyan' }, { x: 0.2, y: 0.57, kind: 'cyan' }, { x: 0.5, y: 0.7, kind: 'arc' }],
+    smoke: [{ x: 0.285, y: 0.62, w: 0.03, rate: 3, dark: true }, { x: 0.345, y: 0.62, w: 0.03, rate: 3, dark: true }],
+    emit: [{ kind: 'spark', x: 0.12, y: 0.35, w: 0.18, h: 0.22, rate: 3, color: '#9ff4ff' }],
+  },
+  bgN7: {
+    lamps: [{ x: 0.28, y: 0.20, kind: 'red' }, { x: 0.49, y: 0.20, kind: 'red' }, { x: 0.545, y: 0.42, kind: 'cyan' }, { x: 0.11, y: 0.47, kind: 'arc' }, { x: 0.55, y: 0.71, kind: 'arc' }],
+    smoke: [{ x: 0.27, y: 0.58, w: 0.03, rate: 3, dark: true }],
+  },
+  bgN8: {
+    searchlight: { x: 0.5, sweep: 0.3, speed: 0.46 },
+    lamps: [{ x: 0.05, y: 0.55, kind: 'cyan' }, { x: 0.99, y: 0.18, kind: 'red' }, { x: 0.3, y: 0.735, kind: 'arc' }, { x: 0.88, y: 0.68, kind: 'arc' }],
+    smoke: [{ x: 0.27, y: 0.60, w: 0.03, rate: 3, dark: true }],
+  },
+  bgN9: {
+    lamps: [{ x: 0.52, y: 0.43, kind: 'alarm' }, { x: 0.4, y: 0.19, kind: 'warm' }, { x: 0.22, y: 0.54, kind: 'cyan' }, { x: 0.17, y: 0.74, kind: 'arc' }, { x: 0.86, y: 0.66, kind: 'arc' }],
+    smoke: [{ x: 0.27, y: 0.08, w: 0.05, rate: 4 }, { x: 0.27, y: 0.60, w: 0.03, rate: 3, dark: true }],
+    emit: [{ kind: 'spark', x: 0.5, y: 0.12, w: 0.12, h: 0.15, rate: 6 }, { kind: 'spark', x: 0.72, y: 0.62, w: 0.08, h: 0.06, rate: 4, color: '#ffb040' }],
+  },
+  bgN10: {
+    searchlight: { x: 0.55, sweep: 0.3, speed: 0.4 },
+    lamps: [{ x: 0.4, y: 0.34, kind: 'cyan' }, { x: 0.18, y: 0.8, kind: 'arc' }, { x: 0.5, y: 0.75, kind: 'arc' }, { x: 0.93, y: 0.84, kind: 'arc' }],
+    smoke: [{ x: 0.27, y: 0.60, w: 0.03, rate: 3, dark: true }],
+  },
+  bgN11: {
+    lamps: [{ x: 0.09, y: 0.38, kind: 'cyan' }, { x: 0.13, y: 0.075, kind: 'alarm' }, { x: 0.2, y: 0.7, kind: 'arc' }, { x: 0.82, y: 0.72, kind: 'arc' }],
+    smoke: [{ x: 0.69, y: 0.60, w: 0.03, rate: 3, dark: true }, { x: 0.585, y: 0.04, w: 0.06, rate: 3, dark: true }, { x: 0.795, y: 0.04, w: 0.06, rate: 3, dark: true }],
+  },
+  bgN12: {
+    lamps: [{ x: 0.665, y: 0.265, kind: 'warm', beam: 1 }, { x: 0.745, y: 0.24, kind: 'spot', beam: -1 }, { x: 0.8, y: 0.26, kind: 'pink' }, { x: 0.39, y: 0.4, kind: 'warm' }, { x: 0.22, y: 0.74, kind: 'arc' }, { x: 0.6, y: 0.74, kind: 'arc' }],
+    smoke: [{ x: 0.46, y: 0.64, w: 0.04, rate: 2, dark: true }],
+    emit: [{ kind: 'mote', x: 0.62, y: 0.28, w: 0.2, h: 0.3, rate: 9 }, { kind: 'spark', x: 0.4, y: 0.55, w: 0.06, h: 0.05, rate: 3, color: '#9ff4ff' }],
+  },
+});
+
 class Atmosphere {
-  static LAMP_COLORS = { red: '#ff2a4a', spot: '#dff3ff', warm: '#ffd890', pink: '#ff4fd8', arc: '#8ff6ff' };
-  static LAMP_RADIUS = { red: 30, spot: 70, warm: 62, pink: 24, arc: 46 };
+  static LAMP_COLORS = { red: '#ff2a4a', spot: '#dff3ff', warm: '#ffd890', pink: '#ff4fd8', arc: '#8ff6ff', cyan: '#35e8ff', alarm: '#ff2a4a' };
+  static LAMP_RADIUS = { red: 30, spot: 70, warm: 62, pink: 24, arc: 46, cyan: 20, alarm: 74 };
   static BOLT_LIFE = 0.2;
 
   constructor(level) {
@@ -369,7 +431,7 @@ class Atmosphere {
     const radius = Atmosphere.LAMP_RADIUS[lamp.kind];
     let level;
     if (lamp.kind === 'arc') level = lamp.event > 0 ? 0.5 + Math.random() * 0.9 : 0;
-    else if (lamp.kind === 'red') level = 0.5 + 0.35 * Math.sin(this.time * 3.2 + lamp.phase); // baliza que late
+    else if (lamp.kind === 'red' || lamp.kind === 'alarm') level = 0.5 + 0.35 * Math.sin(this.time * 3.2 + lamp.phase); // baliza que late
     else level = 0.8 + 0.12 * Math.sin(this.time * 2 + lamp.phase); // luz fija con respiración leve
     if (lamp.event > 0 && lamp.kind !== 'arc') level = Math.random() < 0.5 ? 0.1 : 1.5; // parpadeo del cortocircuito
     level += this.flash * 0.45;

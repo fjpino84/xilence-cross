@@ -130,9 +130,32 @@ class Level {
   }
 
   // Devuelve false si faltan imágenes (se usa el fondo de respaldo)
+  // Fondo lejano (la ciudad) detrás de las ilustraciones, que tienen el cielo transparente. Se desplaza muy despacio (parallax) y se
+  // repite en espejo para que la unión no se note.
+  renderBackdrop(ctx, camera) {
+    const image = Assets.image(this.config.backdropKey);
+    if (!image) return;
+    const height = CONFIG.HEIGHT * 1.15;
+    const width = (image.width / image.height) * height;
+    const shift = camera.x * 0.1;
+    for (let i = Math.floor(shift / width); i * width - shift < CONFIG.WIDTH; i++) {
+      const x = i * width - shift;
+      if (((i % 2) + 2) % 2 === 0) {
+        ctx.drawImage(image, x, 0, width, height);
+      } else {
+        ctx.save();
+        ctx.translate(x + width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(image, 0, 0, width, height);
+        ctx.restore();
+      }
+    }
+  }
+
   renderSequenceBackground(ctx, camera) {
     const sequence = this.config.backgroundSequence;
     if (!sequence || !sequence.every((tile) => Assets.image(tile.key))) return false;
+    if (this.config.backdropKey) this.renderBackdrop(ctx, camera);
     sequence.forEach((tile, index) => {
       const x = Math.round(index * Level.TILE_STRIDE - camera.x);
       if (x > CONFIG.WIDTH || x + Level.TILE_WIDTH < 0) return;

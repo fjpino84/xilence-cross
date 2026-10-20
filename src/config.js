@@ -1,4 +1,11 @@
 // Cuadros numerados de una animación: clave1..claveN → carpeta/prefijo_1..N.png
+// Piezas recortadas de las hojas de "Nuevo Level 2" (tools/make_scenes.js sheets): objetos del escenario y primeros planos
+const NEW_PIECES = [
+  'obj1_4', 'obj1_5', 'obj1_7', 'obj1_8', 'obj1_9', 'obj1_10', 'obj1_12', 'obj1_13', 'obj1_14', 'obj1_15',
+  'obj2_10', 'obj2_11', 'obj3_1', 'obj3_2', 'obj3_3', 'obj3_4', 'obj3_5', 'obj3_6', 'obj3_7', 'obj3_8', 'obj3_9', 'obj3_10', 'obj3_13',
+  'obj4_3', 'obj4_4', 'obj4_5',
+  'fgA_1', 'fgA_2', 'fgA_3', 'fgS_1', 'fgS_2', 'fgS_3', 'fgR_1', 'fgR_2', 'fgT_2', 'fgT_3', 'fgT_4',
+];
 const frameAssets = (key, folder, name, count) => Object.fromEntries(
   Array.from({ length: count }, (_, i) => [`${key}${i + 1}`, `assets/sprites/${folder}/${name}_${i + 1}.png`]),
 );
@@ -37,16 +44,6 @@ const CONFIG = Object.freeze({
   ASSETS: Object.freeze({
     bgTitle: 'assets/backgrounds/titulo-eco.jpg',
     bgFinal: 'assets/backgrounds/final-batalla.jpg',
-    prop_balizas: 'assets/sprites/props/balizas.png',
-    prop_carrete: 'assets/sprites/props/carrete.png',
-    prop_cartel: 'assets/sprites/props/cartel.png',
-    prop_foco: 'assets/sprites/props/foco.png',
-    prop_generador: 'assets/sprites/props/generador.png',
-    prop_grua: 'assets/sprites/props/grua.png',
-    prop_pila: 'assets/sprites/props/pila.png',
-    prop_torre: 'assets/sprites/props/torre.png',
-    prop_tuberia: 'assets/sprites/props/tuberia.png',
-    prop_valla: 'assets/sprites/props/valla.png',
     spriteVoidhar: 'assets/sprites/voidhar.png',
     spriteBatuk: 'assets/sprites/batuk/batuk.png',
     portraitBatuk: 'assets/sprites/batuk/retrato.png',
@@ -55,13 +52,10 @@ const CONFIG = Object.freeze({
     batukPoder: 'assets/sprites/batuk/poder_1.png',
     ...frameAssets('batukInst', 'batuk', 'inst', 6),
     bgLevel01: 'assets/backgrounds/nivel01-cementerio-naves.jpg',
-    bgLevel01a: 'assets/backgrounds/nivel01-a.jpg',
-    bgLevel01b: 'assets/backgrounds/nivel01-b.jpg',
-    bgLevel01c: 'assets/backgrounds/nivel01-c.jpg',
-    bgLevel01d: 'assets/backgrounds/nivel01-d.jpg',
-    bgLevel01e: 'assets/backgrounds/nivel01-e.jpg',
-    bgLevel01s: 'assets/backgrounds/nivel01-subjefe.jpg',
-    bgLevel01j: 'assets/backgrounds/nivel01-jefe.jpg',
+    // Nivel 1: doce escenas con el cielo transparente, el fondo lejano y las piezas sueltas
+    ...Object.fromEntries(Array.from({ length: 12 }, (_, i) => ['bgN' + (i + 1), 'assets/backgrounds/nivel1/escena-' + (i + 1) + '.webp'])),
+    bgNFondo: 'assets/backgrounds/nivel1/fondo.webp',
+    ...Object.fromEntries(NEW_PIECES.map((name) => ['pn_' + name, 'assets/sprites/nivel1/' + name + '.png'])),
     bgLevel02: 'assets/backgrounds/nivel02-estacion-transito.jpg',
     bgLevel04: 'assets/backgrounds/nivel04-colonia-agricola.jpg',
     bgLevel07: 'assets/backgrounds/nivel07-planeta-en-llamas.jpg',

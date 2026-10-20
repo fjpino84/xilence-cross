@@ -38,3 +38,19 @@ const PUDDLE_DATA = {
     { x: 0.133, y: 0.905, rx: 0.057, ry: 0.030, color: '#50b4ab' },
   ],
 };
+
+// Nivel 1 (Nuevo Level 2)
+Object.assign(PUDDLE_DATA, {
+  bgN1: [{ x: 0.3, y: 0.715, rx: 0.13, ry: 0.026, color: '#3fe0b0' }, { x: 0.57, y: 0.7, rx: 0.08, ry: 0.022, color: '#4b8fe0' }, { x: 0.22, y: 0.745, rx: 0.05, ry: 0.02, color: '#3fb6e0' }],
+  bgN2: [{ x: 0.3, y: 0.72, rx: 0.14, ry: 0.026, color: '#3fe0b0' }, { x: 0.58, y: 0.69, rx: 0.08, ry: 0.02, color: '#3fe0b0' }, { x: 0.72, y: 0.7, rx: 0.07, ry: 0.02, color: '#4b8fe0' }],
+  bgN3: [{ x: 0.22, y: 0.79, rx: 0.22, ry: 0.035, color: '#3fe0b0' }, { x: 0.46, y: 0.745, rx: 0.12, ry: 0.028, color: '#3fe0b0' }],
+  bgN4: [{ x: 0.37, y: 0.725, rx: 0.1, ry: 0.026, color: '#3fe0b0' }, { x: 0.56, y: 0.705, rx: 0.12, ry: 0.024, color: '#3fe0b0' }, { x: 0.69, y: 0.67, rx: 0.05, ry: 0.018, color: '#3fe0b0' }],
+  bgN5: [{ x: 0.56, y: 0.735, rx: 0.1, ry: 0.028, color: '#3fe0b0' }, { x: 0.72, y: 0.79, rx: 0.14, ry: 0.03, color: '#3fe0b0' }, { x: 0.9, y: 0.86, rx: 0.1, ry: 0.03, color: '#3fe0b0' }],
+  bgN6: [{ x: 0.27, y: 0.72, rx: 0.12, ry: 0.026, color: '#3fe0b0' }, { x: 0.5, y: 0.7, rx: 0.1, ry: 0.024, color: '#3fe0b0' }, { x: 0.72, y: 0.695, rx: 0.09, ry: 0.022, color: '#4b8fe0' }],
+  bgN7: [{ x: 0.3, y: 0.72, rx: 0.14, ry: 0.026, color: '#3fe0b0' }, { x: 0.56, y: 0.7, rx: 0.12, ry: 0.024, color: '#4b8fe0' }],
+  bgN8: [{ x: 0.3, y: 0.735, rx: 0.28, ry: 0.035, color: '#3fe0b0' }, { x: 0.62, y: 0.73, rx: 0.16, ry: 0.03, color: '#3fe0b0' }, { x: 0.88, y: 0.68, rx: 0.1, ry: 0.04, color: '#3fe0b0' }, { x: 0.12, y: 0.78, rx: 0.12, ry: 0.03, color: '#3fe0b0' }],
+  bgN9: [{ x: 0.3, y: 0.74, rx: 0.3, ry: 0.035, color: '#3fe0b0' }, { x: 0.6, y: 0.7, rx: 0.2, ry: 0.03, color: '#3fe0b0' }, { x: 0.88, y: 0.66, rx: 0.1, ry: 0.035, color: '#3fe0b0' }],
+  bgN10: [{ x: 0.18, y: 0.8, rx: 0.15, ry: 0.035, color: '#3fe0b0' }, { x: 0.5, y: 0.75, rx: 0.28, ry: 0.035, color: '#3fe0b0' }, { x: 0.85, y: 0.88, rx: 0.14, ry: 0.03, color: '#3fe0b0' }],
+  bgN11: [{ x: 0.2, y: 0.7, rx: 0.17, ry: 0.03, color: '#3fe0b0' }, { x: 0.5, y: 0.74, rx: 0.22, ry: 0.03, color: '#3fe0b0' }, { x: 0.82, y: 0.72, rx: 0.14, ry: 0.03, color: '#3fe0b0' }],
+  bgN12: [{ x: 0.22, y: 0.78, rx: 0.14, ry: 0.03, color: '#3fe0b0' }, { x: 0.55, y: 0.76, rx: 0.14, ry: 0.03, color: '#3fe0b0' }],
+});
