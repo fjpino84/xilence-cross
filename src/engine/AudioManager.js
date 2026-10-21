@@ -775,7 +775,7 @@ AudioManager.RECORDED = {
     a.lastDuelBad = now;
     a.sample('duelErr', { count: 4, volume: 0.45, jitter: 0.03 });
   },
-  duelStreak: (a) => { a.sample('duelX10', { volume: 0.9, jitter: 0.01 }); },
+  duelStreak: (a) => { a.sample('duelX10', { volume: 2.2, jitter: 0.01 }); },
   // Ambiente: el trueno de los relámpagos del fondo y las corrientes eléctricas (cortocircuitos y rayos del Power Chord)
   thunder: (a) => { a.sample('thunder', { count: 2, volume: 0.5, jitter: 0.07 }); },
   zap: (a) => { a.sample('zap', { count: 3, volume: 0.45, jitter: 0.08 }); },

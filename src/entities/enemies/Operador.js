@@ -349,7 +349,7 @@ class Operador extends Entity {
         const cy = this.y - Math.random() * Operador.HEIGHT;
         world.particles.burst({ x: cx, y: cy, count: 3, speed: [100, 420], life: [0.15, 0.4], size: [2, 4], colors: ['#35e8ff', '#ffffff', '#ffe600'], type: 'spark', drag: 2 });
       }
-      if (this.deadTime >= Operador.SHOCK_TIME) { this.state = 'dead'; world.audio.play('thud'); world.landDust(this.x, this.y, 5); }
+      if (this.deadTime >= Operador.SHOCK_TIME) { this.state = 'dead'; world.audio.play('thud'); world.landDust(this.x, this.y, 5); world.particles.burst({ x: this.x, y: this.y - 10, count: 26, speed: [150, 560], life: [0.3, 0.8], size: [2.2, 4.5], colors: ['#35e8ff', '#ffffff'], type: 'spark', drag: 1.6, gravity: 400 }); }
     } else if (this.state === 'dead') {
       this.deadTime += dt;
     }
@@ -373,32 +373,42 @@ class Operador extends Entity {
       const fade = dead ? Math.max(0, 1 - Math.max(0, this.deadTime - Operador.SHOCK_TIME - Operador.FALL_TIME) / Operador.FADE_TIME) : 1;
       const jitter = shocking ? (Math.random() - 0.5) * 8 : 0;
       Sprite.draw(ctx, image, {
-        x: this.x + jitter, y: this.y, height: Operador.HEIGHT, anchorX: anchors[this.pose], facing: -this.facing,
+        x: this.x + jitter, y: this.y, height: Operador.HEIGHT, anchorX: anchors[this.pose], facing: this.facing, // el dibujo mira a la derecha: mira hacia donde ataca (hacia ECO)
         rotation: dead ? -Math.min(1.45, Math.max(0, fall) * 1.45) : 0,
-        flash: this.hitFlash > 0 || (shocking && Math.floor(this.age * 24) % 2 === 0),
-        alpha: fade, tint: shocking ? { color: '#bff8ff', alpha: 0.25 + 0.25 * Math.sin(this.age * 50) } : null, glow: shocking ? 2 : 0,
+        flash: this.hitFlash > 0,
+        alpha: fade, tint: shocking ? { color: '#35e8ff', alpha: 0.12 + 0.12 * Math.max(0, Math.sin(this.age * 38)) } : (dead ? { color: '#05060c', alpha: Math.min(0.6, this.deadTime - Operador.SHOCK_TIME) } : null), glow: shocking ? 1.2 : 0,
       });
       if (shocking) this.renderArcs(ctx);
     }
     if (!prep && this.drone.isAlive === false) { /* el cable ya no se dibuja */ }
   }
 
-  // Descargas eléctricas que recorren el cuerpo
+  // Descarga que recorre el cuerpo: arcos finos y cortos que saltan de un punto a otro del abrigo, con un halo que late
   renderArcs(ctx) {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     ctx.lineCap = 'round';
-    for (let k = 0; k < 3; k++) {
-      let x = this.x + (Math.random() - 0.5) * 50;
-      let y = this.y - Operador.HEIGHT;
+    ctx.lineJoin = 'round';
+    const top = this.y - Operador.HEIGHT;
+    const halo = ctx.createRadialGradient(this.x, this.y - Operador.HEIGHT * 0.5, 10, this.x, this.y - Operador.HEIGHT * 0.5, 120);
+    halo.addColorStop(0, 'rgba(120, 245, 255, 0.35)');
+    halo.addColorStop(1, 'rgba(0, 160, 255, 0)');
+    ctx.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(this.age * 21));
+    ctx.fillStyle = halo;
+    ctx.fillRect(this.x - 120, top - 20, 240, Operador.HEIGHT + 60);
+    ctx.globalAlpha = 1;
+    for (let k = 0; k < 6; k++) {
+      let x = this.x + (Math.random() - 0.5) * 54;
+      let y = top + Math.random() * Operador.HEIGHT * 0.9;
       ctx.beginPath();
       ctx.moveTo(x, y);
-      for (let i = 0; i < 7; i++) { x += (Math.random() - 0.5) * 36; y += Operador.HEIGHT / 7; ctx.lineTo(x, y); }
-      ctx.strokeStyle = 'rgba(120, 245, 255, 0.9)';
-      ctx.lineWidth = 3;
+      const steps = 3 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < steps; i++) { x += (Math.random() - 0.5) * 34; y += (Math.random() - 0.4) * 26; ctx.lineTo(x, y); }
+      ctx.strokeStyle = 'rgba(80, 225, 255, 0.85)';
+      ctx.lineWidth = 2.2;
       ctx.stroke();
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = 0.9;
       ctx.stroke();
     }
     ctx.restore();
