@@ -204,7 +204,8 @@ class Level {
         wave.started = true;
         camera.lockX = camera.x;
         wave.clock = 0;
-        const normals = wave.spawns.filter((entry) => !entry.elite && !entry.boss).length;
+        const normals = wave.spawns.filter((entry) => !entry.elite && !entry.boss && !entry.drone).length;
+        const drones = wave.spawns.filter((entry) => entry.drone).length;
         const elites = wave.spawns.filter((entry) => entry.elite).length;
         const bosses = wave.spawns.filter((entry) => entry.boss).length;
         // El número de enemigos normales varía un poco entre partidas
@@ -213,13 +214,14 @@ class Level {
           ...Array.from({ length: count }, (_, index) => ({ delay: index === 0 ? 0 : 0.3 + Math.random() * 2.6, ...Level.entryStyle(wave.difficulty || 0) })),
           ...Array.from({ length: elites }, (_, index) => ({ delay: 1.2 + index * 1.4, rush: true, elite: true })),
           ...Array.from({ length: bosses }, () => ({ delay: 0.6, boss: true })),
+          ...Array.from({ length: drones }, (_, index) => ({ delay: 0.8 + index * 2, drone: true })),
         ].sort((first, second) => first.delay - second.delay);
       }
       if (wave.started && !wave.cleared) {
         wave.clock += dt;
         while (wave.pending.length && wave.pending[0].delay <= wave.clock) {
           const entry = wave.pending.shift();
-          wave.enemies.push(spawn(...this.spawnPoint(camera), true, { rush: entry.rush, drop: entry.drop, elite: entry.elite, boss: entry.boss, difficulty: wave.difficulty || 0 }));
+          wave.enemies.push(spawn(...this.spawnPoint(camera), true, { rush: entry.rush, drop: entry.drop, elite: entry.elite, boss: entry.boss, drone: entry.drone, difficulty: wave.difficulty || 0 }));
         }
         if (!wave.pending.length && wave.enemies.every((enemy) => !enemy.isAlive)) {
           wave.cleared = true;

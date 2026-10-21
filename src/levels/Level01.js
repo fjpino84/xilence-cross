@@ -11,12 +11,12 @@ class Level01 extends Level {
   static ENCOUNTERS = {
     2: { normal: 2 },
     3: { normal: 2 },
-    4: { normal: 2, elite: 1 },
+    4: { normal: 2, elite: 1, drone: 1 },
     5: { normal: 2, elite: 1 },
-    6: { normal: 3, elite: 1 },
+    6: { normal: 3, elite: 1, drone: 1 },
     7: { boss: true }, // sub jefe: Rex Vane
     8: { normal: 2, elite: 1 },
-    9: { normal: 3, elite: 1 },
+    9: { normal: 3, elite: 1, drone: 1 },
     10: { normal: 2, elite: 2 },
     11: { normal: 3, elite: 2 },
     12: { normal: 2, elite: 2 }, // tras este encuentro entra Batuk
@@ -37,6 +37,7 @@ class Level01 extends Level {
         ...Array.from({ length: encounter.normal || 0 }, () => ({})),
         ...Array.from({ length: encounter.elite || 0 }, () => ({ elite: true })),
         ...(encounter.boss ? [{ boss: true }] : []),
+        ...Array.from({ length: encounter.drone || 0 }, () => ({ drone: true })),
       ],
     }));
     super({

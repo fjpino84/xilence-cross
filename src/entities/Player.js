@@ -324,7 +324,7 @@ class Player extends Entity {
     const box = Collision.frontBox(this, attack.range);
     const damage = Math.round(Player.BASE_DAMAGE * attack.multiplier);
     for (const enemy of world.enemies) {
-      if (!enemy.isAlive || this.alreadyHit.has(enemy)) continue;
+      if (!enemy.isAlive || enemy.untargetable || this.alreadyHit.has(enemy)) continue;
       if (!Collision.hitTest(box, enemy, 48, attack.reachZ || 70)) continue;
       this.alreadyHit.add(enemy);
       this.landHit(enemy, damage, attack.knock, 12, world, { power: attack.power, launch: attack.launch });
@@ -448,7 +448,7 @@ class Player extends Entity {
     // El rayo atraviesa a todos los enemigos de su carril; con poca carga solo los empuja
     const box = Collision.frontBox(this, length, length);
     for (const enemy of world.enemies) {
-      if (!enemy.isAlive || !Collision.hitTest(box, enemy, 45, 110)) continue;
+      if (!enemy.isAlive || enemy.untargetable || !Collision.hitTest(box, enemy, 45, 110)) continue;
       this.landHit(enemy, damage, 160 + 170 * level, 2 + Math.round(4 * level), world, {
         power: level < 0.3 ? 2 : 3, launch: level >= 0.3, burst: 0.8 + level,
       });
@@ -505,7 +505,7 @@ class Player extends Entity {
 
       for (const enemy of world.enemies) {
         const onScreen = enemy.x > world.camera.left - 40 && enemy.x < world.camera.right + 40;
-        if (enemy.isAlive && onScreen) {
+        if (enemy.isAlive && !enemy.untargetable && onScreen) {
           this.landHit(enemy, 70, 520, 0, world, { power: 3, launch: true, direction: Math.sign(enemy.x - this.x) || this.facing });
         }
       }
@@ -539,7 +539,7 @@ class Player extends Entity {
     this.energy = Math.min(Player.MAX_ENERGY, this.energy + energyGain);
     this.score += 10 * this.comboHits;
 
-    world.impact({ x: enemy.x, y: enemy.y, z: enemy.z + enemy.h * 0.55, power, direction });
+    world.impact({ x: enemy.x, y: enemy.y, z: enemy.z + enemy.h * 0.55, power, direction, mechanical: !!enemy.mechanical });
     if (power >= 3) world.starburst(enemy.x, enemy.y, enemy.z + enemy.h * 0.55, options.burst ?? 1);
     world.addText(enemy.x, enemy.y, enemy.z + enemy.h * 0.85, String(damage), {
       color: power >= 3 ? CONFIG.COLORS.YELLOW : '#ffffff', size: 18 + Math.min(18, damage * 0.4),

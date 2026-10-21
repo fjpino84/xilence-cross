@@ -52,6 +52,9 @@ const CONFIG = Object.freeze({
     batukPoder: 'assets/sprites/batuk/poder_1.png',
     ...frameAssets('batukInst', 'batuk', 'inst', 6),
     bgLevel01: 'assets/backgrounds/nivel01-cementerio-naves.jpg',
+    a3Point: 'assets/sprites/adversario3/op_point.png',
+    a3Prep: 'assets/sprites/adversario3/op_prep.png',
+    a3Dron: 'assets/sprites/adversario3/dron.png',
     // Nivel 1: doce escenas con el cielo transparente, el fondo lejano y las piezas sueltas
     ...Object.fromEntries(Array.from({ length: 12 }, (_, i) => ['bgN' + (i + 1), 'assets/backgrounds/nivel1/escena-' + (i + 1) + '.webp'])),
     bgNFondo: 'assets/backgrounds/nivel1/fondo.webp',

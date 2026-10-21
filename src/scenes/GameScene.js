@@ -150,6 +150,7 @@ class GameScene {
 
   spawnEnemy(x, y, aggressive, opts = {}) {
     if (opts.boss) return this.spawnBoss();
+    if (opts.drone) return this.spawnOperator(opts);
     // Los élites son la Garra (variante 1); la tropa normal, el Martillo
     const variant = opts.elite ? GameScene.ELITE_VARIANT : GameScene.ENEMY_VARIANTS[Math.floor(Math.random() * GameScene.ENEMY_VARIANTS.length)];
     if (opts.drop) {
@@ -171,6 +172,16 @@ class GameScene {
     return enemy;
   }
 
+  // Adversario 3: el Operador entra caminando por la derecha y lanza su dron (que es otro enemigo, el que hay que derrotar)
+  spawnOperator() {
+    const y = CONFIG.GROUND_TOP + 30 + Math.random() * (CONFIG.GROUND_BOTTOM - CONFIG.GROUND_TOP - 60);
+    const operator = new Operador(this.camera.right + 90, y);
+    this.enemies.push(operator, operator.drone);
+    this.edgeWarnings.push({ side: 'right', age: 0 });
+    this.game.audio.play('enemyWarn');
+    return operator;
+  }
+
   // Limita cuántos enemigos atacan a la vez para que el combate sea legible
   requestAttackSlot(requester) {
     const attacking = this.enemies.filter((enemy) => enemy !== requester && enemy.state === 'attack').length;
@@ -180,7 +191,7 @@ class GameScene {
   // ---------------------------------------------------------------- efectos de impacto
 
   // Impacto de un golpe: chispas, destello, onda, notas, sonido, hit-stop y temblor
-  impact({ x, y, z, power = 1, direction = 1, color = 'cyan' }) {
+  impact({ x, y, z, power = 1, direction = 1, color = 'cyan', mechanical = false }) {
     const { CYAN, RED, YELLOW } = CONFIG.COLORS;
     const screenY = y - z;
     const palette = color === 'red' ? [RED, '#ff9aae', '#ffffff'] : [CYAN, '#ffffff', YELLOW];
@@ -195,7 +206,7 @@ class GameScene {
     if (power >= 2) this.shards(x, screenY, 3 + power * 2, palette);
 
     this.game.audio.play(power >= 3 ? 'heavyHit' : 'hit', { power });
-    if (color !== 'red') this.game.audio.play('enemyHurt', { power }); // gruñido del enemigo golpeado
+    if (color !== 'red' && !mechanical) this.game.audio.play('enemyHurt', { power }); // gruñido del enemigo golpeado
     this.hitStopTime = Math.max(this.hitStopTime, 0.03 + 0.025 * power);
     this.camera.shake(2 + power * 3, 0.12 + power * 0.04);
     if (power >= 3) this.camera.punch(0.04);
@@ -209,7 +220,7 @@ class GameScene {
     this.particles.add({ type: 'ring', x: enemy.x, y: enemy.y, size: 10, sizeEnd: 130, life: 0.45, color: PURPLE, width: 8, flat: 0.3 });
     this.shards(enemy.x, screenY, 12, [PURPLE, CYAN, '#ffffff']);
     this.maybeDropPickup(enemy);
-    this.game.audio.play('enemyDie');
+    this.game.audio.play(enemy.mechanical ? 'zap' : 'enemyDie');
     this.hitStopTime = Math.max(this.hitStopTime, 0.08);
     this.camera.shake(8, 0.2);
     this.camera.punch(0.03);
@@ -1255,7 +1266,7 @@ class GameScene {
       });
 
       for (const enemy of this.enemies) {
-        if (!enemy.isAlive || bolt.hit.has(enemy)) continue;
+        if (!enemy.isAlive || enemy.untargetable || bolt.hit.has(enemy)) continue;
         if (Math.abs(enemy.y - bolt.y) <= 45 && Math.abs(enemy.x - bolt.x) <= enemy.w / 2 + 26) {
           bolt.hit.add(enemy);
           this.player.landHit(enemy, bolt.damage, 320, 4, this.world, { power: 2, launch: true, direction: bolt.direction });
@@ -1574,8 +1585,8 @@ class GameScene {
   }
 
   // Rayo del Power Chord: cae del cielo hasta el suelo con un destello, un anillo y chispas en el impacto
-  superBolt(x) {
-    const groundY = CONFIG.GROUND_TOP + 10 + Math.random() * (CONFIG.GROUND_BOTTOM - CONFIG.GROUND_TOP - 10);
+  superBolt(x, lane = null) {
+    const groundY = lane ?? (CONFIG.GROUND_TOP + 10 + Math.random() * (CONFIG.GROUND_BOTTOM - CONFIG.GROUND_TOP - 10));
     const points = [{ x, y: -30 }];
     let px = x;
     const steps = 9;
