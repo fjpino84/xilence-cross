@@ -13,7 +13,7 @@ const W = 1611, H = 2000; // coordenadas medidas sobre la hoja vista a 1611×200
 const rect = (a, b, c, d) => [a / W, b / H, c / W, d / H];
 const SHEETS = {
   adv1: {
-    file: 'Adversario 1/Derrota.jpg', ref: 862, radius: 50,
+    file: 'Adversario 1/Derrota.jpg', ref: 862, radius: 50, shadowPanels: [2, 3], // las sombras lavanda del suelo se quitan
     panels: [rect(50, 42, 803, 983), rect(825, 42, 1560, 983), rect(50, 988, 803, 1955), rect(825, 988, 1560, 1955)],
   },
   adv2: {
@@ -35,14 +35,14 @@ const SHEETS = {
 const page = `<html><body><script>
 const SHEETS = ${JSON.stringify(SHEETS)};
 const load = (f) => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error('no cargó ' + f)); i.src = '/src/levels/' + f.split('/').map(encodeURIComponent).join('/'); });
-function whiteMask(d, w, h) { const m = new Uint8Array(w * h); for (let i = 0; i < w * h; i++) { const r = d[i*4], g = d[i*4+1], b = d[i*4+2]; if (d[i*4+3] > 0 && Math.min(r,g,b) >= 224 && Math.max(r,g,b) - Math.min(r,g,b) <= 30) m[i] = 1; } return m; }
+function whiteMask(d, w, h, lim, sat) { const m = new Uint8Array(w * h); for (let i = 0; i < w * h; i++) { const r = d[i*4], g = d[i*4+1], b = d[i*4+2]; if (d[i*4+3] > 0 && Math.min(r,g,b) >= lim && Math.max(r,g,b) - Math.min(r,g,b) <= sat) m[i] = 1; } return m; }
 function comps(mask, w, h) { const label = new Int32Array(w*h), infos = [], st = new Int32Array(w*h);
   for (let s = 0; s < w*h; s++) { if (!mask[s] || label[s]) continue; const id = infos.length + 1; let top = 0, area = 0, edge = false; st[top++] = s; label[s] = id;
     while (top) { const p = st[--top], x = p % w, y = (p / w) | 0; area++; if (x === 0 || y === 0 || x === w-1 || y === h-1) edge = true;
       if (x > 0 && mask[p-1] && !label[p-1]) { label[p-1] = id; st[top++] = p-1; } if (x < w-1 && mask[p+1] && !label[p+1]) { label[p+1] = id; st[top++] = p+1; }
       if (y > 0 && mask[p-w] && !label[p-w]) { label[p-w] = id; st[top++] = p-w; } if (y < h-1 && mask[p+w] && !label[p+w]) { label[p+w] = id; st[top++] = p+w; } }
     infos.push({ id, area, edge }); } return { label, infos }; }
-function key(img) { const w = img.width, h = img.height, d = img.data; const { label, infos } = comps(whiteMask(d, w, h), w, h);
+function key(img, lim = 224, sat = 30) { const w = img.width, h = img.height, d = img.data; const { label, infos } = comps(whiteMask(d, w, h, lim, sat), w, h);
   const drop = new Set(infos.filter((i) => i.edge || i.area >= 40).map((i) => i.id)); const gone = new Uint8Array(w*h);
   for (let i = 0; i < w*h; i++) if (label[i] && drop.has(label[i])) gone[i] = 1;
   const dist = new Uint8Array(w*h).fill(9); let fr = []; for (let i = 0; i < w*h; i++) if (gone[i] || d[i*4+3] === 0) { dist[i] = 0; fr.push(i); }
@@ -74,7 +74,7 @@ const save = async (name, canvas) => { const blob = await new Promise((r) => can
       const x0 = Math.round(fx0 * sw) + inset, y0 = Math.round(fy0 * sh) + inset, x1 = Math.round(fx1 * sw) - inset, y1 = Math.round(fy1 * sh) - inset;
       const pw = x1 - x0, ph = y1 - y0;
       const c = document.createElement('canvas'); c.width = pw; c.height = ph; const cx = c.getContext('2d'); cx.drawImage(image, x0, y0, pw, ph, 0, 0, pw, ph);
-      let data = key(cx.getImageData(0, 0, pw, ph));
+      let data = key(cx.getImageData(0, 0, pw, ph), ...((sheet.shadowPanels || []).includes(n) ? [196, 70] : [224, 30]));
       for (const [ex0, ey0, ex1, ey1] of (sheet.erase && sheet.erase[n]) || []) for (let y = Math.floor(ey0 * ph); y < Math.ceil(ey1 * ph); y++) for (let x = Math.floor(ex0 * pw); x < Math.ceil(ex1 * pw); x++) data.data[(y*pw+x)*4+3] = 0;
       data = keepMain(data, sheet.radius);
       const b = bbox(data);

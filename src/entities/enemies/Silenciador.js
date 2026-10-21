@@ -281,8 +281,8 @@ class Silenciador extends Enemy {
 
   // --- Derrota con cuadros ilustrados (Garra = adv1, Martillo = adv2): la armadura se desarma, cae y sale humo morado ---
   static DEFEAT_FRAMES = [[0, 1], [0.25, 2], [0.5, 3], [0.85, 4]];
-  static DEFEAT_HOLD = 2.1; // segundos hasta empezar a desvanecerse
-  static DEFEAT_FADE = 0.9;
+  static DEFEAT_HOLD = 1.25; // segundos hasta empezar a desvanecerse
+  static DEFEAT_FADE = 1.3;
 
   get defeatId() { return 'adv' + this.variant; }
   get hasDefeat() { return this.framed && DefeatFrames.has(this.defeatId); }
@@ -290,7 +290,7 @@ class Silenciador extends Enemy {
 
   // Humo morado, esquirlas de armadura que caen y golpe al tocar el suelo
   defeatEffects(dt, world) {
-    this.smokeBudget = (this.smokeBudget || 0) + dt * (this.deadTime < 1.6 ? 13 : 5);
+    this.smokeBudget = (this.smokeBudget || 0) + dt * (this.deadTime < 0.5 ? 6 : 15);
     while (this.smokeBudget >= 1) {
       this.smokeBudget -= 1;
       world.particles.add({
@@ -316,7 +316,8 @@ class Silenciador extends Enemy {
     for (const [from, frame] of Silenciador.DEFEAT_FRAMES) if (this.deadTime >= from) n = frame;
     const fade = Math.max(0, 1 - Math.max(0, this.deadTime - Silenciador.DEFEAT_HOLD) / Silenciador.DEFEAT_FADE);
     if (n < 3) this.drawShadow(ctx);
-    DefeatFrames.draw(ctx, this.defeatId, n, this.x, this.y - this.z, this.facing, { alpha: fade, flash: this.deadTime < 0.08 });
+    const tweak = DefeatFrames.TWEAK[this.defeatId][n - 1];
+    DefeatFrames.draw(ctx, this.defeatId, n, this.x, this.y - this.z, this.facing, { alpha: fade, flash: this.deadTime < 0.08, scale: tweak[0], offsetY: tweak[1] });
     return true;
   }
 

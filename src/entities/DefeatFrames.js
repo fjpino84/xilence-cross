@@ -5,6 +5,8 @@ class DefeatFrames {
   static META = {"adv1":[{"w":291,"h":324,"anchor":0.509},{"w":284,"h":338,"anchor":0.483},{"w":295,"h":362,"anchor":0.512},{"w":287,"h":255,"anchor":0.509}],"adv2":[{"w":276,"h":326,"anchor":0.515},{"w":265,"h":335,"anchor":0.542},{"w":479,"h":168,"anchor":0.506},{"w":538,"h":161,"anchor":0.536}],"rex":[{"w":274,"h":336,"anchor":0.452},{"w":278,"h":359,"anchor":0.468},{"w":408,"h":194,"anchor":0.427},{"w":608,"h":145,"anchor":0.493}],"op":[{"w":207,"h":299,"anchor":0.439},{"w":244,"h":231,"anchor":0.454},{"w":346,"h":147,"anchor":0.537},{"w":420,"h":137,"anchor":0.525}]};
   static STAND = { adv1: 205, adv2: 165, rex: 230, op: 156 };
   // Hacia qué lado queda la cabeza al tumbarse en el dibujo original (-1 izquierda, 1 derecha)
+  // Ajuste por cuadro [escala, bajar px]: al caer la armadura queda más pequeña y más abajo
+  static TWEAK = { adv1: [[1, 0], [1, 0], [0.9, 6], [0.78, 14]], adv2: [[1, 0], [1, 0], [0.95, 4], [0.88, 8]], rex: [[1, 0], [1, 0], [1, 0], [1, 0]], op: [[1, 0], [1, 0], [1, 0], [1, 0]] };
   static HEAD = { adv1: -1, adv2: -1, rex: -1, op: 1 };
 
   static has(id) { return !!Assets.image('df_' + id + '_1'); }

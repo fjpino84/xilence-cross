@@ -332,13 +332,13 @@ class Operador extends Entity {
     const camera = world.camera;
     const player = world.player;
     if (this.state === 'enter') {
-      const target = camera.right - 130;
+      const target = camera.right - 330;
       this.slot = target;
       this.x += Math.sign(target - this.x) * Math.min(Math.abs(target - this.x), Operador.WALK_SPEED * dt);
       if (Math.abs(target - this.x) < 2) { this.state = 'idle'; this.stateTime = 0; }
     } else if (this.state === 'idle') {
       // Se mantiene a lo lejos, mirando a ECO
-      this.slot = Math.max(camera.x + CONFIG.WIDTH * 0.62, Math.min(camera.right - 110, this.slot));
+      this.slot = Math.max(camera.x + CONFIG.WIDTH * 0.5, Math.min(camera.right - 300, this.slot));
       this.x += (this.slot - this.x) * Math.min(1, dt * 2);
       this.ready = true;
     } else if (this.state === 'shock') {
@@ -368,7 +368,7 @@ class Operador extends Entity {
     }
     if (this.state !== 'shock' && this.state !== 'dead') this.facing = Math.sign(player.x - this.x) || this.facing;
     this.facing = this.state === 'dead' || this.state === 'shock' ? this.facing : (player.x < this.x ? -1 : 1);
-    this.y += (Math.max(CONFIG.GROUND_TOP + 20, Math.min(CONFIG.GROUND_BOTTOM - 10, player.y)) - this.y) * Math.min(1, dt * 0.6);
+    this.y += (Math.max(CONFIG.GROUND_TOP + 20, Math.min(CONFIG.GROUND_BOTTOM - 45, player.y)) - this.y) * Math.min(1, dt * 0.6);
   }
 
   // Pose: preparando el lanzamiento con el dron en la mano; si no, apuntando con el cable tendido

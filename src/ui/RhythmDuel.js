@@ -58,6 +58,7 @@ class RhythmDuel {
     this.notes = this.chart.map((note) => ({ ...note, hit: false, missed: false }));
     this.meter = 0.5;
     this.combo = 0;
+    this.lit = false;
     this.maxCombo = 0;
     this.score = 0;
     this.counts = { perfect: 0, good: 0, miss: 0, stray: 0 };
@@ -190,6 +191,7 @@ class RhythmDuel {
         this.counts.stray++;
       }
       this.music.playMiss(false);
+      this.lit = false; // una tecla equivocada también apaga la iluminación
       return;
     }
     const perfect = Math.abs(target.t - time) <= RhythmDuel.PERFECT;
@@ -213,6 +215,7 @@ class RhythmDuel {
     note.missed = true;
     this.counts.miss++;
     this.combo = 0;
+    this.lit = false;
     this.tier = 1;
     this.meter = Math.max(0, this.meter - RhythmDuel.MISS_PENALTY);
     this.music.playMiss(true);
@@ -280,6 +283,7 @@ class RhythmDuel {
     this.player.playRiffPose(); // ECO hace la animación del Thunder Riff
     world.audio.play('duelStreak'); // el sonido de la racha de 10 aciertos
     this.x10Flash = 1; // el diapasón se ilumina (ver renderX10)
+    this.lit = true; // las notas quedan iluminadas hasta que el jugador falle
     world.shake(7, 0.25);
     this.boss.squash = 0.22;
     if (this.boss.react) this.boss.react('streak', world);
@@ -635,10 +639,20 @@ class RhythmDuel {
 
       // Halo
       ctx.globalCompositeOperation = 'lighter';
-      const halo = rx * 2.6;
-      ctx.globalAlpha *= 0.5;
+      const lit = this.lit && !note.missed;
+      const halo = rx * (lit ? 4.2 : 2.6);
+      ctx.globalAlpha *= lit ? 0.95 : 0.5;
       ctx.drawImage(Atmosphere.glowSprite(color), point.x - halo / 2, point.y - halo * 0.36, halo, halo * 0.72);
-      ctx.globalAlpha /= 0.5;
+      if (lit) {
+        // aro blanco que late alrededor de la nota iluminada
+        ctx.globalAlpha = 0.8 * (0.6 + 0.4 * Math.sin(this.age * 14 + note.lane));
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = Math.max(2, 4 * point.scale);
+        ctx.beginPath();
+        ctx.ellipse(point.x, point.y, rx * 1.35, ry * 1.35, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = lit ? 1 : ctx.globalAlpha / 0.5;
       ctx.globalCompositeOperation = 'source-over';
 
       // Gema: borde negro, cuerpo con degradado y brillo
