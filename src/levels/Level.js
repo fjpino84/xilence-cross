@@ -99,6 +99,25 @@ class Level {
     return null;
   }
 
+  // Móviles: mantiene en memoria solo las escenas cercanas a la cámara. Carga las que vienen y libera las que quedaron atrás
+  streamTiles(cameraX) {
+    if (typeof IS_TOUCH_DEVICE === 'undefined' || !IS_TOUCH_DEVICE) return;
+    const sequence = this.config.backgroundSequence;
+    if (!sequence) return;
+    const current = Math.floor(cameraX / Level.TILE_STRIDE);
+    sequence.forEach((tile, index) => {
+      const near = index >= current - 1 && index <= current + 2;
+      const far = index < current - 2 || index > current + 4;
+      const path = 'assets/backgrounds/nivel1/escena-' + (index + 1) + '.webp';
+      if (near && !Assets.image(tile.key)) Assets.loadOne(tile.key, path);
+      else if (far && Assets.image(tile.key)) {
+        Assets.unload(tile.key);
+        this.tileCanvases[index] = null;
+        if (this.liquid && this.liquid.masks) this.liquid.masks[index] = undefined;
+      }
+    });
+  }
+
   // Ilustración de la secuencia ya escalada, reflejada si toca y con el borde izquierdo difuminado (salvo la primera)
   tileCanvas(index) {
     if (this.tileCanvases[index]) return this.tileCanvases[index];
@@ -156,12 +175,14 @@ class Level {
 
   renderSequenceBackground(ctx, camera) {
     const sequence = this.config.backgroundSequence;
-    if (!sequence || !sequence.every((tile) => Assets.image(tile.key))) return false;
+    // Con la carga por tramos (móviles) puede faltar alguna escena lejana: se dibujan solo las que están cargadas
+    if (!sequence || !sequence.some((tile) => Assets.image(tile.key))) return false;
     if (this.config.backdropKey) this.renderBackdrop(ctx, camera);
     sequence.forEach((tile, index) => {
       const x = Math.round(index * Level.TILE_STRIDE - camera.x);
       if (x > CONFIG.WIDTH || x + Level.TILE_WIDTH < 0) return;
-      ctx.drawImage(this.tileCanvas(index), x, 0);
+      const canvas = this.tileCanvas(index);
+      if (canvas) ctx.drawImage(canvas, x, 0);
     });
     return true;
   }

@@ -110,3 +110,5 @@ No se ha definido aún una licencia para el código ni para el arte, por lo que,
 - **Móviles (resolución)**: en pantallas táctiles el lienzo se dibuja a 640×360 (el juego sigue en coordenadas de 960×540 y el navegador lo estira), se limita la recuperación de pasos atrasados y no suena el helicóptero. ?res=1 fuerza la resolución completa.
 
 - **Diálogos**: botón SALTAR ▶▶ arriba a la derecha (o tecla S); los eventos de escena que faltaban se disparan igualmente. **Cuadros de pausa, derrota y victoria** rediseñados (rombo con icono, cifras en recuadros, colores cian/rojo/dorado). **Duelo con Batuk**: mientras dura se apagan el fondo vivo, el líquido y las nieblas para ir más fluido.
+
+- **Móviles (memoria)**: las ilustraciones de las escenas se cargan por tramos (solo las 4-5 cercanas a la cámara; las que quedan atrás se liberan) y hay un tope a las copias de color de los sprites. Antes las 12 escenas y todas las copias se acumulaban en memoria y el teléfono acababa cerrándose.

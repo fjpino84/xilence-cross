@@ -10,6 +10,14 @@ const Sprite = {
       this.variantCache.set(image, byColor);
     }
     if (!byColor.has(color)) {
+      // Tope de copias de color en memoria (cada una es un lienzo del tamaño de la imagen): al pasarlo se descartan las más antiguas
+      this.variantCount = (this.variantCount || 0) + 1;
+      if (this.variantCount > 260) {
+        this.variantCache.clear();
+        this.variantCount = 0;
+        byColor = new Map();
+        this.variantCache.set(image, byColor);
+      }
       const canvas = document.createElement('canvas');
       canvas.width = image.width;
       canvas.height = image.height;

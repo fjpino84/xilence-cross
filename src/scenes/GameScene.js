@@ -1073,6 +1073,7 @@ class GameScene {
     this.player.update(scaled, this.finale ? GameScene.NO_INPUT : input, this.world);
     const wasLocked = this.level.locked;
     const wasCompleted = this.level.completed;
+    this.level.streamTiles(this.camera.x);
     this.level.update(this.player, this.camera, (x, y, aggressive, opts) => this.spawnEnemy(x, y, aggressive, opts), scaled);
     for (const warning of this.edgeWarnings) warning.age += scaled;
     this.edgeWarnings = this.edgeWarnings.filter((warning) => warning.age < 0.9);

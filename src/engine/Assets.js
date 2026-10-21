@@ -29,6 +29,23 @@ const Assets = {
     return Promise.race([Promise.all(loads), timeout]);
   },
 
+  // Carga una sola imagen bajo demanda (promesa que siempre se resuelve)
+  loadOne(key, src) {
+    if (this.images.has(key) || (this.loading && this.loading.has(key))) return Promise.resolve();
+    this.loading = this.loading || new Set();
+    this.loading.add(key);
+    return this.loadImages({ [key]: src }).then(() => this.loading.delete(key));
+  },
+
+  // Libera una imagen (y las copias de color que se hicieron de ella) para devolver memoria
+  unload(key) {
+    const image = this.images.get(key);
+    if (!image) return;
+    this.images.delete(key);
+    if (typeof Sprite !== 'undefined') Sprite.variantCache.delete(image);
+    image.src = '';
+  },
+
   image(key) {
     return this.images.get(key) || null;
   },

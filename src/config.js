@@ -63,7 +63,8 @@ const CONFIG = Object.freeze({
     a3Prep: 'assets/sprites/adversario3/op_prep.png',
     a3Dron: 'assets/sprites/adversario3/dron.png',
     // Nivel 1: doce escenas con el cielo transparente, el fondo lejano y las piezas sueltas
-    ...Object.fromEntries(Array.from({ length: 12 }, (_, i) => ['bgN' + (i + 1), 'assets/backgrounds/nivel1/escena-' + (i + 1) + '.webp'])),
+    // En móviles (IS_TOUCH_DEVICE) solo se precargan 4 escenas: el resto se carga al acercarse y se libera al alejarse (Level.streamTiles)
+    ...Object.fromEntries(Array.from({ length: IS_TOUCH_DEVICE ? 4 : 12 }, (_, i) => ['bgN' + (i + 1), 'assets/backgrounds/nivel1/escena-' + (i + 1) + '.webp'])),
     bgNFondo: 'assets/backgrounds/nivel1/fondo.webp',
     ...Object.fromEntries(NEW_PIECES.map((name) => ['pn_' + name, 'assets/sprites/nivel1/' + name + '.png'])),
     bgLevel02: 'assets/backgrounds/nivel02-estacion-transito.jpg',
