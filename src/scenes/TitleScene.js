@@ -1,4 +1,4 @@
-// Pantalla de título: ECO a la derecha y el título ("THE ORDER OF XILENCE", en letra decorada con un aro de runas) a la izquierda, sin taparlo.
+// Pantalla de título: ECO a la derecha y el título ("THE SOUND OF XILENCE", en letra decorada con un aro de runas) a la izquierda, sin taparlo.
 class TitleScene {
   static INPUT_DELAY = 0.3; // evita saltar la pantalla con la tecla que nos trajo aquí
   static ART_SHIFT = 170; // cuánto se desplaza la ilustración hacia la derecha para dejar sitio al título
@@ -162,7 +162,7 @@ class TitleScene {
     return width - spacing;
   }
 
-  // Compone una sola vez el título: "THE ORDER OF" en letra clásica y "XILENCE" en letra decorada dorada, con un adorno debajo
+  // Compone una sola vez el título: "THE SOUND OF" en letra clásica y "XILENCE" en letra decorada dorada, con un adorno debajo
   buildTitleArt() {
     const width = 470;
     const height = 226;
@@ -181,7 +181,7 @@ class TitleScene {
     c.shadowColor = '#7c3aff';
     c.shadowBlur = 12;
     c.fillStyle = upper;
-    TitleScene.drawSpaced(c, 'THE ORDER OF', 6, 44, 9);
+    TitleScene.drawSpaced(c, 'THE SOUND OF', 6, 44, 9);
     c.shadowBlur = 0;
 
     // Palabra principal en la versión más pesada de Cinzel (la I decorada de Cinzel Decorative se confunde con un 1): se ajusta el tamaño para que quepa
