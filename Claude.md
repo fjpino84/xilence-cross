@@ -166,4 +166,4 @@ Todo con formas geométricas de colores — sprites Midjourney se agregan despu�
 
 NOTA: La música se genera con Web Audio API (síntesis, no archivos de audio). Las melodías de los jefes derrotados se van sumando progresivamente a la banda sonora.
 
-The Sound of Xilence — El silencio que combates, y la nota que te salva.
+The Order of Xilence — El silencio que combates, y la nota que te salva.

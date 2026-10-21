@@ -36,7 +36,7 @@ class IntroScene {
     video.className = 'intro-video';
     video.src = IntroScene.SRC;
     video.setAttribute('playsinline', '');
-    video.setAttribute('aria-label', 'Introducción de The Sound of Xilence');
+    video.setAttribute('aria-label', 'Introducción de The Order of Xilence');
     video.preload = 'auto';
     video.volume = 1;
     this.video = video;

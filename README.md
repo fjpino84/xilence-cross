@@ -1,4 +1,4 @@
-# THE SOUND OF XILENCE
+# THE ORDER OF XILENCE
 Tipografías del título: Cinzel y Cinzel Decorative (SIL Open Font License, en `assets/fonts/OFL.txt`).
 
 > *El silencio que combates, y la nota que te salva.*
