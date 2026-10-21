@@ -13,7 +13,7 @@ const W = 1611, H = 2000; // coordenadas medidas sobre la hoja vista a 1611×200
 const rect = (a, b, c, d) => [a / W, b / H, c / W, d / H];
 const SHEETS = {
   adv1: {
-    file: 'Adversario 1/Derrota.jpg', ref: 862, radius: 50, shadowPanels: [2, 3], // las sombras lavanda del suelo se quitan
+    file: 'Adversario 1/Derrota.jpg', ref: 862, radius: 50, shadowPanels: [2, 3], erase: [[], [], [[0, 0, 1, 0.045], [0.955, 0, 1, 1]], []], // las sombras lavanda del suelo se quitan
     panels: [rect(50, 42, 803, 983), rect(825, 42, 1560, 983), rect(50, 988, 803, 1955), rect(825, 988, 1560, 1955)],
   },
   adv2: {
@@ -70,11 +70,11 @@ const save = async (name, canvas) => { const blob = await new Promise((r) => can
     meta[id] = [];
     for (let n = 0; n < sheet.panels.length; n++) {
       const [fx0, fy0, fx1, fy1] = sheet.panels[n];
-      const inset = id === 'rex' ? 22 : 10;
+      const inset = id === 'rex' ? 22 : (id === 'adv1' ? 20 : 10);
       const x0 = Math.round(fx0 * sw) + inset, y0 = Math.round(fy0 * sh) + inset, x1 = Math.round(fx1 * sw) - inset, y1 = Math.round(fy1 * sh) - inset;
       const pw = x1 - x0, ph = y1 - y0;
       const c = document.createElement('canvas'); c.width = pw; c.height = ph; const cx = c.getContext('2d'); cx.drawImage(image, x0, y0, pw, ph, 0, 0, pw, ph);
-      let data = key(cx.getImageData(0, 0, pw, ph), ...((sheet.shadowPanels || []).includes(n) ? [196, 70] : [224, 30]));
+      let data = key(cx.getImageData(0, 0, pw, ph), ...((sheet.shadowPanels || []).includes(n) ? [168, 95] : [224, 30]));
       for (const [ex0, ey0, ex1, ey1] of (sheet.erase && sheet.erase[n]) || []) for (let y = Math.floor(ey0 * ph); y < Math.ceil(ey1 * ph); y++) for (let x = Math.floor(ex0 * pw); x < Math.ceil(ex1 * pw); x++) data.data[(y*pw+x)*4+3] = 0;
       data = keepMain(data, sheet.radius);
       const b = bbox(data);

@@ -280,8 +280,8 @@ class Silenciador extends Enemy {
   }
 
   // --- Derrota con cuadros ilustrados (Garra = adv1, Martillo = adv2): la armadura se desarma, cae y sale humo morado ---
-  static DEFEAT_FRAMES = [[0, 1], [0.25, 2], [0.5, 3], [0.85, 4]];
-  static DEFEAT_HOLD = 1.25; // segundos hasta empezar a desvanecerse
+  static DEFEAT_FRAMES = [[0, 1], [0.5, 2], [0.85, 3], [1.15, 4]];
+  static DEFEAT_HOLD = 1.7; // segundos hasta empezar a desvanecerse
   static DEFEAT_FADE = 1.3;
 
   get defeatId() { return 'adv' + this.variant; }
@@ -290,12 +290,12 @@ class Silenciador extends Enemy {
 
   // Humo morado, esquirlas de armadura que caen y golpe al tocar el suelo
   defeatEffects(dt, world) {
-    this.smokeBudget = (this.smokeBudget || 0) + dt * (this.deadTime < 0.5 ? 6 : 15);
+    this.smokeBudget = (this.smokeBudget || 0) + dt * (this.deadTime < 1.1 ? 55 : 16);
     while (this.smokeBudget >= 1) {
       this.smokeBudget -= 1;
       world.particles.add({
-        type: 'puff', x: this.x + (Math.random() - 0.5) * 70, y: this.y - this.z - 20 - Math.random() * 60, vx: (Math.random() - 0.5) * 30, vy: -22 - Math.random() * 26,
-        life: 1.3 + Math.random() * 0.7, size: 16, sizeEnd: 52 + Math.random() * 22, color: Math.random() < 0.6 ? '#6b3fa8' : '#3a2160', additive: false, alpha: 0.38,
+        type: 'puff', x: this.x + (Math.random() - 0.5) * 70, y: this.y - this.z - 20 - Math.random() * (this.deadTime < 1.1 ? 150 : 60), vx: (Math.random() - 0.5) * 30, vy: -22 - Math.random() * 26,
+        life: 1.3 + Math.random() * 0.7, size: 16, sizeEnd: 60 + Math.random() * 26, color: Math.random() < 0.6 ? '#7b4bc0' : '#3a2160', additive: false, alpha: this.deadTime < 1.1 ? 0.55 : 0.4,
       });
     }
     if (!this.pieceFx && this.deadTime >= 0.12) {

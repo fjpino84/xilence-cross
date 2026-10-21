@@ -374,7 +374,9 @@ class RexVane extends Enemy {
     // Flota mientras se apaga y, al terminar de hablar, cae al suelo
     const targetZ = withFrames && this.deadTime > 1.1 ? 0 : RexVane.HOVER + 10;
     this.z += (targetZ - this.z) * Math.min(1, dt * (targetZ === 0 ? 6 : 3));
-    this.redness = withFrames ? Math.max(0, 1 - this.deadTime / 1.7) : 1; // 1 = rojo encendido, 0 = apagado
+    this.redness = withFrames ? (this.deadTime < 0.5 ? 1 : Math.max(0, 1 - (this.deadTime - 0.5) / 1.3)) : 1;
+    // Destello rojo intenso antes de empezar a apagarse
+    if (withFrames && !this.redFlash) { this.redFlash = true; world.flash(0.7, '#ff1030', 0.75); world.shake(9, 0.4); world.particles.add({ type: 'ring', x: this.x, y: this.y - this.z - 80, size: 10, sizeEnd: 320, life: 0.55, color: '#ff2a55', width: 14, flat: 0.8 }); world.particles.burst({ x: this.x, y: this.y - this.z - 90, count: 40, speed: [200, 800], life: [0.3, 0.8], size: [3, 6], colors: ['#ff2a55', '#ffffff', '#ff6a80'], type: 'spark', drag: 1.5 }); } // 1 = rojo encendido, 0 = apagado
     this.fxTimer -= dt;
     if (this.fxTimer <= 0) {
       this.fxTimer = withFrames ? 0.05 : 0.04;
@@ -478,7 +480,28 @@ class RexVane extends Enemy {
     const shake = t < 1.1 ? (Math.random() - 0.5) * 6 * red : 0;
     if (t < 1.25) {
       // cuadro 1 (rojo) pasa al 2 (menos rojo) entre 0,3 y 0,8 s
-      const mix = Math.max(0, Math.min(1, (t - 0.3) / 0.5));
+      const mix = Math.max(0, Math.min(1, (t - 0.55) / 0.55));
+      // el rojo se enciende al máximo en los primeros instantes: silueta roja y halo que laten
+      if (t < 0.7) {
+        const pulse = 0.65 + 0.35 * Math.sin(t * 60);
+        const k = (1 - t / 0.7) * pulse;
+        const fr = Assets.image('df_rex_1');
+        if (fr) {
+          const info = DefeatFrames.META.rex[0];
+          const hh = info.h * (DefeatFrames.STAND.rex / 300);
+          Sprite.draw(ctx, fr, { x: this.x + shake, y: footY, height: hh, anchorX: info.anchor, facing: DefeatFrames.facingFor('rex', this.facing), silhouetteColor: '#ff1a3a', additive: true, alpha: Math.min(1, k * 1.1) });
+        }
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        const gg = ctx.createRadialGradient(this.x, footY - 100, 10, this.x, footY - 100, 230);
+        gg.addColorStop(0, 'rgba(255, 90, 110, 0.9)');
+        gg.addColorStop(0.4, 'rgba(255, 20, 60, 0.45)');
+        gg.addColorStop(1, 'rgba(255, 0, 40, 0)');
+        ctx.globalAlpha = k;
+        ctx.fillStyle = gg;
+        ctx.fillRect(this.x - 240, footY - 340, 480, 480);
+        ctx.restore();
+      }
       DefeatFrames.draw(ctx, 'rex', 1, this.x, footY, this.facing, { alpha: (1 - mix) * this.alpha, offsetX: shake, flash: this.hitFlash > 0 });
       DefeatFrames.draw(ctx, 'rex', 2, this.x, footY, this.facing, { alpha: mix * this.alpha, offsetX: shake });
     } else if (t < 1.9) {
