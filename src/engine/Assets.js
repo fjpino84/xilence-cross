@@ -1,6 +1,8 @@
 // Carga de imágenes. Si una imagen falla, el juego sigue con sus gráficos procedurales.
 const Assets = {
   images: new Map(),
+  // Versión tomada de los scripts de index.html (?v=N): cada publicación nueva renueva también las imágenes
+  version: (typeof document !== 'undefined' && document.querySelector && (document.querySelector('script[src*="Assets.js?v="]') || { src: '' }).src.split('?v=')[1]) || '0',
 
   // sources: { clave: 'ruta/relativa.png' } → promesa que siempre se resuelve
   loadImages(sources) {
@@ -11,7 +13,7 @@ const Assets = {
         resolve();
       };
       image.onerror = () => resolve();
-      image.src = src;
+      image.src = src + (src.includes('?') ? '&' : '?') + 'v=' + this.version; // la versión del juego evita ver imágenes viejas en caché
     }));
     return Promise.all(loads);
   },
