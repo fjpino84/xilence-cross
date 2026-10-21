@@ -21,6 +21,7 @@ class Liquid {
     this.frame = 0;
     level.liquid = this;
     if (typeof document === 'undefined') return;
+    if (FX.low) return; // sin lienzos de pantalla en modo ligero
     const make = () => { const c = document.createElement('canvas'); c.width = Liquid.SCREEN_W; c.height = Liquid.SCREEN_H; return c; };
     this.screenMask = make();
     this.shimmerCanvas = make();
@@ -71,6 +72,7 @@ class Liquid {
 
   // Máscara del líquido de una ilustración (alfa por píxel) a partir de su color; solo la mitad baja, para no confundirlo con luces y pantallas
   maskFor(index) {
+    if (FX.low) return null; // en móviles no se reconoce el líquido: cada máscara ocupa varios MB y se acumulaban al avanzar por el nivel
     if (this.masks[index] !== undefined) return this.masks[index];
     const tile = this.level.tileCanvas(index);
     if (!tile || typeof document === 'undefined') return null;

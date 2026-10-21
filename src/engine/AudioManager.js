@@ -28,6 +28,7 @@ class AudioManager {
     this.sfxLevel = 1;
     this.sfx = null; // hoja de sonidos grabados ya decodificada
     this.lastPick = {};
+    this.activeVoices = 0;
     this.chargeVoice = null;
     this.talkVoice = null;
     this.heliVoice = null;
@@ -417,6 +418,8 @@ class AudioManager {
   sample(name, options = {}) {
     const { count = 0, volume = 1, rate = 1, jitter = 0.05, pan = 0, wet = 0, loop = false } = options;
     if (!this.sfx || !this.ready) return null;
+    // Tope de voces a la vez (más bajo en móviles): demasiadas grabaciones largas juntas saturan el audio
+    if (this.activeVoices >= (typeof IS_TOUCH_DEVICE !== 'undefined' && IS_TOUCH_DEVICE ? 10 : 24)) return null;
     let key = options.name || name;
     if (count > 0) {
       let pick = 1 + Math.floor(Math.random() * count);
@@ -441,6 +444,8 @@ class AudioManager {
     } else {
       source.start(this.context.currentTime, clip[0], clip[1]);
     }
+    this.activeVoices++;
+    source.onended = () => { this.activeVoices = Math.max(0, this.activeVoices - 1); };
     return { source, gain };
   }
 
