@@ -106,3 +106,5 @@ No se ha definido aún una licencia para el código ni para el arte, por lo que,
 - **Móviles (memoria)**: en modo ligero no se construyen las máscaras del líquido (cada una ocupa varios MB y se acumulaban al pasar de Rex Vane en adelante) y hay un tope de sonidos grabados simultáneos (10 en móvil).
 
 - **Derrotas con cuadros ilustrados** (assets/sprites/derrotas, generados con tools/make_defeats.js desde las hojas "Derrota"): Adversarios 1 y 2 se desarman y caen con humo morado; Rex Vane se va apagando de rojo a negro, cae de rodillas y queda tendido; el Operador (Adversario 3) recibe una descarga eléctrica, cae y queda con humo negro. Cada personaje usa una sola escala en sus 4 cuadros.
+
+- **Móviles (resolución)**: en pantallas táctiles el lienzo se dibuja a 640×360 (el juego sigue en coordenadas de 960×540 y el navegador lo estira), se limita la recuperación de pasos atrasados y no suena el helicóptero. ?res=1 fuerza la resolución completa.

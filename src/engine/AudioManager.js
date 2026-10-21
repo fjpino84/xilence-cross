@@ -452,6 +452,7 @@ class AudioManager {
   // Helicóptero del reflector: suena en bucle mientras la luz está cerca de la pantalla (level 0-1) y se apaga solo si se aleja
   setHelicopter(level, dt = 1 / 60) {
     if (!this.sfx || !this.ready) return;
+    if (typeof IS_TOUCH_DEVICE !== 'undefined' && IS_TOUCH_DEVICE) return; // en móviles no suena el helicóptero (bucle largo continuo)
     const target = Math.max(0, Math.min(1, level)) * 0.16;
     if (target > 0.004 && !this.heliVoice) this.heliVoice = this.sample('heli', { loop: true, volume: 0, jitter: 0 });
     const voice = this.heliVoice;

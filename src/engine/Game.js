@@ -15,8 +15,11 @@ class Game {
     this.lastTimestamp = 0;
     this.accumulator = 0;
 
-    this.canvas.width = CONFIG.WIDTH;
-    this.canvas.height = CONFIG.HEIGHT;
+    // En móviles el lienzo se dibuja a menor resolución (el navegador lo estira): menos píxeles que pintar y más aire para el audio.
+    // El juego sigue usando coordenadas de 960×540; ?res=1 fuerza la resolución completa
+    this.renderScale = (typeof IS_TOUCH_DEVICE !== 'undefined' && IS_TOUCH_DEVICE && !/[?&]res=1/.test(window.location.search || '')) ? 0.667 : 1;
+    this.canvas.width = Math.round(CONFIG.WIDTH * this.renderScale);
+    this.canvas.height = Math.round(CONFIG.HEIGHT * this.renderScale);
 
     // El navegador solo permite sonido tras un gesto del usuario
     const unlock = () => this.audio.unlock();
@@ -68,6 +71,8 @@ class Game {
     this.lastTimestamp = timestamp;
     this.accumulator += frameTime;
 
+    // En móviles, si el dispositivo no da abasto no se recuperan muchos pasos de golpe (eso lo atascaba más): el juego va un poco lento en vez de cortarse
+    if (this.renderScale < 1) this.accumulator = Math.min(this.accumulator, CONFIG.STEP * 3);
     while (this.accumulator >= CONFIG.STEP) {
       if (this.input.justPressed('mute')) this.audio.toggleMute();
       this.scenes.update(CONFIG.STEP);
@@ -75,6 +80,9 @@ class Game {
       this.accumulator -= CONFIG.STEP;
     }
 
+    this.ctx.setTransform(this.renderScale, 0, 0, this.renderScale, 0, 0);
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = this.renderScale < 1 ? 'low' : 'high';
     this.scenes.render(this.ctx);
     this.renderAudioStatus();
     const scene = this.scenes.current;
