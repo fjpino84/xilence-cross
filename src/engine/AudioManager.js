@@ -185,7 +185,7 @@ class AudioManager {
   // para que mande sobre todo lo demás. Solo funciona desde un servidor (http/https); abriendo el archivo desde el disco el navegador lo
   // impide y suena a su volumen normal.
   boostBoss() {
-    if (this.bossBoosted || !this.boss || !this.context || typeof location === 'undefined' || !/^https?:$/.test(location.protocol)) return;
+    if (this.bossBoosted || (typeof IS_TOUCH_DEVICE !== 'undefined' && IS_TOUCH_DEVICE) || !this.boss || !this.context || typeof location === 'undefined' || !/^https?:$/.test(location.protocol)) return;
     try {
       const source = this.context.createMediaElementSource(this.boss);
       const gain = this.context.createGain();
@@ -279,13 +279,21 @@ class AudioManager {
 
   get ready() { return this.context !== null && !this.muted; }
 
+  // En móviles se pide un búfer de audio grande ('playback'): un poco más de retardo, pero sin cortes ni chasquidos
+  makeContext(AudioContextClass) {
+    if (typeof IS_TOUCH_DEVICE !== 'undefined' && IS_TOUCH_DEVICE) {
+      try { return new AudioContextClass({ latencyHint: 'playback' }); } catch (error) { /* sin opciones */ }
+    }
+    return new AudioContextClass();
+  }
+
   // Crea el contexto de audio (suspendido) y empieza a cargar los sonidos grabados ya al abrir la página, para que estén listos
   // cuando llegue el primer gesto del jugador (el botón del título suena al pulsarlo)
   prepare() {
     if (this.context) return;
     const AudioContextClass = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
     if (!AudioContextClass) return;
-    try { this.setup(new AudioContextClass()); } catch (error) { /* se creará con el primer gesto */ }
+    try { this.setup(this.makeContext(AudioContextClass)); } catch (error) { /* se creará con el primer gesto */ }
   }
 
   unlock() {
@@ -293,7 +301,7 @@ class AudioManager {
     if (!this.context) {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (!AudioContextClass) return;
-      this.setup(new AudioContextClass());
+      this.setup(this.makeContext(AudioContextClass));
     }
     if (this.context.state === 'suspended') this.context.resume();
   }
@@ -775,7 +783,7 @@ AudioManager.RECORDED = {
     a.lastDuelBad = now;
     a.sample('duelErr', { count: 4, volume: 0.45, jitter: 0.03 });
   },
-  duelStreak: (a) => { a.sample('duelX10', { volume: 2.2, jitter: 0.01 }); },
+  duelStreak: (a) => { a.sample('duelX10', { volume: 3.6, jitter: 0.01 }); },
   // Ambiente: el trueno de los relámpagos del fondo y las corrientes eléctricas (cortocircuitos y rayos del Power Chord)
   thunder: (a) => { a.sample('thunder', { count: 2, volume: 0.5, jitter: 0.07 }); },
   zap: (a) => { a.sample('zap', { count: 3, volume: 0.45, jitter: 0.08 }); },

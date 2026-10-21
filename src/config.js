@@ -11,7 +11,12 @@ const frameAssets = (key, folder, name, count) => Object.fromEntries(
 );
 
 // Calidad de efectos: se activa sola en dispositivos lentos, o con ?fx=low en la dirección
-const FX = { low: typeof window !== 'undefined' && !!window.location && /[?&]fx=low/.test(window.location.search || '') };
+// Efectos pesados (líquido animado, fondo vivo, niebla): se apagan con ?fx=low y, por defecto, en móviles y tabletas (pantalla táctil), donde
+// el dibujo extra hace que el audio se pegue y suene cortado. ?fx=high los fuerza también en móvil.
+const IS_TOUCH_DEVICE = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+const FX = {
+  low: typeof window !== 'undefined' && !!window.location && (/[?&]fx=low/.test(window.location.search || '') || (IS_TOUCH_DEVICE && !/[?&]fx=high/.test(window.location.search || ''))),
+};
 
 // Constantes globales del juego. Un único lugar para ajustar el balance y la paleta.
 const CONFIG = Object.freeze({
