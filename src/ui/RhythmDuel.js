@@ -117,6 +117,7 @@ class RhythmDuel {
       this.held[i] = input.isDown(`lane${i}`);
       this.padFlash[i] = Math.max(0, this.padFlash[i] - dt * 5);
     }
+    this.x10Flash = Math.max(0, (this.x10Flash || 0) - dt * 1.1);
     this.failFlash = Math.max(0, this.failFlash - dt * 3);
     this.tierFlash = Math.max(0, (this.tierFlash || 0) - dt * 2.4);
     this.updateSparks(dt);
@@ -204,8 +205,8 @@ class RhythmDuel {
     if (perfect) this.music.playSparkle(lane);
     this.hitEffects(lane, perfect);
     this.addPop(perfect ? 'PERFECTO' : 'BIEN', perfect ? '#ffffff' : RhythmDuel.LANE_COLORS[1], lane);
-    // Cada 10 notas buenas (perfectas o buenas, aunque haya fallos de por medio) ECO lanza el Thunder Riff
-    if ((this.counts.perfect + this.counts.good) % RhythmDuel.STREAK_EVERY === 0) this.streakBeam();
+    // Cada 10 aciertos seguidos (el combo se rompe al fallar) ECO lanza el Thunder Riff y el diapasón se ilumina
+    if (this.combo > 0 && this.combo % RhythmDuel.STREAK_EVERY === 0) this.streakBeam();
   }
 
   miss(note) {
@@ -278,6 +279,7 @@ class RhythmDuel {
     world.beam({ facing: 1, owner: this.player, dx: 46, dy: -94, length, duration: 0.4, power: 2, thickness: 0.9 });
     this.player.playRiffPose(); // ECO hace la animación del Thunder Riff
     world.audio.play('duelStreak'); // el sonido de la racha de 10 aciertos
+    this.x10Flash = 1; // el diapasón se ilumina (ver renderX10)
     world.shake(7, 0.25);
     this.boss.squash = 0.22;
     if (this.boss.react) this.boss.react('streak', world);
@@ -367,6 +369,7 @@ class RhythmDuel {
     this.renderMeter(ctx, pulse);
     if (this.state === 'play' || this.state === 'won') this.renderNotes(ctx);
     this.renderPads(ctx, pulse);
+    this.renderX10(ctx);
     this.renderSideInfo(ctx);
     this.renderPops(ctx);
     this.renderCountIn(ctx);
@@ -662,6 +665,69 @@ class RhythmDuel {
       ctx.fill();
       ctx.restore();
     }
+  }
+
+  // Racha de 10: una ola de luz sube por las cuerdas del diapasón, la línea de aciertos y los cuatro pads estallan
+  renderX10(ctx) {
+    const flash = this.x10Flash || 0;
+    if (flash <= 0.01) return;
+    const { TOP, HIT } = RhythmDuel;
+    const progress = 1 - flash; // 0 → 1 a lo largo de la animación
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    // cuerdas encendidas
+    for (let lane = 0; lane < 4; lane++) {
+      const a = this.lanePoint(lane, 1);
+      const b = this.lanePoint(lane, 0);
+      const color = RhythmDuel.LANE_COLORS[lane];
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 5 + 5 * flash;
+      ctx.globalAlpha = 0.5 * flash;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.6;
+      ctx.globalAlpha = 0.9 * flash;
+      ctx.stroke();
+    }
+    // ola de luz que sube desde la línea de aciertos
+    const depth = Math.min(1, progress * 2.2);
+    const wave = this.lanePoint(1.5, 1 - depth);
+    const left = this.lanePoint(-0.6, 1 - depth);
+    const right = this.lanePoint(3.6, 1 - depth);
+    const band = ctx.createLinearGradient(0, wave.y - 40, 0, wave.y + 40);
+    band.addColorStop(0, 'rgba(255, 255, 255, 0)');
+    band.addColorStop(0.5, 'rgba(255, 255, 255, 0.95)');
+    band.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.globalAlpha = Math.min(1, flash * 1.6);
+    ctx.fillStyle = band;
+    ctx.fillRect(left.x, wave.y - 40, right.x - left.x, 80);
+    // línea de aciertos y pads
+    const hitLeft = this.lanePoint(-0.6, 1);
+    const hitRight = this.lanePoint(3.6, 1);
+    ctx.globalAlpha = flash;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(hitLeft.x, HIT - 5, hitRight.x - hitLeft.x, 10);
+    for (let lane = 0; lane < 4; lane++) {
+      const p = this.lanePoint(lane, 1);
+      const r = 30 + 90 * progress;
+      const g = ctx.createRadialGradient(p.x, p.y, 4, p.x, p.y, r);
+      g.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+      g.addColorStop(0.4, RhythmDuel.LANE_COLORS[lane] + 'aa');
+      g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.globalAlpha = flash;
+      ctx.fillStyle = g;
+      ctx.fillRect(p.x - r, p.y - r, r * 2, r * 2);
+      ctx.strokeStyle = RhythmDuel.LANE_COLORS[lane];
+      ctx.lineWidth = 4 * flash + 1;
+      ctx.globalAlpha = flash;
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, 20 + 110 * progress, (20 + 110 * progress) * 0.35, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   // Los cuatro pads de la línea de aciertos, con la tecla de cada uno; con racha alta echan llamas
