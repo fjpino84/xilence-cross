@@ -369,14 +369,31 @@ class RexVane extends Enemy {
   updateDead(dt, world) {
     this.deadTime += dt;
     if (this.lastWords && !this.lastWordsDone) this.deadTime = Math.min(this.deadTime, 1.05); // la explosión final espera a que termine de hablar
+    const talking = this.lastWords && !this.lastWordsDone;
+    if (!talking) this.blastTime = (this.blastTime || 0) + dt; // tiempo desde que terminó de hablar: la explosión y la caída cuentan desde aquí
+    const bt = this.blastTime || 0;
     this.kx = 0;
     const withFrames = DefeatFrames.has('rex');
     // Flota mientras se apaga y, al terminar de hablar, cae al suelo
-    const targetZ = withFrames && this.deadTime > 1.1 ? 0 : RexVane.HOVER + 10;
+    const targetZ = withFrames && bt > 0.9 ? 0 : RexVane.HOVER + 10;
     this.z += (targetZ - this.z) * Math.min(1, dt * (targetZ === 0 ? 6 : 3));
-    this.redness = withFrames ? (this.deadTime < 0.5 ? 1 : Math.max(0, 1 - (this.deadTime - 0.5) / 1.3)) : 1;
-    // Destello rojo intenso antes de empezar a apagarse
-    if (withFrames && !this.redFlash) { this.redFlash = true; world.flash(0.7, '#ff1030', 0.75); world.shake(9, 0.4); world.particles.add({ type: 'ring', x: this.x, y: this.y - this.z - 80, size: 10, sizeEnd: 320, life: 0.55, color: '#ff2a55', width: 14, flat: 0.8 }); world.particles.burst({ x: this.x, y: this.y - this.z - 90, count: 40, speed: [200, 800], life: [0.3, 0.8], size: [3, 6], colors: ['#ff2a55', '#ffffff', '#ff6a80'], type: 'spark', drag: 1.5 }); } // 1 = rojo encendido, 0 = apagado
+    this.redness = withFrames ? (bt < 0.5 ? 1 : Math.max(0, 1 - (bt - 0.5) / 1.3)) : 1; // 1 = rojo encendido, 0 = apagado
+    // Explosión roja al terminar de hablar, antes de apagarse y caer (sin anillos)
+    if (withFrames && bt > 0 && !this.redFlash) {
+      this.redFlash = true;
+      world.flash(0.6, '#ff3a3a', 0.85);
+      world.shake(16, 0.6);
+      world.camera.punch(0.05);
+      world.hitStop(0.06);
+      world.audio.play('rexBolt');
+      const cx = this.x;
+      const cy = this.y - this.z - 90;
+      world.particles.burst({ x: cx, y: cy, count: 90, speed: [250, 1100], life: [0.35, 0.95], size: [3, 7], colors: ['#ff2a45', '#ffffff', '#ff8a30', '#ffd070'], type: 'spark', drag: 1.5, gravity: 200 });
+      world.shards(cx, cy, 24, ['#ff2a45', '#ffffff', '#5a0b1c'], true);
+      for (let k = 0; k < 14; k++) {
+        world.particles.add({ type: 'puff', x: cx + (Math.random() - 0.5) * 60, y: cy + (Math.random() - 0.5) * 90, vx: (Math.random() - 0.5) * 420, vy: -Math.random() * 260, life: 1.0 + Math.random() * 0.6, size: 30, sizeEnd: 120 + Math.random() * 40, color: Math.random() < 0.5 ? '#7a0f24' : '#1a0a14', additive: false, alpha: 0.7 });
+      }
+    }
     this.fxTimer -= dt;
     if (this.fxTimer <= 0) {
       this.fxTimer = withFrames ? 0.05 : 0.04;
@@ -391,12 +408,12 @@ class RexVane extends Enemy {
         });
       }
     }
-    if (!this.deathBurst && this.deadTime > 1.1) {
+    if (!this.deathBurst && (withFrames ? bt > 0.9 : this.deadTime > 1.1)) {
       this.deathBurst = true;
       world.shake(withFrames ? 7 : 14, 0.4);
       if (!withFrames) world.flash(0.3, '#ffffff');
       world.audio.play('rexBolt');
-      world.particles.add({ type: 'ring', x: this.x, y: this.y - this.z - 60, size: 10, sizeEnd: withFrames ? 150 : 260, life: 0.7, color: '#ff4466', width: withFrames ? 5 : 10, flat: 0.9 });
+      if (!withFrames) world.particles.add({ type: 'ring', x: this.x, y: this.y - this.z - 60, size: 10, sizeEnd: 260, life: 0.7, color: '#ff4466', width: 10, flat: 0.9 });
       if (withFrames) world.landDust(this.x, this.y, 8);
       else world.particles.burst({ x: this.x, y: this.y - this.z - 70, count: 40, speed: [200, 800], life: [0.3, 0.9], size: [2.5, 5], colors: ['#ff4466', '#ffffff', '#ff2a55'], type: 'spark', drag: 1.8 });
     }
@@ -464,9 +481,9 @@ class RexVane extends Enemy {
 
   // Derrota con cuadros: de rojo encendido a negro apagado (viñetas 1 y 2 con mezcla suave), de rodillas y tendido
   renderDefeat(ctx) {
-    const t = this.deadTime;
+    const t = this.blastTime || 0; // 0 mientras habla: se ve entero, con todo su rojo
     const footY = this.y - this.z;
-    const red = this.redness ?? 0;
+    const red = this.redness ?? 1;
     // aura roja que se apaga
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -477,33 +494,37 @@ class RexVane extends Enemy {
     ctx.fillStyle = g;
     ctx.fillRect(this.x - 140, footY - 220, 280, 280);
     ctx.restore();
-    const shake = t < 1.1 ? (Math.random() - 0.5) * 6 * red : 0;
-    if (t < 1.25) {
-      // cuadro 1 (rojo) pasa al 2 (menos rojo) entre 0,3 y 0,8 s
-      const mix = Math.max(0, Math.min(1, (t - 0.55) / 0.55));
-      // el rojo se enciende al máximo en los primeros instantes: silueta roja y halo que laten
-      if (t < 0.7) {
-        const pulse = 0.65 + 0.35 * Math.sin(t * 60);
-        const k = (1 - t / 0.7) * pulse;
+    const shake = t < 0.9 ? (Math.random() - 0.5) * (t > 0 ? 9 : 4) * red : 0;
+    if (t < 1.15) {
+      // cuadro 1 (rojo) pasa al 2 (menos rojo) entre 0,5 y 1,05 s
+      const mix = Math.max(0, Math.min(1, (t - 0.5) / 0.55));
+      DefeatFrames.draw(ctx, 'rex', 1, this.x, footY, this.facing, { alpha: (1 - mix) * this.alpha, offsetX: shake, flash: this.hitFlash > 0 });
+      DefeatFrames.draw(ctx, 'rex', 2, this.x, footY, this.facing, { alpha: mix * this.alpha, offsetX: shake });
+      if (t > 0 && t < 0.75) {
+        // Explosión: el cuerpo se pone al rojo blanco y una bola de fuego se abre sobre él (sin contornos)
+        const k = 1 - t / 0.75;
         const fr = Assets.image('df_rex_1');
         if (fr) {
           const info = DefeatFrames.META.rex[0];
           const hh = info.h * (DefeatFrames.STAND.rex / 300);
-          Sprite.draw(ctx, fr, { x: this.x + shake, y: footY, height: hh, anchorX: info.anchor, facing: DefeatFrames.facingFor('rex', this.facing), silhouetteColor: '#ff1a3a', additive: true, alpha: Math.min(1, k * 1.1) });
+          Sprite.draw(ctx, fr, { x: this.x + shake, y: footY, height: hh, anchorX: info.anchor, facing: DefeatFrames.facingFor('rex', this.facing), silhouetteColor: '#ffd0d0', additive: true, alpha: Math.min(1, k * 1.4) });
         }
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
-        const gg = ctx.createRadialGradient(this.x, footY - 100, 10, this.x, footY - 100, 230);
-        gg.addColorStop(0, 'rgba(255, 90, 110, 0.9)');
-        gg.addColorStop(0.4, 'rgba(255, 20, 60, 0.45)');
-        gg.addColorStop(1, 'rgba(255, 0, 40, 0)');
-        ctx.globalAlpha = k;
-        ctx.fillStyle = gg;
-        ctx.fillRect(this.x - 240, footY - 340, 480, 480);
+        const r = 90 + 300 * (1 - k);
+        const cy = footY - 110;
+        for (const [scale, alpha, stops] of [[1.0, 0.8, ['rgba(255,255,255,0.95)', 'rgba(255,120,70,0.7)', 'rgba(255,30,50,0.35)']], [0.6, 0.9, ['rgba(255,255,255,1)', 'rgba(255,230,160,0.8)', 'rgba(255,90,40,0.3)']]]) {
+          const gg = ctx.createRadialGradient(this.x, cy, 4, this.x, cy, r * scale);
+          gg.addColorStop(0, stops[0]);
+          gg.addColorStop(0.35, stops[1]);
+          gg.addColorStop(0.7, stops[2]);
+          gg.addColorStop(1, 'rgba(255, 0, 30, 0)');
+          ctx.globalAlpha = alpha * k;
+          ctx.fillStyle = gg;
+          ctx.fillRect(this.x - r, cy - r, r * 2, r * 2);
+        }
         ctx.restore();
       }
-      DefeatFrames.draw(ctx, 'rex', 1, this.x, footY, this.facing, { alpha: (1 - mix) * this.alpha, offsetX: shake, flash: this.hitFlash > 0 });
-      DefeatFrames.draw(ctx, 'rex', 2, this.x, footY, this.facing, { alpha: mix * this.alpha, offsetX: shake });
     } else if (t < 1.9) {
       DefeatFrames.draw(ctx, 'rex', 3, this.x, footY, this.facing, { alpha: this.alpha });
     } else {
