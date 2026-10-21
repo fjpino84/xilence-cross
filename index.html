@@ -307,8 +307,9 @@
 
     .modal-message {
       margin: 0 0 22px;
-      font-family: Arial, sans-serif;
-      font-size: 1.05rem;
+      font-family: 'Bangers', Impact, 'Arial Black', sans-serif;
+      letter-spacing: 0.08em;
+      font-size: 1.5rem;
       color: #cfe;
       white-space: pre-line;
       line-height: 1.5;
@@ -355,10 +356,10 @@
       background: var(--accent, var(--cyan)); border: 4px solid #000; transform: rotate(45deg); box-shadow: 0 0 24px var(--accent, var(--cyan)); text-shadow: 2px 2px 0 #000;
     }
     .modal-stats { display: flex; gap: 12px; justify-content: center; margin: -6px 0 22px; flex-wrap: wrap; }
-    .modal-stat { min-width: 110px; padding: 8px 14px; background: rgba(255, 255, 255, 0.06); border: 2px solid #000; outline: 2px solid var(--accent, var(--cyan)); transform: skewX(-8deg); font-family: Arial, sans-serif; }
+    .modal-stat { min-width: 110px; padding: 8px 14px; background: rgba(255, 255, 255, 0.06); border: 2px solid #000; outline: 2px solid var(--accent, var(--cyan)); transform: skewX(-8deg); font-family: 'Bangers', Impact, sans-serif; }
     .modal-stat strong { display: block; font-family: var(--font); font-size: 1.7rem; font-style: italic; color: #fff; text-shadow: 2px 2px 0 #000; }
-    .modal-stat span { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: #9fb4cc; }
-    .modal-hint { margin: 18px 0 0; font-family: Arial, sans-serif; font-size: 0.8rem; letter-spacing: 0.06em; color: #8da2bd; }
+    .modal-stat span { font-size: 1rem; letter-spacing: 0.12em; text-transform: uppercase; color: #9fb4cc; }
+    .modal-hint { margin: 18px 0 0; font-family: 'Bangers', Impact, sans-serif; font-size: 1.1rem; letter-spacing: 0.1em; color: #8da2bd; }
     .modal-overlay--pause { --accent: #00f5ff; background: radial-gradient(circle at 50% 50%, rgba(3, 12, 30, 0.7), rgba(3, 3, 10, 0.92)); backdrop-filter: blur(3px); }
     .modal-overlay--lose { --accent: #ff003c; background: radial-gradient(circle at 50% 50%, rgba(60, 0, 14, 0.6), rgba(3, 3, 10, 0.94)); backdrop-filter: blur(3px); }
     .modal-overlay--win { --accent: #ffe600; background: radial-gradient(circle at 50% 50%, rgba(50, 36, 0, 0.55), rgba(3, 3, 10, 0.92)); backdrop-filter: blur(3px); }
@@ -389,55 +390,55 @@
   </main>
 
   <!-- Orden de carga: configuración → motor → entidades → niveles → UI → escenas → arranque -->
-  <script src="src/config.js?v=129"></script>
-  <script src="src/engine/Draw.js?v=129"></script>
-  <script src="src/engine/Assets.js?v=129"></script>
-  <script src="src/engine/Sprite.js?v=129"></script>
-  <script src="src/engine/ParticleSystem.js?v=129"></script>
-  <script src="src/engine/SfxData.js?v=129"></script>
-  <script src="src/engine/AudioManager.js?v=129"></script>
-  <script src="src/engine/InputManager.js?v=129"></script>
-  <script src="src/engine/TouchControls.js?v=129"></script>
-  <script src="src/engine/Camera.js?v=129"></script>
-  <script src="src/engine/Collision.js?v=129"></script>
-  <script src="src/engine/Records.js?v=129"></script>
-  <script src="src/engine/DuelMusic.js?v=129"></script>
-  <script src="src/levels/BatukChart.js?v=129"></script>
-  <script src="src/engine/TrackMusic.js?v=129"></script>
-  <script src="src/engine/SceneManager.js?v=129"></script>
-  <script src="src/engine/Game.js?v=129"></script>
-  <script src="src/entities/Entity.js?v=129"></script>
-  <script src="src/entities/Player.js?v=129"></script>
-  <script src="src/entities/Trino.js?v=129"></script>
-  <script src="src/entities/VoidharFinale.js?v=129"></script>
-  <script src="src/entities/BatukBoss.js?v=129"></script>
-  <script src="src/entities/enemies/Enemy.js?v=129"></script>
-  <script src="src/entities/DefeatFrames.js?v=129"></script>
-  <script src="src/entities/enemies/Operador.js?v=129"></script>
-  <script src="src/entities/enemies/Silenciador.js?v=129"></script>
-  <script src="src/entities/enemies/RexVane.js?v=129"></script>
-  <script src="src/levels/PuddleData.js?v=129"></script>
-  <script src="src/levels/OccluderData.js?v=129"></script>
-  <script src="src/levels/Level.js?v=129"></script>
-  <script src="src/levels/Atmosphere.js?v=129"></script>
-  <script src="src/levels/Foreground.js?v=129"></script>
-  <script src="src/levels/LiveBackground.js?v=129"></script>
-  <script src="src/levels/Liquid.js?v=129"></script>
-  <script src="src/levels/Props.js?v=129"></script>
-  <script src="src/levels/Level01.js?v=129"></script>
-  <script src="src/levels/Level02.js?v=129"></script>
-  <script src="src/levels/Level04.js?v=129"></script>
-  <script src="src/levels/Level07.js?v=129"></script>
-  <script src="src/ui/HUD.js?v=129"></script>
-  <script src="src/ui/Modal.js?v=129"></script>
-  <script src="src/ui/Dialogue.js?v=129"></script>
-  <script src="src/ui/DefeatCard.js?v=129"></script>
-  <script src="src/ui/RhythmDuel.js?v=129"></script>
-  <script src="src/scenes/TitleScene.js?v=129"></script>
-  <script src="src/scenes/IntroScene.js?v=129"></script>
-  <script src="src/scenes/GameScene.js?v=129"></script>
-  <script src="src/scenes/GameOverScene.js?v=129"></script>
-  <script src="src/scenes/EndingScene.js?v=129"></script>
-  <script src="src/main.js?v=129"></script>
+  <script src="src/config.js?v=130"></script>
+  <script src="src/engine/Draw.js?v=130"></script>
+  <script src="src/engine/Assets.js?v=130"></script>
+  <script src="src/engine/Sprite.js?v=130"></script>
+  <script src="src/engine/ParticleSystem.js?v=130"></script>
+  <script src="src/engine/SfxData.js?v=130"></script>
+  <script src="src/engine/AudioManager.js?v=130"></script>
+  <script src="src/engine/InputManager.js?v=130"></script>
+  <script src="src/engine/TouchControls.js?v=130"></script>
+  <script src="src/engine/Camera.js?v=130"></script>
+  <script src="src/engine/Collision.js?v=130"></script>
+  <script src="src/engine/Records.js?v=130"></script>
+  <script src="src/engine/DuelMusic.js?v=130"></script>
+  <script src="src/levels/BatukChart.js?v=130"></script>
+  <script src="src/engine/TrackMusic.js?v=130"></script>
+  <script src="src/engine/SceneManager.js?v=130"></script>
+  <script src="src/engine/Game.js?v=130"></script>
+  <script src="src/entities/Entity.js?v=130"></script>
+  <script src="src/entities/Player.js?v=130"></script>
+  <script src="src/entities/Trino.js?v=130"></script>
+  <script src="src/entities/VoidharFinale.js?v=130"></script>
+  <script src="src/entities/BatukBoss.js?v=130"></script>
+  <script src="src/entities/enemies/Enemy.js?v=130"></script>
+  <script src="src/entities/DefeatFrames.js?v=130"></script>
+  <script src="src/entities/enemies/Operador.js?v=130"></script>
+  <script src="src/entities/enemies/Silenciador.js?v=130"></script>
+  <script src="src/entities/enemies/RexVane.js?v=130"></script>
+  <script src="src/levels/PuddleData.js?v=130"></script>
+  <script src="src/levels/OccluderData.js?v=130"></script>
+  <script src="src/levels/Level.js?v=130"></script>
+  <script src="src/levels/Atmosphere.js?v=130"></script>
+  <script src="src/levels/Foreground.js?v=130"></script>
+  <script src="src/levels/LiveBackground.js?v=130"></script>
+  <script src="src/levels/Liquid.js?v=130"></script>
+  <script src="src/levels/Props.js?v=130"></script>
+  <script src="src/levels/Level01.js?v=130"></script>
+  <script src="src/levels/Level02.js?v=130"></script>
+  <script src="src/levels/Level04.js?v=130"></script>
+  <script src="src/levels/Level07.js?v=130"></script>
+  <script src="src/ui/HUD.js?v=130"></script>
+  <script src="src/ui/Modal.js?v=130"></script>
+  <script src="src/ui/Dialogue.js?v=130"></script>
+  <script src="src/ui/DefeatCard.js?v=130"></script>
+  <script src="src/ui/RhythmDuel.js?v=130"></script>
+  <script src="src/scenes/TitleScene.js?v=130"></script>
+  <script src="src/scenes/IntroScene.js?v=130"></script>
+  <script src="src/scenes/GameScene.js?v=130"></script>
+  <script src="src/scenes/GameOverScene.js?v=130"></script>
+  <script src="src/scenes/EndingScene.js?v=130"></script>
+  <script src="src/main.js?v=130"></script>
 </body>
 </html>
