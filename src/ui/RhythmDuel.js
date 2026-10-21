@@ -300,8 +300,11 @@ class RhythmDuel {
     this.scene.world.shake(12, 0.5);
     this.scene.world.flash(0.35, '#ff2a55');
     this.game.modal.show({
+      variant: 'lose',
+      icon: '✕',
       title: 'EL SILENCIO GANA',
-      message: `La frecuencia se apagó.\nAciertos: ${this.counts.perfect + this.counts.good}  ·  Combo máximo: ${this.maxCombo}`,
+      message: 'La frecuencia se apagó.',
+      stats: [['Aciertos', this.counts.perfect + this.counts.good], ['Combo máximo', this.maxCombo], ['Fallos', this.counts.miss]],
       buttons: [
         { label: 'Reintentar duelo', onClick: () => { this.game.modal.hide(); this.setState('intro'); this.fromX = { player: this.player.x, boss: this.boss.x }; this.stateTime = RhythmDuel.INTRO_TIME; } },
         { label: 'Menú principal', onClick: () => { this.game.modal.hide(); this.game.scenes.change('title'); } },

@@ -26,6 +26,39 @@ class Dialogue {
     this.wrapCache = new Map();
     const notify = this.onLine;
     if (notify) notify(0, this.lines[0]);
+    this.buildSkip();
+  }
+
+  // Botón "SALTAR" (también con la tecla S): cierra el diálogo; los eventos de escena que faltaban se disparan igualmente
+  buildSkip() {
+    if (typeof document === 'undefined' || !document.querySelector) return;
+    const shell = document.querySelector('.game-shell');
+    if (!shell) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'dialogue-skip';
+    button.textContent = 'Saltar ▶▶';
+    button.setAttribute('aria-label', 'Saltar el diálogo');
+    button.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); this.skip(); });
+    this.onKey = (event) => { if (event.code === 'KeyS' && !event.repeat) this.skip(); };
+    window.addEventListener('keydown', this.onKey);
+    shell.appendChild(button);
+    this.skipButton = button;
+  }
+
+  skip() {
+    if (this.closing || this.done) return;
+    const notify = this.onLine;
+    if (notify) for (let i = this.index + 1; i < this.lines.length; i++) if (this.lines[i].event) notify(i, this.lines[i]);
+    this.index = this.lines.length - 1;
+    this.shown = this.line.text.length;
+    this.closing = true;
+    this.dispose();
+  }
+
+  dispose() {
+    if (this.skipButton) { this.skipButton.remove(); this.skipButton = null; }
+    if (this.onKey) { window.removeEventListener('keydown', this.onKey); this.onKey = null; }
   }
 
   get line() { return this.lines[this.index]; }
@@ -34,6 +67,7 @@ class Dialogue {
   update(dt, input, audio) {
     this.age += dt;
     if (this.closing) {
+      this.dispose();
       this.bars = Math.max(0, this.bars - dt * 3.2);
       if (this.bars <= 0 && !this.done) {
         this.done = true;

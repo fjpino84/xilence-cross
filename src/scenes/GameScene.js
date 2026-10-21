@@ -111,6 +111,7 @@ class GameScene {
   }
 
   exit() {
+    if (this.dialogue) this.dialogue.dispose();
     if (this.duel) this.duel.dispose();
     this.game.modal.hide();
     this.game.audio.duckMusic(false); // por si se sale desde la pausa
@@ -1096,8 +1097,8 @@ class GameScene {
     this.updateSplashes(scaled);
     if (this.level.config.ambient === 'rain') this.rainRipples(scaled);
     this.updateAmbient(scaled);
-    this.live.update(scaled);
-    this.liquid.update(scaled, [this.player, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : [])], this.camera);
+    if (!this.duel) this.live.update(scaled);
+    if (!this.duel) this.liquid.update(scaled, [this.player, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : [])], this.camera);
     this.props.update(scaled);
     this.atmosphere.update(scaled, this.camera, this.atmosphereHooks);
     this.maxCombo = Math.max(this.maxCombo, this.player.comboHits);
@@ -1385,8 +1386,11 @@ class GameScene {
     if (this.duel) this.duel.setPaused(this.paused);
     if (this.paused) {
       this.game.modal.show({
+        variant: 'pause',
+        icon: 'II',
         title: 'PAUSA',
         message: 'El silencio espera.',
+        hint: 'P o Esc para continuar',
         buttons: [
           { label: 'Continuar', onClick: () => this.togglePause() },
           { label: 'Menú principal', onClick: () => this.game.scenes.change('title') },
@@ -1403,12 +1407,14 @@ class GameScene {
     ctx.save();
     this.camera.applyZoom(ctx);
     this.level.renderBackground(ctx, this.camera);
-    this.live.render(ctx, this.camera); // telas, cadenas, cables, carteles y generador animados
-    this.liquid.renderShimmer(ctx, this.camera); // destellos y brillo del líquido del suelo
+    // Durante el duelo con Batuk se apagan los adornos animados del fondo (fondo vivo, líquido, nieblas): el diapasón necesita todos los fotogramas
+    const heavy = !this.duel;
+    if (heavy) this.live.render(ctx, this.camera); // telas, cadenas, cables, carteles y generador animados
+    if (heavy) this.liquid.renderShimmer(ctx, this.camera); // destellos y brillo del líquido del suelo
     this.atmosphere.renderBack(ctx, this.camera);
-    this.live.renderFog(ctx, this.camera, 'far'); // niebla del fondo y del plano medio, por detrás de los personajes
+    if (heavy) this.live.renderFog(ctx, this.camera, 'far'); // niebla del fondo y del plano medio, por detrás de los personajes
     this.props.renderBack(ctx, this.camera); // objetos del plano trasero, bajo la niebla media
-    this.live.renderFog(ctx, this.camera, 'mid');
+    if (heavy) this.live.renderFog(ctx, this.camera, 'mid');
     this.ambientBack.render(ctx); // lluvia lejana
     if (this.darkness > 0.01) {
       ctx.fillStyle = `rgba(3, 3, 12, ${this.darkness})`;
@@ -1422,7 +1428,7 @@ class GameScene {
     for (const enemy of this.enemies) if (enemy.renderHazards) enemy.renderHazards(ctx); // rayos y avisos del jefe
     for (const effect of this.effects) if (effect.ground) this.renderEffect(ctx, effect); // grietas bajo los personajes
     const walkers = [this.player, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : [])];
-    this.liquid.renderWorld(ctx, this.camera, walkers); // ondas, reflejos, burbujas y vapor, bajo los personajes
+    if (heavy) this.liquid.renderWorld(ctx, this.camera, walkers); // ondas, reflejos, burbujas y vapor, bajo los personajes
     const drawables = [this.player, this.trino, ...this.enemies, ...(this.finale && this.finale.boss ? [this.finale.boss] : []), ...this.activeOccluders(walkers), ...this.props.worldDrawables(this.camera, this.player)]
       .sort((a, b) => (a.sortY ?? a.y) - (b.sortY ?? b.y));
     // Perspectiva: los personajes crecen un poco al acercarse a la cámara (bajar por el suelo) y se encogen al alejarse
@@ -1446,7 +1452,7 @@ class GameScene {
     ctx.restore();
     this.foreground.render(ctx, this.camera.x); // chatarra y cables por delante, con parallax
     if (!this.finale) this.props.renderFront(ctx, this.camera, this.player); // objetos grandes y oscuros del plano delantero
-    this.live.renderFog(ctx, this.camera, 'front'); // neblina baja junto al suelo, por delante
+    if (heavy) this.live.renderFog(ctx, this.camera, 'front'); // neblina baja junto al suelo, por delante
     ctx.restore();
 
     this.ambient.render(ctx);

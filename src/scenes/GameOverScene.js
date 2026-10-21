@@ -32,13 +32,16 @@ class GameOverScene {
     buttons.push({ label: 'Menú principal', onClick: () => scenes.change('title') });
 
     // Resumen de la partida y mejores marcas
+    let stats = [['Puntuación', score]];
+    let hint = '';
     if (record) {
       const flags = [record.newScore ? 'PUNTUACIÓN' : '', record.newCombo ? 'COMBO' : ''].filter(Boolean);
-      const lines = [message, `Combo máximo: ${record.maxCombo}  ·  Tiempo: ${Records.formatTime(record.seconds)}`];
-      lines.push(flags.length ? `¡NUEVO RÉCORD DE ${flags.join(' Y ')}!` : `Mejor puntuación: ${record.best.score}  ·  Mejor combo: ${record.best.combo}`);
-      message = lines.join('\n');
+      stats = [['Puntuación', score], ['Combo máximo', record.maxCombo], ['Tiempo', Records.formatTime(record.seconds)]];
+      hint = flags.length ? '¡NUEVO RÉCORD DE ' + flags.join(' Y ') + '!' : 'Mejor puntuación: ' + record.best.score + '  ·  Mejor combo: ' + record.best.combo;
     }
-    this.game.modal.show({ title, message, buttons });
+    message = message.replace(/ Puntuación( final)?: \d+/, '');
+    this.game.modal.show({ title, message, buttons, variant: victory ? 'win' : 'lose', icon: victory ? '★' : '✕', stats, hint });
+
   }
 
   exit() {
