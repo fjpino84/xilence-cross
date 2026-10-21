@@ -290,8 +290,9 @@ class Operador extends Entity {
   static HEIGHT = 156; // altura de dibujo (px): la misma en todas sus poses
   static WALK_SPEED = 150;
   static SHOCK_TIME = 1.5;
-  static FALL_TIME = 0.8;
-  static FADE_TIME = 1.2;
+  static FALL_TIME = 0.6; // viñetas 2 y 3 (cae)
+  static HOLD_TIME = 2.0; // tendido, con humo negro
+  static FADE_TIME = 1.0;
 
   constructor(x, y) {
     super({ x, y, w: 50, h: Operador.HEIGHT, maxHp: 1 });
@@ -308,7 +309,7 @@ class Operador extends Entity {
     this.slot = x;
   }
 
-  get removable() { return !this.isAlive && this.deadTime >= Operador.SHOCK_TIME + Operador.FALL_TIME + Operador.FADE_TIME; }
+  get removable() { return !this.isAlive && this.deadTime >= Operador.SHOCK_TIME + Operador.FALL_TIME + Operador.HOLD_TIME + Operador.FADE_TIME; }
   get handX() { return this.x + this.facing * Operador.HEIGHT * 0.5 * 0.9; }
   get cableY() { return this.y - Operador.HEIGHT * 0.64; }
 
@@ -353,6 +354,18 @@ class Operador extends Entity {
     } else if (this.state === 'dead') {
       this.deadTime += dt;
     }
+    // Humo negro: sale del cuerpo desde la descarga y se va espesando cuando está tendido
+    if (this.state === 'shock' || this.state === 'dead') {
+      this.smokeBudget = (this.smokeBudget || 0) + dt * (this.state === 'dead' ? 7 : 8);
+      while (this.smokeBudget >= 1) {
+        this.smokeBudget -= 1;
+        const lying = this.state === 'dead';
+        world.particles.add({
+          type: 'puff', x: this.x + (Math.random() - 0.5) * (lying ? 90 : 40), y: this.y - (lying ? 45 : 30 + Math.random() * 90), vx: (Math.random() - 0.5) * 24, vy: -20 - Math.random() * 28,
+          life: 1.4 + Math.random() * 0.8, size: 14, sizeEnd: 44 + Math.random() * 20, color: Math.random() < 0.6 ? '#15151d' : '#2b2b36', additive: false, alpha: 0.42,
+        });
+      }
+    }
     if (this.state !== 'shock' && this.state !== 'dead') this.facing = Math.sign(player.x - this.x) || this.facing;
     this.facing = this.state === 'dead' || this.state === 'shock' ? this.facing : (player.x < this.x ? -1 : 1);
     this.y += (Math.max(CONFIG.GROUND_TOP + 20, Math.min(CONFIG.GROUND_BOTTOM - 10, player.y)) - this.y) * Math.min(1, dt * 0.6);
@@ -361,7 +374,23 @@ class Operador extends Entity {
   // Pose: preparando el lanzamiento con el dron en la mano; si no, apuntando con el cable tendido
   get pose() { return this.drone.state === 'held' || this.state === 'enter' ? 'a3Prep' : 'a3Point'; }
 
+  // Derrota con cuadros: sacudida con la descarga (1), cae (2 y 3) y queda tendido (4)
+  renderDefeat(ctx) {
+    const shocking = this.state === 'shock';
+    const t = this.deadTime - Operador.SHOCK_TIME; // desde que cae
+    let n = 1;
+    if (!shocking) n = t < 0.25 ? 2 : (t < Operador.FALL_TIME ? 3 : 4);
+    const fade = !shocking ? Math.max(0, 1 - Math.max(0, t - Operador.FALL_TIME - Operador.HOLD_TIME) / Operador.FADE_TIME) : 1;
+    if (n <= 2) this.drawShadow(ctx);
+    DefeatFrames.draw(ctx, 'op', n, this.x, this.y, this.facing, {
+      alpha: fade, offsetX: shocking ? (Math.random() - 0.5) * 6 : 0, flash: shocking && Math.floor(this.age * 20) % 5 === 0,
+      tint: shocking ? { color: '#35e8ff', alpha: 0.1 + 0.12 * Math.max(0, Math.sin(this.age * 38)) } : null,
+    });
+    if (shocking) this.renderArcs(ctx);
+  }
+
   render(ctx) {
+    if ((this.state === 'shock' || this.state === 'dead') && DefeatFrames.has('op')) { this.renderDefeat(ctx); return; }
     this.drawShadow(ctx);
     const prep = this.pose === 'a3Prep';
     const image = Assets.image(this.pose);

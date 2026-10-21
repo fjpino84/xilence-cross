@@ -57,6 +57,8 @@ const CONFIG = Object.freeze({
     batukPoder: 'assets/sprites/batuk/poder_1.png',
     ...frameAssets('batukInst', 'batuk', 'inst', 6),
     bgLevel01: 'assets/backgrounds/nivel01-cementerio-naves.jpg',
+    // Cuadros de derrota (tools/make_defeats.js)
+    ...Object.fromEntries(['adv1', 'adv2', 'rex', 'op'].flatMap((id) => [1, 2, 3, 4].map((n) => ['df_' + id + '_' + n, 'assets/sprites/derrotas/' + id + '_' + n + '.png']))),
     a3Point: 'assets/sprites/adversario3/op_point.png',
     a3Prep: 'assets/sprites/adversario3/op_prep.png',
     a3Dron: 'assets/sprites/adversario3/dron.png',

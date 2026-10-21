@@ -104,3 +104,5 @@ No se ha definido aún una licencia para el código ni para el arte, por lo que,
 - **Móviles**: en pantallas táctiles el juego apaga por defecto los efectos pesados (líquido animado, fondo vivo, niebla), usa un búfer de audio grande y no aplica la ganancia extra a la canción de Batuk, porque con todo eso el sonido se pegaba y salía cortado. ?fx=high los fuerza otra vez.
 
 - **Móviles (memoria)**: en modo ligero no se construyen las máscaras del líquido (cada una ocupa varios MB y se acumulaban al pasar de Rex Vane en adelante) y hay un tope de sonidos grabados simultáneos (10 en móvil).
+
+- **Derrotas con cuadros ilustrados** (assets/sprites/derrotas, generados con tools/make_defeats.js desde las hojas "Derrota"): Adversarios 1 y 2 se desarman y caen con humo morado; Rex Vane se va apagando de rojo a negro, cae de rodillas y queda tendido; el Operador (Adversario 3) recibe una descarga eléctrica, cae y queda con humo negro. Cada personaje usa una sola escala en sus 4 cuadros.

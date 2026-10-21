@@ -6,7 +6,7 @@ class RexVane extends Enemy {
   static HOVER = 70; // altura de vuelo: ECO lo alcanza con los golpes del suelo
   static ARRIVE_TIME = 1.8;
   static FLY_FPS = 9;
-  static DEATH_TIME = 2.4;
+  static DEATH_TIME = 3.9;
   static BOLT_HALF_WIDTH = 40; // mitad del ancho de cada rayo vertical
   static BOLT_SPACING = 220;
   static RAY_LENGTH = 1100;
@@ -370,28 +370,37 @@ class RexVane extends Enemy {
     this.deadTime += dt;
     if (this.lastWords && !this.lastWordsDone) this.deadTime = Math.min(this.deadTime, 1.05); // la explosión final espera a que termine de hablar
     this.kx = 0;
-    this.z += (RexVane.HOVER + 10 - this.z) * Math.min(1, dt * 3);
+    const withFrames = DefeatFrames.has('rex');
+    // Flota mientras se apaga y, al terminar de hablar, cae al suelo
+    const targetZ = withFrames && this.deadTime > 1.1 ? 0 : RexVane.HOVER + 10;
+    this.z += (targetZ - this.z) * Math.min(1, dt * (targetZ === 0 ? 6 : 3));
+    this.redness = withFrames ? Math.max(0, 1 - this.deadTime / 1.7) : 1; // 1 = rojo encendido, 0 = apagado
     this.fxTimer -= dt;
     if (this.fxTimer <= 0) {
-      this.fxTimer = 0.04;
+      this.fxTimer = withFrames ? 0.05 : 0.04;
       world.particles.add({
         type: 'puff', x: this.x + (Math.random() - 0.5) * 80, y: this.y - this.z - 20 - Math.random() * 120, vx: (Math.random() - 0.5) * 60, vy: -40 - Math.random() * 40,
-        life: 1.1, size: 22, sizeEnd: 80, color: Math.random() < 0.5 ? '#5a0b1c' : '#1a0a14', additive: false, alpha: 0.55,
+        life: 1.1, size: 22, sizeEnd: 80, color: Math.random() < this.redness ? '#5a0b1c' : '#1a0a14', additive: false, alpha: 0.5 * (withFrames ? Math.max(0.3, 1 - this.deadTime / 3) : 1),
       });
-      world.particles.add({
-        type: 'spark', x: this.x + (Math.random() - 0.5) * 70, y: this.y - this.z - Math.random() * 140,
-        vx: (Math.random() - 0.5) * 360, vy: -Math.random() * 260, gravity: 500, life: 0.35, size: 2.6, color: Math.random() < 0.5 ? '#ff4466' : '#ffffff',
-      });
+      if (Math.random() < this.redness) {
+        world.particles.add({
+          type: 'spark', x: this.x + (Math.random() - 0.5) * 70, y: this.y - this.z - Math.random() * 140,
+          vx: (Math.random() - 0.5) * 360, vy: -Math.random() * 260, gravity: 500, life: 0.35, size: 2.6, color: Math.random() < 0.5 ? '#ff4466' : '#ffffff',
+        });
+      }
     }
     if (!this.deathBurst && this.deadTime > 1.1) {
       this.deathBurst = true;
-      world.shake(14, 0.5);
-      world.flash(0.3, '#ffffff');
+      world.shake(withFrames ? 7 : 14, 0.4);
+      if (!withFrames) world.flash(0.3, '#ffffff');
       world.audio.play('rexBolt');
-      world.particles.add({ type: 'ring', x: this.x, y: this.y - this.z - 60, size: 10, sizeEnd: 260, life: 0.7, color: '#ff4466', width: 10, flat: 0.9 });
-      world.particles.burst({ x: this.x, y: this.y - this.z - 70, count: 40, speed: [200, 800], life: [0.3, 0.9], size: [2.5, 5], colors: ['#ff4466', '#ffffff', '#ff2a55'], type: 'spark', drag: 1.8 });
+      world.particles.add({ type: 'ring', x: this.x, y: this.y - this.z - 60, size: 10, sizeEnd: withFrames ? 150 : 260, life: 0.7, color: '#ff4466', width: withFrames ? 5 : 10, flat: 0.9 });
+      if (withFrames) world.landDust(this.x, this.y, 8);
+      else world.particles.burst({ x: this.x, y: this.y - this.z - 70, count: 40, speed: [200, 800], life: [0.3, 0.9], size: [2.5, 5], colors: ['#ff4466', '#ffffff', '#ff2a55'], type: 'spark', drag: 1.8 });
     }
-    this.alpha = Math.max(0, 1 - Math.max(0, this.deadTime - 0.6) / (RexVane.DEATH_TIME - 0.6));
+    this.alpha = withFrames
+      ? Math.max(0, 1 - Math.max(0, this.deadTime - 3.0) / (RexVane.DEATH_TIME - 3.0))
+      : Math.max(0, 1 - Math.max(0, this.deadTime - 0.6) / (RexVane.DEATH_TIME - 0.6));
   }
 
   // Chispas eléctricas que saltan del cetro
@@ -451,7 +460,36 @@ class RexVane extends Enemy {
     return { image, height, anchorX: set.anchor, drop: (1 - set.feet) * height };
   }
 
+  // Derrota con cuadros: de rojo encendido a negro apagado (viñetas 1 y 2 con mezcla suave), de rodillas y tendido
+  renderDefeat(ctx) {
+    const t = this.deadTime;
+    const footY = this.y - this.z;
+    const red = this.redness ?? 0;
+    // aura roja que se apaga
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.45 * red * this.alpha;
+    const g = ctx.createRadialGradient(this.x, footY - 80, 6, this.x, footY - 80, 130);
+    g.addColorStop(0, '#ff3355');
+    g.addColorStop(1, 'rgba(255, 0, 40, 0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(this.x - 140, footY - 220, 280, 280);
+    ctx.restore();
+    const shake = t < 1.1 ? (Math.random() - 0.5) * 6 * red : 0;
+    if (t < 1.25) {
+      // cuadro 1 (rojo) pasa al 2 (menos rojo) entre 0,3 y 0,8 s
+      const mix = Math.max(0, Math.min(1, (t - 0.3) / 0.5));
+      DefeatFrames.draw(ctx, 'rex', 1, this.x, footY, this.facing, { alpha: (1 - mix) * this.alpha, offsetX: shake, flash: this.hitFlash > 0 });
+      DefeatFrames.draw(ctx, 'rex', 2, this.x, footY, this.facing, { alpha: mix * this.alpha, offsetX: shake });
+    } else if (t < 1.9) {
+      DefeatFrames.draw(ctx, 'rex', 3, this.x, footY, this.facing, { alpha: this.alpha });
+    } else {
+      DefeatFrames.draw(ctx, 'rex', 4, this.x, footY, this.facing, { alpha: this.alpha });
+    }
+  }
+
   render(ctx) {
+    if (this.state === 'dead' && DefeatFrames.has('rex')) { this.drawShadow(ctx); this.renderDefeat(ctx); return; }
     const frame = this.currentFrame();
     if (!frame) return;
     this.drawShadow(ctx);

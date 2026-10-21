@@ -145,6 +145,7 @@ class Silenciador extends Enemy {
 
   // --- Efectos por fotograma ---
   afterUpdate(dt, world) {
+    if (this.state === 'dead' && this.hasDefeat) this.defeatEffects(dt, world);
     // El ciclo de caminar avanza según la velocidad real (los pasos acompañan al desplazamiento, sin patinar)
     this.walkClock = (this.walkClock || 0) + dt * (Math.abs(this.vx) > 5 ? Math.min(1.9, Math.abs(this.vx) / this.stats.speed) : 0);
     if (!this.framed) return;
@@ -278,7 +279,49 @@ class Silenciador extends Enemy {
     }
   }
 
+  // --- Derrota con cuadros ilustrados (Garra = adv1, Martillo = adv2): la armadura se desarma, cae y sale humo morado ---
+  static DEFEAT_FRAMES = [[0, 1], [0.25, 2], [0.5, 3], [0.85, 4]];
+  static DEFEAT_HOLD = 2.1; // segundos hasta empezar a desvanecerse
+  static DEFEAT_FADE = 0.9;
+
+  get defeatId() { return 'adv' + this.variant; }
+  get hasDefeat() { return this.framed && DefeatFrames.has(this.defeatId); }
+  get removable() { return !this.isAlive && this.deadTime >= (this.hasDefeat ? Silenciador.DEFEAT_HOLD + Silenciador.DEFEAT_FADE : Enemy.DEATH_FADE_TIME); }
+
+  // Humo morado, esquirlas de armadura que caen y golpe al tocar el suelo
+  defeatEffects(dt, world) {
+    this.smokeBudget = (this.smokeBudget || 0) + dt * (this.deadTime < 1.6 ? 13 : 5);
+    while (this.smokeBudget >= 1) {
+      this.smokeBudget -= 1;
+      world.particles.add({
+        type: 'puff', x: this.x + (Math.random() - 0.5) * 70, y: this.y - this.z - 20 - Math.random() * 60, vx: (Math.random() - 0.5) * 30, vy: -22 - Math.random() * 26,
+        life: 1.3 + Math.random() * 0.7, size: 16, sizeEnd: 52 + Math.random() * 22, color: Math.random() < 0.6 ? '#6b3fa8' : '#3a2160', additive: false, alpha: 0.38,
+      });
+    }
+    if (!this.pieceFx && this.deadTime >= 0.12) {
+      this.pieceFx = true;
+      world.shards(this.x, this.y - this.z - 70, 9, ['#7a5a50', '#4a3a40', '#8a6aa8', '#2a2230'], false); // piezas de armadura que saltan
+      world.audio.play('clang' in AudioManager.SOUNDS ? 'clang' : 'thud');
+    }
+    if (!this.landFx && this.deadTime > 0.3 && this.z <= 0) {
+      this.landFx = true;
+      world.audio.play('thud');
+      world.landDust(this.x, this.y, 6);
+      world.shards(this.x, this.y - 20, 8, ['#7a5a50', '#4a3a40', '#8a6aa8'], false);
+    }
+  }
+
+  renderDefeat(ctx) {
+    let n = 1;
+    for (const [from, frame] of Silenciador.DEFEAT_FRAMES) if (this.deadTime >= from) n = frame;
+    const fade = Math.max(0, 1 - Math.max(0, this.deadTime - Silenciador.DEFEAT_HOLD) / Silenciador.DEFEAT_FADE);
+    if (n < 3) this.drawShadow(ctx);
+    DefeatFrames.draw(ctx, this.defeatId, n, this.x, this.y - this.z, this.facing, { alpha: fade, flash: this.deadTime < 0.08 });
+    return true;
+  }
+
   render(ctx) {
+    if (this.state === 'dead' && this.hasDefeat && this.renderDefeat(ctx)) return;
     const frame = this.currentFrame();
     const image = frame ? frame.image : Assets.image(`spriteAdversario${this.variant}`);
     if (!image) {
