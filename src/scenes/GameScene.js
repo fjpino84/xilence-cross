@@ -1390,7 +1390,7 @@ class GameScene {
         variant: 'pause',
         icon: 'II',
         title: 'PAUSA',
-        message: 'El silencio espera.',
+        message: 'La música espera.',
         hint: 'P o Esc para continuar',
         buttons: [
           { label: 'Continuar', onClick: () => this.togglePause() },
