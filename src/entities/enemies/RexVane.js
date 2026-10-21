@@ -377,6 +377,8 @@ class RexVane extends Enemy {
     // Flota mientras se apaga y, al terminar de hablar, cae al suelo
     const targetZ = withFrames && bt > 0.9 ? 0 : RexVane.HOVER + 10;
     this.z += (targetZ - this.z) * Math.min(1, dt * (targetZ === 0 ? 6 : 3));
+    // Al caer, su cuerpo queda en el mismo carril que ECO (a la altura de sus pies)
+    if (withFrames && bt > 0 && world.player) this.y += (world.player.y - this.y) * Math.min(1, dt * 5);
     this.redness = withFrames ? (bt < 0.5 ? 1 : Math.max(0, 1 - (bt - 0.5) / 1.3)) : 1; // 1 = rojo encendido, 0 = apagado
     // Explosión roja al terminar de hablar, antes de apagarse y caer (sin anillos)
     if (withFrames && bt > 0 && !this.redFlash) {
