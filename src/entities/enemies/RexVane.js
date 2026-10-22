@@ -15,7 +15,7 @@ class RexVane extends Enemy {
   static GIF_G = 0.62; // px de juego por px del lienzo del GIF
   static GIF_FEET = 0.93;
   // Tamaño relativo de cada cuadro: en el GIF el personaje cambia de escala de un cuadro a otro; así Rex mide siempre lo mismo
-  static GIF_SCALE = [1.0, 1.0, 1.05, 1.0, 1.05, 0.88, 0.78, 1.15]; // fracción de altura del lienzo donde están los pies
+  static GIF_SCALE = [1.0, 1.0, 1.05, 1.0, 1.05, 0.88, 0.78, 1.15, 0.97, 0.97, 0.91]; // fracción de altura del lienzo donde están los pies
   static FRAMES = {
     fly: { key: 'rexFly', count: 6, canvas: 393, g: 1.0, feet: 0.984, anchor: 0.4734, scales: [1, 1, 1, 1.2, 1.2, 1.2] },
     charge: { key: 'rexCharge', count: 6, canvas: 474, g: 0.63, feet: 0.9947, anchor: 0.4299, scales: [1, 1, 1, 1.15, 1.15, 1] },
@@ -470,6 +470,9 @@ class RexVane extends Enemy {
       else number = this.sub === 'recover' ? 4 : 7;
     } else if (this.state === 'slam') {
       number = { dive: 5, touch: 6, windup: 7, strike: 8, recover: 6, rise: 4 }[this.sub] || 6;
+      // Golpe del bastón contra el suelo: explosión (8) y tres cuadros intermedios en que salta y entierra el bastón (9, 10, 11)
+      if (this.sub === 'strike') number = this.subTime < 0.1 ? 8 : (this.subTime < 0.22 ? 9 : (this.subTime < 0.34 ? 10 : 11));
+      else if (this.sub === 'recover' && this.subTime < 0.18) number = 11;
     } else {
       // Vuelo: 2 → 3 → 4 → 3 con mezcla continua entre cuadros (sin saltos)
       const sequence = [2, 3, 4, 3];

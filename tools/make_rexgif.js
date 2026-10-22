@@ -1,4 +1,4 @@
-// Prepara los 8 cuadros del GIF de Rex Vane (src/levels/Subjefe level 2/GIF Subjefe.gif): primero node tools/gif_frames.js <gif> <carpeta>,
+// Prepara los 11 cuadros (8 del GIF + 3 intermedios del golpe al suelo, copiados como g_009…g_011) del GIF de Rex Vane (src/levels/Subjefe level 2/GIF Subjefe.gif): primero node tools/gif_frames.js <gif> <carpeta>,
 // luego node tools/make_rexgif.js <carpeta>. Quita el fondo blanco, conserva el lienzo de 512×512 y guarda assets/sprites/rexvane/gif_N.png
 const fs = require('fs'); const path = require('path'); const http = require('http'); const { spawn, execSync } = require('child_process');
 const root = path.resolve(__dirname, '..'); const folder = path.resolve(process.argv[2] || '');
@@ -24,9 +24,9 @@ function key(img) { const w = img.width, h = img.height, d = img.data; const { l
     out[i*4] = Math.max(0, Math.min(255, (r - (1-aa)*255) / aa)); out[i*4+1] = Math.max(0, Math.min(255, (g - (1-aa)*255) / aa)); out[i*4+2] = Math.max(0, Math.min(255, (b - (1-aa)*255) / aa)); out[i*4+3] = Math.round(255 * Math.min(1, a * 1.15)); }
   return new ImageData(out, w, h); }
 (async () => {
-  for (let n = 1; n <= 8; n++) {
-    const im = await load('g_' + String(n).padStart(3, '0') + '.png'); const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
-    const x = c.getContext('2d'); x.drawImage(im, 0, 0); const kd = key(x.getImageData(0, 0, c.width, c.height));
+  for (let n = 1; n <= 11; n++) {
+    const im = await load('g_' + String(n).padStart(3, '0') + '.png'); const c = document.createElement('canvas'); c.width = 512; c.height = 512; // los cuadros 9-11 (intermedios del golpe al suelo) vienen a 2048 px y se reducen a 512
+    const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(im, 0, 0, 512, 512); const kd = key(x.getImageData(0, 0, c.width, c.height));
     // el humo y los rayos que tocan el borde del lienzo se difuminan (sin cortes rectos)
     const F = 56; for (let py = 0; py < c.height; py++) for (let px = 0; px < c.width; px++) { const e = Math.min(px, py, c.width - 1 - px, c.height - 1 - py); if (e < F) { const t = e / F; kd.data[(py*c.width+px)*4+3] *= t * t * (3 - 2 * t); } }
     x.putImageData(kd, 0, 0);
