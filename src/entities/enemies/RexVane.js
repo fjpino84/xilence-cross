@@ -12,6 +12,8 @@ class RexVane extends Enemy {
   static RAY_LENGTH = 1100;
 
   // g = px de juego por px del lienzo; scales corrige cuadros que en la hoja se dibujaron más pequeños (relativo al lienzo común)
+  static GIF_G = 0.62; // px de juego por px del lienzo del GIF
+  static GIF_FEET = 0.93; // fracción de altura del lienzo donde están los pies
   static FRAMES = {
     fly: { key: 'rexFly', count: 6, canvas: 393, g: 1.0, feet: 0.984, anchor: 0.4734, scales: [1, 1, 1, 1.2, 1.2, 1.2] },
     charge: { key: 'rexCharge', count: 6, canvas: 474, g: 0.63, feet: 0.9947, anchor: 0.4299, scales: [1, 1, 1, 1.15, 1.15, 1] },
@@ -455,7 +457,21 @@ class RexVane extends Enemy {
   // ---------------------------------------------------------------- dibujo
 
   // Cuadro ilustrado de la acción actual: { image, height, anchorX, drop }
+  // Cuadros del GIF (lienzo de 512 px, personaje centrado): vuelo 2-3-4, carga 1, picado 5, aterrizaje 6-7 y golpe 8
+  gifFrame() {
+    let number;
+    if (this.state === 'bolts') number = this.sub === 'strike' ? 7 : (this.sub === 'recover' ? 4 : 1);
+    else if (this.state === 'slam') {
+      number = { dive: 5, touch: 6, windup: 7, strike: 8, recover: 6, rise: 4 }[this.sub] || 6;
+    } else number = [2, 3, 4, 3][Math.floor(this.age * RexVane.FLY_FPS * 0.7) % 4];
+    const image = Assets.image('rexG' + number);
+    if (!image) return null;
+    const height = image.height * RexVane.GIF_G;
+    return { image, height, anchorX: 0.5, drop: (1 - RexVane.GIF_FEET) * height };
+  }
+
   currentFrame() {
+    if (this.state !== 'dead' && Assets.image('rexG1')) return this.gifFrame();
     const F = RexVane.FRAMES;
     let set = F.fly;
     let number = 1 + (Math.floor(this.age * RexVane.FLY_FPS) % 6);

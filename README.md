@@ -112,3 +112,5 @@ No se ha definido aún una licencia para el código ni para el arte, por lo que,
 - **Diálogos**: botón SALTAR ▶▶ arriba a la derecha (o tecla S); los eventos de escena que faltaban se disparan igualmente. **Cuadros de pausa, derrota y victoria** rediseñados (rombo con icono, cifras en recuadros, colores cian/rojo/dorado). **Duelo con Batuk**: mientras dura se apagan el fondo vivo, el líquido y las nieblas para ir más fluido.
 
 - **Móviles (memoria)**: las ilustraciones de las escenas se cargan por tramos (solo las 4-5 cercanas a la cámara; las que quedan atrás se liberan) y hay un tope a las copias de color de los sprites. Antes las 12 escenas y todas las copias se acumulaban en memoria y el teléfono acababa cerrándose.
+
+- **Rex Vane con los cuadros del GIF** (src/levels/Subjefe level 2/GIF Subjefe.gif; tools/gif_frames.js + tools/make_rexgif.js): vuelo (2-3-4), carga de rayos (1), rayos (7), picado (5), aterrizaje (6-7) y golpe contra el suelo (8). La derrota sigue usando su hoja.
