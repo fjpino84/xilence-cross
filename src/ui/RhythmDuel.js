@@ -203,7 +203,7 @@ class RhythmDuel {
     this.score += (perfect ? 100 : 50) * this.multiplier;
     this.meter = Math.min(1, this.meter + RhythmDuel.GAIN[perfect ? 'perfect' : 'good']);
     this.music.playLead(lane);
-    this.game.audio.play('duelNote', { lane, perfect });
+    // (sin sonido por nota acertada: solo suena el X10 cada 10 aciertos)
     if (perfect) this.music.playSparkle(lane);
     this.hitEffects(lane, perfect);
     this.addPop(perfect ? 'PERFECTO' : 'BIEN', perfect ? '#ffffff' : RhythmDuel.LANE_COLORS[1], lane);
