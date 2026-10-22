@@ -13,7 +13,9 @@ class RexVane extends Enemy {
 
   // g = px de juego por px del lienzo; scales corrige cuadros que en la hoja se dibujaron más pequeños (relativo al lienzo común)
   static GIF_G = 0.62; // px de juego por px del lienzo del GIF
-  static GIF_FEET = 0.93; // fracción de altura del lienzo donde están los pies
+  static GIF_FEET = 0.93;
+  // Tamaño relativo de cada cuadro: en el GIF el personaje cambia de escala de un cuadro a otro; así Rex mide siempre lo mismo
+  static GIF_SCALE = [1.0, 1.0, 1.05, 1.0, 1.05, 0.88, 0.78, 1.15]; // fracción de altura del lienzo donde están los pies
   static FRAMES = {
     fly: { key: 'rexFly', count: 6, canvas: 393, g: 1.0, feet: 0.984, anchor: 0.4734, scales: [1, 1, 1, 1.2, 1.2, 1.2] },
     charge: { key: 'rexCharge', count: 6, canvas: 474, g: 0.63, feet: 0.9947, anchor: 0.4299, scales: [1, 1, 1, 1.15, 1.15, 1] },
@@ -460,14 +462,41 @@ class RexVane extends Enemy {
   // Cuadros del GIF (lienzo de 512 px, personaje centrado): vuelo 2-3-4, carga 1, picado 5, aterrizaje 6-7 y golpe 8
   gifFrame() {
     let number;
-    if (this.state === 'bolts') number = this.sub === 'strike' ? 7 : (this.sub === 'recover' ? 4 : 1);
-    else if (this.state === 'slam') {
+    let blend = null; // [número del cuadro siguiente, mezcla 0-1] en el vuelo
+    if (this.state === 'bolts') {
+      // Carga con el cetro en alto (1); poco antes de que caigan los rayos agacha la mirada (7) y los suelta mirando hacia abajo
+      const chargeTime = this.enraged ? 0.9 : 1.2;
+      if (this.sub === 'charge') number = this.subTime > chargeTime * 0.62 ? 7 : 1;
+      else number = this.sub === 'recover' ? 4 : 7;
+    } else if (this.state === 'slam') {
       number = { dive: 5, touch: 6, windup: 7, strike: 8, recover: 6, rise: 4 }[this.sub] || 6;
-    } else number = [2, 3, 4, 3][Math.floor(this.age * RexVane.FLY_FPS * 0.7) % 4];
+    } else {
+      // Vuelo: 2 → 3 → 4 → 3 con mezcla continua entre cuadros (sin saltos)
+      const sequence = [2, 3, 4, 3];
+      const position = this.age * RexVane.FLY_FPS * 0.55;
+      const index = Math.floor(position) % 4;
+      const fraction = position - Math.floor(position);
+      number = sequence[index];
+      blend = [sequence[(index + 1) % 4], fraction * fraction * (3 - 2 * fraction)];
+    }
+    // Al cambiar de pose se funde el cuadro anterior con el nuevo durante un instante
+    if (this.gifNumber !== number) {
+      if (this.gifNumber && !blend) { this.gifFrom = this.gifNumber; this.gifSwitch = this.age; }
+      this.gifNumber = number;
+    }
     const image = Assets.image('rexG' + number);
     if (!image) return null;
-    const height = image.height * RexVane.GIF_G;
-    return { image, height, anchorX: 0.5, drop: (1 - RexVane.GIF_FEET) * height };
+    const scale = RexVane.GIF_SCALE[number - 1];
+    const height = image.height * RexVane.GIF_G * scale;
+    const frame = { image, height, anchorX: 0.5, drop: (1 - RexVane.GIF_FEET) * height, scale };
+    if (blend) {
+      const next = Assets.image('rexG' + blend[0]);
+      if (next) { frame.blendImage = next; frame.blend = blend[1]; frame.blendHeight = next.height * RexVane.GIF_G * RexVane.GIF_SCALE[blend[0] - 1]; }
+    } else if (this.gifFrom && this.age - this.gifSwitch < 0.16) {
+      const previous = Assets.image('rexG' + this.gifFrom);
+      if (previous) { frame.blendImage = previous; frame.blend = 1 - (this.age - this.gifSwitch) / 0.16; frame.blendHeight = previous.height * RexVane.GIF_G * RexVane.GIF_SCALE[this.gifFrom - 1]; frame.blendUnder = true; }
+    }
+    return frame;
   }
 
   currentFrame() {
@@ -577,12 +606,19 @@ class RexVane extends Enemy {
 
     const squash = this.hitSquash > 0 ? this.hitSquash / 0.12 : 0;
     const shake = this.state === 'dead' ? (Math.random() - 0.5) * 8 : (this.shock > 0 ? (Math.random() - 0.5) * 6 : 0);
-    Sprite.draw(ctx, frame.image, {
-      x: this.x, y: this.y - this.z, height: frame.height, anchorX: frame.anchorX, facing: this.facing,
-      flash: this.hitFlash > 0, alpha: this.alpha, scaleX: 1 + 0.06 * squash, scaleY: 1 - 0.05 * squash,
-      offsetX: shake, offsetY: frame.drop,
+    const drawLayer = (image, height, alpha) => Sprite.draw(ctx, image, {
+      x: this.x, y: this.y - this.z, height, anchorX: frame.anchorX, facing: this.facing,
+      flash: this.hitFlash > 0, alpha: alpha * this.alpha, scaleX: 1 + 0.06 * squash + breathe * 0.012, scaleY: 1 - 0.05 * squash - breathe * 0.012,
+      offsetX: shake, offsetY: (1 - RexVane.GIF_FEET) * height, rotation: lean, pivot: 0,
       tint: this.shock > 0 ? { color: CONFIG.COLORS.CYAN, alpha: 0.15 + 0.2 * Math.abs(Math.sin(this.age * 50)) } : null,
     });
+    // En el vuelo se inclina hacia donde se desplaza y respira; con los cuadros del GIF se mezclan los cuadros vecinos
+    const gif = !!frame.blendImage || frame.scale !== undefined;
+    const lean = gif && this.state === 'float' ? Math.max(-0.1, Math.min(0.1, (this.sweepSpeed || 0) / 2200)) : 0;
+    const breathe = gif ? Math.sin(this.age * 4.2) : 0;
+    if (frame.blendImage && frame.blendUnder) drawLayer(frame.blendImage, frame.blendHeight, frame.blend);
+    drawLayer(frame.image, frame.height, frame.blendImage && !frame.blendUnder ? 1 - frame.blend : 1);
+    if (frame.blendImage && !frame.blendUnder) drawLayer(frame.blendImage, frame.blendHeight, frame.blend);
     this.renderScepterGlow(ctx, frame);
   }
 
