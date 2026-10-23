@@ -93,11 +93,11 @@ class GameScene {
     this.skipBatukDialogue = !!shortcut && (shortcut[1] === 'skip' || shortcut[1] === '2');
     // ?rex=1 va directo a la escena de Rex Vane (la 7): se saltan los encuentros anteriores y el jefe entra al llegar a su zona
     //   ?rex=skip además salta el diálogo de entrada
-    const rexShortcut = /[?&]rex=(w+)/.exec(window.location.search || '');
+    const rexShortcut = /[?&]rex=(\w+)/.exec(window.location.search || '');
     if (rexShortcut) {
       const position = 7;
       this.level.waves.forEach((wave, index) => { if (index < position - 2) { wave.started = true; wave.cleared = true; } });
-      this.player.x = (position - 1) * Level.TILE_STRIDE + 400;
+      this.player.x = (position - 1) * Level.TILE_STRIDE + 530; // justo antes de la zona que hace entrar al jefe
       this.camera.x = (position - 1) * Level.TILE_STRIDE;
       this.enemies.length = 0;
       this.skipRexDialogue = rexShortcut[1] === 'skip';
