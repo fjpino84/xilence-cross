@@ -8,7 +8,7 @@ game.scenes.register('gameover', new GameOverScene(game));
 game.scenes.register('ending', new EndingScene(game));
 
 // Precarga de imágenes; si alguna falta, el juego usa sus gráficos de respaldo
-Promise.all([Assets.loadImages(CONFIG.ASSETS), Assets.loadFonts(CONFIG.FONT_FILES)]).then(() => {
+Promise.all([Assets.loadImages(CORE_ASSETS), Assets.loadFonts(CONFIG.FONT_FILES)]).then(() => {
   game.scenes.change('title');
   game.start();
 });

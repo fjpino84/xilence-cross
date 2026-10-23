@@ -120,3 +120,5 @@ No se ha definido aún una licencia para el código ni para el arte, por lo que,
 - **Rex Vane en el aire con video** ("Volando de lado a lado y con poder en altura.mp4"; tools/make_rexvuelo.js): vuela de lado con su estela, flota de frente al detenerse y al lanzar los rayos levanta el cetro y se envuelve en relámpagos (35 cuadros centrados en su torso, con transparencia real del humo).
 
 - **Atajo para Rex Vane**: añade `?rex=1` a la dirección para ir directo a su escena (la 7); con `?rex=skip` además se salta su diálogo. Se puede combinar con `&skipintro=1`.
+
+- **Optimización (fase 1)**: los sprites pasaron de PNG a WebP (58,6 → 13,0 MB, sin diferencia visible; herramienta tools/to_webp.js) y las imágenes se cargan por etapas (CORE_ASSETS al abrir; ASSET_GROUPS: operador desde la escena 2, Rex Vane desde la 4 —y se libera al derrotarlo—, Batuk desde la 9, final desde la 11; los objetos sueltos y lámparas desactivados no se cargan).

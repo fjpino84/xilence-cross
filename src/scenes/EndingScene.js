@@ -10,6 +10,7 @@ class EndingScene {
   }
 
   enter() {
+    Assets.loadGroup('final');
     this.time = 0;
     this.cardShown = false;
     this.game.modal.hide();

@@ -84,17 +84,20 @@ class GameScene {
     this.victoryTimer = 0;
     this.world = this.buildWorld();
 
+    this.rexDone = false; // Rex Vane ya derrotado: sus imágenes se liberan y no se vuelven a pedir en esta partida
     this.level.spawnPatrols((x, y, aggressive) => this.spawnEnemy(x, y, aggressive));
 
     // Atajos para probar el duelo sin jugar los 10 escenarios (se añaden a la dirección):
     //   ?duel=1     Batuk entra, hay diálogo y empieza el duelo
     //   ?duel=skip  salta el diálogo: directo al momento previo a la batalla (música desde el 0:43)
     const shortcut = /[?&]duel=(\w+)/.exec(window.location.search || '');
+    if (shortcut) { Assets.loadGroup('batuk'); Assets.loadGroup('final'); } // atajos de prueba: cargan sus imágenes ya
     this.skipBatukDialogue = !!shortcut && (shortcut[1] === 'skip' || shortcut[1] === '2');
     // ?rex=1 va directo a la escena de Rex Vane (la 7): se saltan los encuentros anteriores y el jefe entra al llegar a su zona
     //   ?rex=skip además salta el diálogo de entrada
     const rexShortcut = /[?&]rex=(\w+)/.exec(window.location.search || '');
     if (rexShortcut) {
+      Assets.loadGroup('rex');
       const position = 7;
       this.level.waves.forEach((wave, index) => { if (index < position - 2) { wave.started = true; wave.cleared = true; } });
       this.player.x = (position - 1) * Level.TILE_STRIDE + 530; // justo antes de la zona que hace entrar al jefe
@@ -1085,6 +1088,7 @@ class GameScene {
     const wasLocked = this.level.locked;
     const wasCompleted = this.level.completed;
     this.level.streamTiles(this.camera.x);
+    this.streamGroups();
     this.level.update(this.player, this.camera, (x, y, aggressive, opts) => this.spawnEnemy(x, y, aggressive, opts), scaled);
     for (const warning of this.edgeWarnings) warning.age += scaled;
     this.edgeWarnings = this.edgeWarnings.filter((warning) => warning.age < 0.9);
@@ -1118,6 +1122,16 @@ class GameScene {
     this.hud.update(dt);
     if (this.finale) this.updateFinale(dt, input);
     else this.checkEndConditions(dt);
+  }
+
+  // Carga por etapas: pide las imágenes de cada jefe unas escenas antes de que aparezca y libera las de Rex Vane cuando ya quedó atrás
+  streamGroups() {
+    const scene = Math.floor(this.camera.x / Level.TILE_STRIDE); // escena de la cámara (0 = la primera)
+    if (scene >= 1) Assets.loadGroup('operador');
+    if (scene >= 3 && !this.rexDone) Assets.loadGroup('rex');
+    if (scene >= 8) Assets.loadGroup('batuk');
+    if (scene >= 10) Assets.loadGroup('final');
+    if (scene >= 8 && !this.rexDone && !this.enemies.some((enemy) => enemy.boss)) { this.rexDone = true; Assets.unloadGroup('rex'); }
   }
 
   updateFeedback(dt) {

@@ -29,6 +29,24 @@ const Assets = {
     return Promise.race([Promise.all(loads), timeout]);
   },
 
+  // Carga un grupo de imágenes (ASSET_GROUPS) la primera vez que se pide; devuelve la promesa. Si ya están cargadas no hace nada.
+  loadGroup(name) {
+    const group = ASSET_GROUPS[name];
+    if (!group) return Promise.resolve();
+    this.groupPromises = this.groupPromises || {};
+    if (this.groupPromises[name]) return this.groupPromises[name];
+    this.groupPromises[name] = this.loadImages(group);
+    return this.groupPromises[name];
+  },
+
+  // Libera un grupo entero (por ejemplo, los cuadros de un jefe ya derrotado); se podrá volver a cargar con loadGroup
+  unloadGroup(name) {
+    const group = ASSET_GROUPS[name];
+    if (!group || !this.groupPromises || !this.groupPromises[name]) return;
+    for (const key of Object.keys(group)) this.unload(key);
+    delete this.groupPromises[name];
+  },
+
   // Carga una sola imagen bajo demanda (promesa que siempre se resuelve)
   loadOne(key, src) {
     if (this.images.has(key) || (this.loading && this.loading.has(key))) return Promise.resolve();
