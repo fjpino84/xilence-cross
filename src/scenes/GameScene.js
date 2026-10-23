@@ -91,6 +91,17 @@ class GameScene {
     //   ?duel=skip  salta el diálogo: directo al momento previo a la batalla (música desde el 0:43)
     const shortcut = /[?&]duel=(\w+)/.exec(window.location.search || '');
     this.skipBatukDialogue = !!shortcut && (shortcut[1] === 'skip' || shortcut[1] === '2');
+    // ?rex=1 va directo a la escena de Rex Vane (la 7): se saltan los encuentros anteriores y el jefe entra al llegar a su zona
+    //   ?rex=skip además salta el diálogo de entrada
+    const rexShortcut = /[?&]rex=(w+)/.exec(window.location.search || '');
+    if (rexShortcut) {
+      const position = 7;
+      this.level.waves.forEach((wave, index) => { if (index < position - 2) { wave.started = true; wave.cleared = true; } });
+      this.player.x = (position - 1) * Level.TILE_STRIDE + 400;
+      this.camera.x = (position - 1) * Level.TILE_STRIDE;
+      this.enemies.length = 0;
+      this.skipRexDialogue = rexShortcut[1] === 'skip';
+    }
     if (shortcut) {
       this.enemies.length = 0;
       this.startFinale();
@@ -1139,6 +1150,7 @@ class GameScene {
     const boss = this.enemies.find((enemy) => enemy.boss);
     if (!boss || boss.talked || boss.state !== 'talk') return;
     boss.talked = true;
+    if (this.skipRexDialogue) { boss.engage(); return; } // atajo ?rex=skip: sin diálogo
     this.player.facing = Math.sign(boss.x - this.player.x) || this.player.facing;
     this.player.vx = 0;
     this.game.audio.play('rexTalk'); // voz de fondo mientras habla con ECO

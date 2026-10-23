@@ -118,3 +118,5 @@ No se ha definido aún una licencia para el código ni para el arte, por lo que,
 - **Poder del suelo de Rex Vane con video** (segundos 3 a 8; tools/make_rexsuelo.js): cae en picado, se agacha y carga, explota con rayos y rocas, y vuelve a elevarse volando (30 cuadros con transparencia real del humo).
 
 - **Rex Vane en el aire con video** ("Volando de lado a lado y con poder en altura.mp4"; tools/make_rexvuelo.js): vuela de lado con su estela, flota de frente al detenerse y al lanzar los rayos levanta el cetro y se envuelve en relámpagos (35 cuadros centrados en su torso, con transparencia real del humo).
+
+- **Atajo para Rex Vane**: añade `?rex=1` a la dirección para ir directo a su escena (la 7); con `?rex=skip` además se salta su diálogo. Se puede combinar con `&skipintro=1`.
