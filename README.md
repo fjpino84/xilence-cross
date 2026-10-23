@@ -114,3 +114,5 @@ No se ha definido aún una licencia para el código ni para el arte, por lo que,
 - **Móviles (memoria)**: las ilustraciones de las escenas se cargan por tramos (solo las 4-5 cercanas a la cámara; las que quedan atrás se liberan) y hay un tope a las copias de color de los sprites. Antes las 12 escenas y todas las copias se acumulaban en memoria y el teléfono acababa cerrándose.
 
 - **Rex Vane con los cuadros del GIF** (src/levels/Subjefe level 2/GIF Subjefe.gif; tools/gif_frames.js + tools/make_rexgif.js): vuelo (2-3-4), carga de rayos (1), rayos (7), picado (5), aterrizaje (6-7) y golpe contra el suelo (8). La derrota sigue usando su hoja.
+
+- **Poder del suelo de Rex Vane con video** (segundos 3 a 8; tools/make_rexsuelo.js): cae en picado, se agacha y carga, explota con rayos y rocas, y vuelve a elevarse volando (30 cuadros con transparencia real del humo).

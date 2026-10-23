@@ -61,6 +61,8 @@ const CONFIG = Object.freeze({
     ...Object.fromEntries(['adv1', 'adv2', 'rex', 'op'].flatMap((id) => [1, 2, 3, 4].map((n) => ['df_' + id + '_' + n, 'assets/sprites/derrotas/' + id + '_' + n + '.png']))),
     // Rex Vane: 8 cuadros del GIF (vuelo, carga, picado, aterrizaje y golpe)
     ...Object.fromEntries(Array.from({ length: 11 }, (_, i) => ['rexG' + (i + 1), 'assets/sprites/rexvane/gif_' + (i + 1) + '.png'])),
+    // Poder del suelo de Rex Vane (video, segundos 3 a 8): 30 cuadros
+    ...Object.fromEntries(Array.from({ length: 30 }, (_, i) => ['rexS' + (i + 1), 'assets/sprites/rexvane/suelo_' + (i + 1) + '.webp'])),
     a3Point: 'assets/sprites/adversario3/op_point.png',
     a3Prep: 'assets/sprites/adversario3/op_prep.png',
     a3Dron: 'assets/sprites/adversario3/dron.png',

@@ -14,6 +14,8 @@ class RexVane extends Enemy {
   // g = px de juego por px del lienzo; scales corrige cuadros que en la hoja se dibujaron más pequeños (relativo al lienzo común)
   static GIF_G = 0.62; // px de juego por px del lienzo del GIF
   static GIF_FEET = 0.93;
+  static SUELO_G = 1.1; // px de juego por px de los cuadros del poder del suelo (576×324)
+  static SUELO_FEET = 0.9;
   // Tamaño relativo de cada cuadro: en el GIF el personaje cambia de escala de un cuadro a otro; así Rex mide siempre lo mismo
   static GIF_SCALE = [1.0, 1.0, 1.05, 1.0, 1.05, 0.88, 0.78, 1.15, 0.97, 0.97, 0.91]; // fracción de altura del lienzo donde están los pies
   static FRAMES = {
@@ -316,7 +318,7 @@ class RexVane extends Enemy {
       }
       case 'strike': {
         this.checkRay(world, player);
-        if (this.subTime >= 0.45) { this.sub = 'recover'; this.subTime = 0; }
+        if (this.subTime >= (Assets.image('rexS1') ? 0.8 : 0.45)) { this.sub = 'recover'; this.subTime = 0; }
         break;
       }
       case 'recover':
@@ -502,7 +504,27 @@ class RexVane extends Enemy {
     return frame;
   }
 
+  // Poder del suelo con los cuadros del video: cae (1-7), se agacha y carga (23-30), explota (8-14) y se eleva de nuevo volando (14-23)
+  sueloFrame() {
+    const windup = this.enraged ? 0.75 : 1.0;
+    const t = this.subTime;
+    let n;
+    switch (this.sub) {
+      case 'dive': n = 1 + Math.min(6, Math.floor((t / 0.6) * 7)); break;
+      case 'touch': n = 23; break;
+      case 'windup': n = 23 + Math.min(7, Math.floor((t / windup) * 8)); break;
+      case 'strike': n = 8 + Math.min(6, Math.floor((t / 0.8) * 7)); break;
+      case 'recover': n = 14 + Math.min(4, Math.floor((t / 0.4) * 4)); break;
+      default: n = 18 + Math.min(5, Math.floor((t / 0.55) * 5)); // rise
+    }
+    const image = Assets.image('rexS' + n);
+    if (!image) return null;
+    const height = image.height * RexVane.SUELO_G;
+    return { image, height, anchorX: 0.5, drop: (1 - RexVane.SUELO_FEET) * height, noGlow: true };
+  }
+
   currentFrame() {
+    if (this.state === 'slam' && Assets.image('rexS1')) return this.sueloFrame();
     if (this.state !== 'dead' && Assets.image('rexG1')) return this.gifFrame();
     const F = RexVane.FRAMES;
     let set = F.fly;
@@ -622,7 +644,7 @@ class RexVane extends Enemy {
     if (frame.blendImage && frame.blendUnder) drawLayer(frame.blendImage, frame.blendHeight, frame.blend);
     drawLayer(frame.image, frame.height, frame.blendImage && !frame.blendUnder ? 1 - frame.blend : 1);
     if (frame.blendImage && !frame.blendUnder) drawLayer(frame.blendImage, frame.blendHeight, frame.blend);
-    this.renderScepterGlow(ctx, frame);
+    if (!frame.noGlow) this.renderScepterGlow(ctx, frame);
   }
 
   // Cetro: segunda pasada aditiva que hace brillar los rayos rosas (el cuerpo, oscuro, casi no cambia), un halo que late
