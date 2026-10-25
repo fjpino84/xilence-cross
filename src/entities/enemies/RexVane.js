@@ -106,6 +106,8 @@ class RexVane extends Enemy {
 
   update(dt, world) {
     this.world = world;
+    // Si sus imágenes aún se están descargando (conexión lenta), espera sin aparecer: así nunca se ve invisible
+    if (this.state === 'arrive' && Assets.groupPending('rex')) return;
     this.tickTimers(dt);
     this.hitSquash = Math.max(0, this.hitSquash - dt);
     this.shock = Math.max(0, this.shock - dt);
@@ -510,19 +512,26 @@ class RexVane extends Enemy {
   sueloFrame() {
     const windup = this.enraged ? 0.75 : 1.0;
     const t = this.subTime;
-    let n;
+    // Posición con decimales dentro de cada fase [primer cuadro, último cuadro, duración]: así el cuadro siguiente se mezcla de forma continua
+    const span = (from, to, duration) => from + (to - from) * Math.min(1, t / duration);
+    let position;
+    let last;
     switch (this.sub) {
-      case 'dive': n = 1 + Math.min(6, Math.floor((t / 0.6) * 7)); break;
-      case 'touch': n = 23; break;
-      case 'windup': n = 23 + Math.min(7, Math.floor((t / windup) * 8)); break;
-      case 'strike': n = 8 + Math.min(6, Math.floor((t / 0.8) * 7)); break;
-      case 'recover': n = 14 + Math.min(4, Math.floor((t / 0.4) * 4)); break;
-      default: n = 18 + Math.min(5, Math.floor((t / 0.55) * 5)); // rise
+      case 'dive': position = span(1, 7, 0.6); last = 7; break;
+      case 'touch': position = 23; last = 23; break;
+      case 'windup': position = span(23, 30, windup); last = 30; break;
+      case 'strike': position = span(8, 14, 0.8); last = 14; break;
+      case 'recover': position = span(14, 18, 0.4); last = 18; break;
+      default: position = span(18, 23, 0.55); last = 23; // rise
     }
+    const n = Math.floor(position);
     const image = Assets.image('rexS' + n);
     if (!image) return null;
     const height = image.height * RexVane.SUELO_G;
-    return { image, height, anchorX: 0.5, drop: (1 - RexVane.SUELO_FEET) * height, noGlow: true };
+    const frame = { image, height, anchorX: 0.5, drop: (1 - RexVane.SUELO_FEET) * height, noGlow: true };
+    const next = n < last ? Assets.image('rexS' + (n + 1)) : null;
+    if (next) { const f = position - n; frame.blendImage = next; frame.blend = f * f * (3 - 2 * f); frame.blendHeight = height; }
+    return frame;
   }
 
   // Vuelo y poder aéreo con los cuadros del video (384 px, Rex centrado a la altura del torso): hacia los lados vuela, parado flota de frente
@@ -533,10 +542,14 @@ class RexVane extends Enemy {
     if (this.state === 'bolts') {
       const chargeTime = this.enraged ? 0.9 : 1.2;
       let idx;
-      if (this.sub === 'charge') idx = 1 + Math.min(12, Math.floor((this.subTime / chargeTime) * 13));
-      else if (this.sub === 'strike') idx = 14 + Math.min(2, Math.floor((this.subTime / 0.5) * 3));
-      else idx = 17 + Math.min(1, Math.floor((this.subTime / 0.55) * 2));
+      let position;
+      let last;
+      if (this.sub === 'charge') { position = 1 + Math.min(1, this.subTime / chargeTime) * 12.99; last = 13; }
+      else if (this.sub === 'strike') { position = 14 + Math.min(1, this.subTime / 0.5) * 2.99; last = 16; }
+      else { position = 17 + Math.min(1, this.subTime / 0.55) * 1.99; last = 18; }
+      idx = Math.floor(position);
       key = 'bol' + idx;
+      if (idx < last) { const f = position - idx; blend = ['bol' + (idx + 1), f * f * (3 - 2 * f)]; }
     } else if (Math.abs(this.sweepSpeed || 0) > 80) {
       const position = this.age * 9;
       const index = Math.floor(position) % 8;
@@ -675,10 +688,20 @@ class RexVane extends Enemy {
 
     const squash = this.hitSquash > 0 ? this.hitSquash / 0.12 : 0;
     const shake = this.state === 'dead' ? (Math.random() - 0.5) * 8 : (this.shock > 0 ? (Math.random() - 0.5) * 6 : 0);
+    // Giro suave: al cambiar de lado el dibujo se aplasta hasta una línea y vuelve a abrirse (en vez de saltar de golpe)
+    const dtRender = Math.min(0.05, Math.max(0, this.age - (this.lastRenderAge ?? this.age)));
+    this.lastRenderAge = this.age;
+    if (this.visFacing === undefined) this.visFacing = this.facing;
+    this.visFacing += (this.facing - this.visFacing) * Math.min(1, dtRender * 12);
+    const turn = Math.max(0.12, Math.abs(this.visFacing));
+    const drawFacing = this.visFacing >= 0 ? 1 : -1;
+    // Inclinación suave según la velocidad (en vuelo) y balanceo vertical leve
+    this.visLean = (this.visLean || 0) + ((this.state === 'float' ? Math.max(-0.07, Math.min(0.07, (this.sweepSpeed || 0) / 3200)) : 0) - (this.visLean || 0)) * Math.min(1, dtRender * 6);
+    const sway = frame.air && this.state === 'float' ? Math.sin(this.age * 2.4) * 3 : 0;
     const drawLayer = (image, height, alpha) => Sprite.draw(ctx, image, {
-      x: this.x, y: this.y - this.z + (frame.baseY || 0), height, anchorX: frame.anchorX, facing: this.facing,
-      flash: this.hitFlash > 0, alpha: alpha * this.alpha, scaleX: 1 + 0.06 * squash + breathe * 0.012, scaleY: 1 - 0.05 * squash - breathe * 0.012,
-      offsetX: shake, offsetY: frame.air ? 0 : (1 - RexVane.GIF_FEET) * height, rotation: lean, pivot: 0,
+      x: this.x, y: this.y - this.z + (frame.baseY || 0) + sway, height, anchorX: frame.anchorX, facing: drawFacing,
+      flash: this.hitFlash > 0, alpha: alpha * this.alpha, scaleX: (1 + 0.06 * squash + breathe * 0.012) * turn, scaleY: 1 - 0.05 * squash - breathe * 0.012,
+      offsetX: shake, offsetY: frame.air ? 0 : (1 - RexVane.GIF_FEET) * height, rotation: lean + (frame.air ? this.visLean * drawFacing : 0), pivot: 0,
       tint: this.shock > 0 ? { color: CONFIG.COLORS.CYAN, alpha: 0.15 + 0.2 * Math.abs(Math.sin(this.age * 50)) } : null,
     });
     // En el vuelo se inclina hacia donde se desplaza y respira; con los cuadros del GIF se mezclan los cuadros vecinos

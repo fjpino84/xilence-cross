@@ -35,7 +35,7 @@ const Assets = {
     if (!group) return Promise.resolve();
     this.groupPromises = this.groupPromises || {};
     if (this.groupPromises[name]) return this.groupPromises[name];
-    this.groupPromises[name] = this.loadImages(group);
+    this.groupPromises[name] = this.loadImages(group).then(() => { this.groupDone = this.groupDone || {}; this.groupDone[name] = true; });
     return this.groupPromises[name];
   },
 
@@ -45,6 +45,12 @@ const Assets = {
     if (!group || !this.groupPromises || !this.groupPromises[name]) return;
     for (const key of Object.keys(group)) this.unload(key);
     delete this.groupPromises[name];
+    if (this.groupDone) delete this.groupDone[name];
+  },
+
+  // true mientras un grupo se está descargando (pedido, pero aún sin terminar)
+  groupPending(name) {
+    return !!(this.groupPromises && this.groupPromises[name] && !(this.groupDone && this.groupDone[name]));
   },
 
   // Carga una sola imagen bajo demanda (promesa que siempre se resuelve)
