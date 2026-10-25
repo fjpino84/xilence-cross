@@ -28,7 +28,8 @@ class AudioManager {
     this.sfxLevel = 1;
     this.sfx = null; // hoja de sonidos grabados ya decodificada
     this.lastPick = {};
-    this.activeVoices = 0;
+    this.voiceEnds = [];
+    this.isMobile = typeof IS_TOUCH_DEVICE !== 'undefined' && IS_TOUCH_DEVICE;
     this.chargeVoice = null;
     this.talkVoice = null;
     this.heliVoice = null;
@@ -304,7 +305,7 @@ class AudioManager {
       if (!AudioContextClass) return;
       this.setup(this.makeContext(AudioContextClass));
     }
-    if (this.context.state === 'suspended') this.context.resume();
+    if (this.context.state !== 'running') this.context.resume().catch(() => {});
   }
 
   // Construye la cadena de efectos sobre un contexto (en vivo, o uno "offline" para pruebas)
@@ -419,7 +420,14 @@ class AudioManager {
     const { count = 0, volume = 1, rate = 1, jitter = 0.05, pan = 0, wet = 0, loop = false } = options;
     if (!this.sfx || !this.ready) return null;
     // Tope de voces a la vez (más bajo en móviles): demasiadas grabaciones largas juntas saturan el audio
-    if (this.activeVoices >= (typeof IS_TOUCH_DEVICE !== 'undefined' && IS_TOUCH_DEVICE ? 10 : 24)) return null;
+    // Tope de voces a la vez. Se cuenta por la hora de fin de cada una (no por el evento 'ended', que en móviles puede no llegar y dejaba el
+    // contador pegado: así dejaban de sonar los sonidos de ECO)
+    const clock = this.context.currentTime;
+    this.voiceEnds = this.voiceEnds.filter((end) => end > clock);
+    if (this.voiceEnds.length >= (this.isMobile ? 14 : 28)) {
+      if (!(options.priority)) return null;
+      this.voiceEnds.shift();
+    }
     let key = options.name || name;
     if (count > 0) {
       let pick = 1 + Math.floor(Math.random() * count);
@@ -444,8 +452,7 @@ class AudioManager {
     } else {
       source.start(this.context.currentTime, clip[0], clip[1]);
     }
-    this.activeVoices++;
-    source.onended = () => { this.activeVoices = Math.max(0, this.activeVoices - 1); };
+    this.voiceEnds.push(loop ? clock + 1e9 : clock + clip[1] / Math.max(0.5, source.playbackRate.value) + 0.05);
     return { source, gain };
   }
 
@@ -499,7 +506,7 @@ class AudioManager {
       last = panner;
     }
     last.connect(this.master);
-    if (wet > 0) {
+    if (wet > 0 && !this.isMobile) {
       const send = this.context.createGain();
       send.gain.value = wet;
       last.connect(send);
@@ -719,8 +726,9 @@ class AudioManager {
   play(name, options = {}) {
     if (!this.ready) return;
     if (this.sfxFilter && !this.sfxFilter.has(name)) return;
+    if (this.context.state !== 'running') { this.context.resume().catch(() => {}); return; }
     const now = this.context.currentTime;
-    if (now - (this.lastPlayed.get(name) ?? -1) < AudioManager.MIN_GAP) return;
+    if (now - (this.lastPlayed.get(name) ?? -1) < (this.isMobile ? 0.06 : AudioManager.MIN_GAP)) return;
     this.lastPlayed.set(name, now);
     // Con los sonidos grabados cargados, estos reemplazan a los sintetizados (si la función devuelve true, se mezclan ambos)
     const recorded = this.sfx && AudioManager.RECORDED[name];
@@ -733,10 +741,10 @@ class AudioManager {
 // Sonidos grabados por evento del juego. Devuelven true si además debe sonar el sintetizado.
 AudioManager.RECORDED = {
   // ECO camina (una pisada por medio ciclo), pisa un charco y golpea: un recorte por paso del combo
-  step: (a) => { a.sample('ecoStep', { count: 4, volume: 0.8, jitter: 0.06 }); },
+  step: (a) => { a.sample('ecoStep', { count: 4, volume: 0.8, jitter: 0.06, priority: true }); },
   splash: (a, { power = 1 }) => { a.sample('ecoWater', { volume: 0.5 + 0.25 * power, jitter: 0.12 }); },
   swing: (a, { step = 1 }) => {
-    a.sample('ecoHit' + Math.min(5, Math.max(1, step)), { volume: 0.9, jitter: 0.04 });
+    a.sample('ecoHit' + Math.min(5, Math.max(1, step)), { volume: 0.9, jitter: 0.04, priority: true });
     return step >= 5; // el remate del combo conserva su carga sintética
   },
   hit: () => true,
@@ -765,14 +773,14 @@ AudioManager.RECORDED = {
     a.crackle({ duration: 0.45, rate: 45, volume: 0.09, low: 700, high: 4000 });
   },
   // Poderes: la carga suena mientras se mantiene K y se apaga al soltar; el disparo, el rayo corto y el súper tienen su grabación
-  rayCharge: (a) => { a.fadeVoice(a.chargeVoice, 0.05); a.chargeVoice = a.sample('rayCharge', { volume: 0.55, jitter: 0 }); },
+  rayCharge: (a) => { a.fadeVoice(a.chargeVoice, 0.05); a.chargeVoice = a.sample('rayCharge', { volume: 0.55, jitter: 0, priority: true }); },
   chargeTick: () => {},
   rayRelease: (a) => { a.fadeVoice(a.chargeVoice, 0.1); a.chargeVoice = null; return true; },
-  rayFire: (a) => { a.fadeVoice(a.chargeVoice, 0.05); a.chargeVoice = null; a.sample('rayFire', { volume: 1, jitter: 0.02 }); },
+  rayFire: (a) => { a.fadeVoice(a.chargeVoice, 0.05); a.chargeVoice = null; a.sample('rayFire', { volume: 1, jitter: 0.02, priority: true }); },
   special: (a) => AudioManager.RECORDED.rayFire(a),
-  rayMini: (a) => { a.sample('rayMini', { volume: 0.9, jitter: 0.04 }); },
-  superCharge: (a) => { a.sample('superStart', { volume: 0.9, jitter: 0 }); },
-  super: (a) => { a.sample('superBlast', { volume: 1, jitter: 0 }); },
+  rayMini: (a) => { a.sample('rayMini', { volume: 0.9, jitter: 0.04, priority: true }); },
+  superCharge: (a) => { a.sample('superStart', { volume: 0.9, jitter: 0, priority: true }); },
+  super: (a) => { a.sample('superBlast', { volume: 1, jitter: 0, priority: true }); },
   hurt: (a) => { a.fadeVoice(a.chargeVoice, 0.08); a.chargeVoice = null; return true; },
   // Botón "LET'S ROCK!!" del título
   letsRock: (a) => { a.sample('letsRock', { volume: 0.9, jitter: 0 }); },
