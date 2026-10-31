@@ -424,10 +424,9 @@ class AudioManager {
     // contador pegado: así dejaban de sonar los sonidos de ECO)
     const clock = this.context.currentTime;
     this.voiceEnds = this.voiceEnds.filter((end) => end > clock);
-    if (this.voiceEnds.length >= (this.isMobile ? 14 : 28)) {
-      if (!(options.priority)) return null;
-      this.voiceEnds.shift();
-    }
+    // Las voces de ECO (priority) pasan del tope normal, pero con un techo duro: antes se olvidaban sin pararlas y se apilaban hasta saturar
+    const cap = this.isMobile ? 12 : 28;
+    if (this.voiceEnds.length >= cap && (!options.priority || this.voiceEnds.length >= cap + 5)) return null;
     let key = options.name || name;
     if (count > 0) {
       let pick = 1 + Math.floor(Math.random() * count);
@@ -734,7 +733,14 @@ class AudioManager {
     const recorded = this.sfx && AudioManager.RECORDED[name];
     if (recorded && !recorded(this, options)) return;
     const sound = AudioManager.SOUNDS[name];
-    if (sound) sound(this, options);
+    if (!sound) return;
+    // En móviles las capas sintetizadas (osciladores, ruido, filtros) se limitan a 3 cada 0.4 s: apiladas colapsaban el audio y sonaba áspero
+    if (this.isMobile) {
+      this.synthTimes = (this.synthTimes || []).filter((time) => now - time < 0.4);
+      if (this.synthTimes.length >= 3) return;
+      this.synthTimes.push(now);
+    }
+    sound(this, options);
   }
 }
 

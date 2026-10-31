@@ -34,7 +34,8 @@ class Level01 extends Level {
       triggerX: (Number(position) - 1) * Level.TILE_STRIDE + 520,
       difficulty: (Number(position) - 2) / (Level01.COUNT - 2), // 0 en el primer encuentro, 1 en el último
       spawns: [
-        ...Array.from({ length: encounter.normal || 0 }, () => ({})),
+        // En móviles los encuentros de 5 o más adversarios llevan uno normal menos: menos sonidos y dibujo a la vez
+        ...Array.from({ length: Math.max(0, (encounter.normal || 0) - (IS_TOUCH_DEVICE && (encounter.normal || 0) + (encounter.elite || 0) >= 5 ? 1 : 0)) }, () => ({})),
         ...Array.from({ length: encounter.elite || 0 }, () => ({ elite: true })),
         ...(encounter.boss ? [{ boss: true }] : []),
         ...Array.from({ length: encounter.drone || 0 }, () => ({ drone: true })),
