@@ -25,6 +25,9 @@ class Liquid {
     const make = () => { const c = document.createElement('canvas'); c.width = Liquid.SCREEN_W; c.height = Liquid.SCREEN_H; return c; };
     this.screenMask = make();
     this.shimmerCanvas = make();
+    // Los destellos se calculan a media resolución (son luz difusa y se ve igual): cuatro veces menos píxeles que rellenar cada fotograma
+    this.shimmerCanvas.width = Liquid.SCREEN_W / 2;
+    this.shimmerCanvas.height = Liquid.SCREEN_H / 2;
     this.reflectCanvas = make();
     this.caustic = this.buildCaustic();
   }
@@ -100,7 +103,10 @@ class Liquid {
       }
     }
     context.putImageData(out, 0, 0);
-    this.masks[index] = { canvas, alpha, w, h };
+    let count = 0;
+    for (let i = 0; i < alpha.length; i += 7) if (alpha[i] > 40) count++;
+    this.maskReady = false; // hay una máscara nueva: se vuelve a componer la de pantalla
+    this.masks[index] = { canvas, alpha, w, h, count }; // count: muestra de píxeles con líquido (0 = esta escena casi no tiene)
     return this.masks[index];
   }
 
@@ -119,13 +125,19 @@ class Liquid {
   composeScreenMask(camera) {
     if (this.maskFrame === this.frame) return;
     this.maskFrame = this.frame;
+    // Si la cámara no se movió, la máscara de pantalla sigue siendo la misma
+    const cameraX = Math.round(camera.x);
+    if (this.maskCameraX === cameraX && this.maskReady) return;
+    this.maskCameraX = cameraX;
+    this.maskReady = true;
+    this.hasLiquid = false;
     const c = this.screenMask.getContext('2d');
     c.clearRect(0, 0, Liquid.SCREEN_W, Liquid.SCREEN_H);
     const first = Math.max(0, Math.floor(camera.x / Level.TILE_STRIDE) - 1);
     for (let index = first; index <= first + 2; index++) {
       if (index >= this.level.config.backgroundSequence.length) break;
       const mask = this.maskFor(index);
-      if (mask) c.drawImage(mask.canvas, Math.round(index * Level.TILE_STRIDE - camera.x), 0);
+      if (mask && mask.count > 40) { c.drawImage(mask.canvas, Math.round(index * Level.TILE_STRIDE - camera.x), 0); this.hasLiquid = true; }
     }
   }
 
@@ -179,8 +191,10 @@ class Liquid {
   renderShimmer(ctx, camera) {
     if (FX.low || !this.shimmerCanvas) return;
     this.composeScreenMask(camera);
+    if (!this.hasLiquid) return; // ninguna de las escenas visibles tiene líquido: no hay nada que animar
     const t = this.time;
     const s = this.shimmerCanvas.getContext('2d');
+    s.setTransform(0.5, 0, 0, 0.5, 0, 0);
     s.clearRect(0, 0, Liquid.SCREEN_W, Liquid.SCREEN_H);
     s.globalCompositeOperation = 'source-over';
     // dos capas de destellos que se mueven en sentidos distintos y a escalas distintas; se desplazan también con la cámara (parallax de suelo)
@@ -202,7 +216,7 @@ class Liquid {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     ctx.globalAlpha = 0.5 + 0.12 * Math.sin(t * 1.3);
-    ctx.drawImage(this.shimmerCanvas, 0, 0);
+    ctx.drawImage(this.shimmerCanvas, 0, 0, Liquid.SCREEN_W, Liquid.SCREEN_H);
     // el propio líquido late con una luz verde
     ctx.globalAlpha = 0.1 + 0.07 * Math.sin(t * 2.1);
     ctx.drawImage(this.screenMask, 0, 0);

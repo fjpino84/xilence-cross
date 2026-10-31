@@ -153,13 +153,38 @@ class Props {
     return list;
   }
 
+  // Versión ya reducida al tamaño de pantalla y oscurecida (se hace una sola vez por pieza): dibujarla cuesta una copia pequeña y no dos
+  // reducciones de un dibujo de 900 px en cada fotograma
+  baked(name, height, tint) {
+    this.bakeCache = this.bakeCache || new Map();
+    const key = name + '|' + height + '|' + (tint ? tint.color + tint.alpha : '');
+    if (this.bakeCache.has(key)) return this.bakeCache.get(key);
+    const image = Assets.image('pn_' + name);
+    if (!image || typeof document === 'undefined') return null;
+    const scale = 1; // se hornea al tamaño del juego; en pantallas de mucha densidad el navegador lo amplía un poco, es difuso y apenas se nota
+    const canvas = document.createElement('canvas');
+    canvas.height = Math.ceil(height * scale);
+    canvas.width = Math.ceil((image.width / image.height) * height * scale);
+    const c = canvas.getContext('2d');
+    c.imageSmoothingQuality = 'high';
+    c.drawImage(image, 0, 0, canvas.width, canvas.height);
+    if (tint && tint.alpha > 0) {
+      c.globalCompositeOperation = 'source-atop';
+      c.globalAlpha = tint.alpha;
+      c.fillStyle = tint.color;
+      c.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    this.bakeCache.set(key, canvas);
+    return canvas;
+  }
+
   // Dibuja un sprite con su base en (sx, sy); devuelve su tamaño en pantalla
   drawImage(ctx, item, def, sx, sy, alpha, tint) {
-    const image = Assets.image('pn_' + item.name);
+    const image = this.baked(item.name, def.h, tint) || Assets.image('pn_' + item.name);
     if (!image) return null;
     const height = def.h;
     const width = (image.width / image.height) * height;
-    Sprite.draw(ctx, image, { x: sx, y: sy, height, anchorX: 0.5, facing: item.flip ? -1 : 1, tint, alpha });
+    Sprite.draw(ctx, image, { x: sx, y: sy, height, anchorX: 0.5, facing: item.flip ? -1 : 1, alpha });
     return { width, height };
   }
 

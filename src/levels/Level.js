@@ -156,21 +156,24 @@ class Level {
   renderBackdrop(ctx, camera) {
     const image = Assets.image(this.config.backdropKey);
     if (!image) return;
-    const height = CONFIG.HEIGHT * 1.15;
-    const width = (image.width / image.height) * height;
-    const shift = camera.x * 0.1;
-    for (let i = Math.floor(shift / width); i * width - shift < CONFIG.WIDTH; i++) {
-      const x = i * width - shift;
-      if (((i % 2) + 2) % 2 === 0) {
-        ctx.drawImage(image, x, 0, width, height);
-      } else {
-        ctx.save();
-        ctx.translate(x + width, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(image, 0, 0, width, height);
-        ctx.restore();
-      }
+    // El fondo (la imagen y su espejo) se compone una sola vez en un lienzo; después cada fotograma solo copia ese lienzo desplazado
+    if (!this.backdropCanvas || this.backdropSource !== image) {
+      const height = Math.round(CONFIG.HEIGHT * 1.15);
+      const width = Math.round((image.width / image.height) * height);
+      const canvas = document.createElement('canvas');
+      canvas.width = width * 2;
+      canvas.height = height;
+      const c = canvas.getContext('2d');
+      c.drawImage(image, 0, 0, width, height);
+      c.translate(width * 2, 0);
+      c.scale(-1, 1);
+      c.drawImage(image, 0, 0, width, height);
+      this.backdropCanvas = canvas;
+      this.backdropSource = image;
     }
+    const pair = this.backdropCanvas.width;
+    const shift = (camera.x * 0.1) % pair;
+    for (let x = -shift; x < CONFIG.WIDTH; x += pair) ctx.drawImage(this.backdropCanvas, Math.round(x), 0);
   }
 
   renderSequenceBackground(ctx, camera) {
