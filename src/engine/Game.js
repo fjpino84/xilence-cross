@@ -29,6 +29,8 @@ class Game {
     window.addEventListener('touchend', unlock, { passive: true });
     window.addEventListener('click', unlock);
     if (FX.low) this.enableLowFx();
+    this.debug = /[?&]debug=1/.test(window.location.search || '');
+    if (this.debug) window.addEventListener('error', (event) => { window.lastError = event.message; });
   }
 
   // Efectos reducidos: sin resplandores (shadowBlur es lo más caro en el canvas), menos partículas y menos lluvia
@@ -80,6 +82,22 @@ class Game {
     });
   }
 
+  // Panel de diagnóstico (se activa con ?debug=1): fotogramas, estado del audio, voces, memoria y el último error, para poder fotografiarlo en el móvil
+  renderDebug(frameSeconds) {
+    this.debugFps = (this.debugFps || 60) * 0.95 + (1 / Math.max(0.001, frameSeconds)) * 0.05;
+    this.debugWorst = Math.max((this.debugWorst || 0) * 0.995, frameSeconds * 1000);
+    const audio = this.audio;
+    const scene = this.scenes.current;
+    const lines = [
+      'fps ' + this.debugFps.toFixed(0) + '  peor ' + this.debugWorst.toFixed(0) + ' ms  escala ' + this.renderScale + '  fx ' + (FX.low ? 'bajo' : 'alto'),
+      'audio ' + (audio.context ? audio.context.state : 'sin contexto') + '  voces ' + audio.voiceEnds.length + '  sfx ' + (audio.sfx ? 'ok' : 'NO'),
+      'escena ' + (scene && scene.camera ? Math.floor(scene.camera.x / Level.TILE_STRIDE) + 1 : '-') + '  enemigos ' + (scene && scene.enemies ? scene.enemies.length : '-'),
+    ];
+    if (performance.memory) lines.push('memoria ' + (performance.memory.usedJSHeapSize / 1048576).toFixed(0) + ' MB');
+    if (window.lastError) lines.push('ERROR ' + window.lastError);
+    lines.forEach((line, i) => Draw.text(this.ctx, line, 8, 18 + i * 17, { size: 14, align: 'left', color: '#7dff9a', strokeWidth: 4 }));
+  }
+
   loop(timestamp) {
     // Limita dt para no acumular pasos tras cambiar de pestaña
     this.watchPerformance((timestamp - this.lastTimestamp) / 1000);
@@ -101,6 +119,8 @@ class Game {
     this.ctx.imageSmoothingQuality = this.renderScale < 1 ? 'low' : 'high';
     this.scenes.render(this.ctx);
     this.renderAudioStatus();
+    if (this.debug) this.renderDebug((timestamp - this.lastDebugStamp) / 1000 || 0.016);
+    this.lastDebugStamp = timestamp;
     const scene = this.scenes.current;
     this.touch.setVisible(!!(scene && scene.usesTouchControls && scene.usesTouchControls()) && !this.modal.isOpen);
     this.touch.setDuel(!!(scene && scene.usesDuelPads && scene.usesDuelPads()) && !this.modal.isOpen);
