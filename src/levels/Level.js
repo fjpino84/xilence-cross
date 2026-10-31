@@ -107,7 +107,7 @@ class Level {
     const current = Math.floor(cameraX / Level.TILE_STRIDE);
     sequence.forEach((tile, index) => {
       const near = index >= current - 1 && index <= current + 2;
-      const far = index < current - 2 || index > current + 4;
+      const far = index < current - 2 || index > current + 3;
       const path = 'assets/backgrounds/nivel1/escena-' + (index + 1) + '.webp';
       if (near && !Assets.image(tile.key)) Assets.loadOne(tile.key, path);
       else if (far && Assets.image(tile.key)) {

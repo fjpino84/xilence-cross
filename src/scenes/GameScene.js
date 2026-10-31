@@ -1195,7 +1195,7 @@ class GameScene {
     if (scene >= 1) Assets.loadGroup('operador');
     if (scene >= 3 && !this.rexDone) Assets.loadGroup('rex');
     // En móviles el video se prepara solo al llegar a la última escena: tenerlo almacenado y decodificándose mientras se pelea quitaba recursos al audio
-    if (scene >= 8) Assets.loadGroup('batuk');
+    if (scene >= (IS_TOUCH_DEVICE ? 10 : 8)) Assets.loadGroup('batuk');
     if (scene >= (IS_TOUCH_DEVICE ? 11 : 8)) this.prepareBatukVideo();
     if (scene >= (IS_TOUCH_DEVICE ? 11 : 10)) Assets.loadGroup('final');
     if (scene >= 8 && !this.rexDone && !this.enemies.some((enemy) => enemy.boss)) { this.rexDone = true; Assets.unloadGroup('rex'); }

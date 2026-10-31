@@ -28,6 +28,7 @@ class Props {
     'obj3_4', 'obj3_5', 'obj3_10', 'obj4_3', 'obj4_5'];
 
   // Primeros planos de abajo (h = altura en pantalla; el pie queda un poco fuera de la pantalla)
+  static SEED = 20260611; // cambia este número para obtener otra distribución fija
   static BOTTOM = {
     fgA_1: { h: 190 }, fgA_2: { h: 190 }, fgA_3: { h: 190 }, fgR_1: { h: 200 }, fgR_2: { h: 250 },
     fgS_1: { h: 300, weight: 0.5 }, fgS_2: { h: 300, weight: 0.5 }, fgS_3: { h: 300, weight: 0.5 },
@@ -41,14 +42,23 @@ class Props {
 
   constructor(level) {
     this.time = 0;
+    // Generador con semilla fija: los primeros planos son "al azar" pero siempre los mismos en cada partida
+    let seed = Props.SEED;
+    const rand = () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let n = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      n = (n + Math.imul(n ^ (n >>> 7), 61 | n)) ^ n;
+      return ((n ^ (n >>> 14)) >>> 0) / 4294967296;
+    };
     const scenes = (level.config.backgroundSequence || []).length;
     const bossScenes = new Set([scenes > 6 ? 6 : -1, scenes - 1]); // sub jefe y jefe: la arena se deja más despejada
     const stride = Level.TILE_STRIDE;
     const overlap = Level.TILE_OVERLAP;
     const pickWeighted = (names, table, avoid) => {
-      const pool = names.filter((name) => name !== avoid);
+      const banned = Array.isArray(avoid) ? avoid : [avoid];
+      const pool = names.filter((name) => !banned.includes(name));
       const total = pool.reduce((sum, name) => sum + ((table[name] && table[name].weight) || 1), 0);
-      let roll = Math.random() * total;
+      let roll = rand() * total;
       for (const name of pool) {
         roll -= (table[name] && table[name].weight) || 1;
         if (roll <= 0) return name;
@@ -61,50 +71,52 @@ class Props {
     const used = new Set();
     for (let index = 0; index < scenes; index++) {
       const boss = bossScenes.has(index);
-      const roll = Math.random();
+      const roll = rand();
       const count = !Props.WORLD_ENABLED ? 0 : boss ? (roll < 0.5 ? 1 : 0) : (roll < 0.15 ? 0 : roll < 0.6 ? 1 : 2);
       const left = index * stride + (index > 0 ? overlap + 60 : 80);
       const right = index * stride + Level.TILE_WIDTH - (index < scenes - 1 ? overlap + 60 : 80);
       let previousX = -1e9;
       for (let n = 0; n < count; n++) {
-        let x = left + Math.random() * (right - left);
-        if (boss) x = Math.random() < 0.5 ? left + Math.random() * 160 : right - Math.random() * 160; // lejos del centro de la arena
+        let x = left + rand() * (right - left);
+        if (boss) x = rand() < 0.5 ? left + rand() * 160 : right - rand() * 160; // lejos del centro de la arena
         if (Math.abs(x - previousX) < 220) x = Math.min(right, Math.max(left, x + (x < (left + right) / 2 ? 240 : -240)));
         previousX = x;
-        const pool = Math.random() < 0.4 ? Props.SIGNS : Props.DEBRIS;
+        const pool = rand() < 0.4 ? Props.SIGNS : Props.DEBRIS;
         // no se repite el mismo objeto en toda la partida mientras queden otros
         const fresh = pool.filter((candidate) => !used.has(candidate));
         const candidates = fresh.length ? fresh : pool;
-        const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+        const chosen = candidates[Math.floor(rand() * candidates.length)];
         used.add(chosen);
-        const y = CONFIG.GROUND_TOP + 14 + Math.random() * (CONFIG.GROUND_BOTTOM - CONFIG.GROUND_TOP - 22);
-        this.world.push({ name: chosen, x, y, flip: !Props.NO_FLIP.has(chosen) && Math.random() < 0.5, phase: Math.random() * 6.28 });
+        const y = CONFIG.GROUND_TOP + 14 + rand() * (CONFIG.GROUND_BOTTOM - CONFIG.GROUND_TOP - 22);
+        this.world.push({ name: chosen, x, y, flip: !Props.NO_FLIP.has(chosen) && rand() < 0.5, phase: rand() * 6.28 });
       }
     }
 
-    // Primeros planos de abajo: uno sobre cada unión y algunos sueltos dentro de las escenas
+    // Primeros planos de abajo: uno sobre cada unión y algunos sueltos dentro de las escenas. En una misma escena no se repite ninguno
     const names = Object.keys(Props.BOTTOM);
     this.front = [];
+    const seams = {};
     let previous = '';
     for (let index = 1; index < scenes; index++) {
       previous = pickWeighted(names, Props.BOTTOM, previous);
-      this.front.push({ name: previous, x: index * stride + overlap / 2 + (Math.random() - 0.5) * 40, flip: !Props.NO_FLIP.has(previous) && Math.random() < 0.5, phase: Math.random() * 6.28 });
+      seams[index] = previous;
+      this.front.push({ name: previous, x: index * stride + overlap / 2 + (rand() - 0.5) * 40, flip: !Props.NO_FLIP.has(previous) && rand() < 0.5, phase: rand() * 6.28 });
     }
     for (let index = 0; index < scenes; index++) {
-      if (bossScenes.has(index) || Math.random() > 0.3) continue;
-      previous = pickWeighted(names, Props.BOTTOM, previous);
-      const x = index * stride + overlap + 150 + Math.random() * (Level.TILE_WIDTH - 2 * overlap - 300);
-      this.front.push({ name: previous, x, flip: !Props.NO_FLIP.has(previous) && Math.random() < 0.5, phase: Math.random() * 6.28 });
+      if (bossScenes.has(index) || rand() > 0.3) continue;
+      const name = pickWeighted(names, Props.BOTTOM, [seams[index], seams[index + 1]]);
+      const x = index * stride + overlap + 150 + rand() * (Level.TILE_WIDTH - 2 * overlap - 300);
+      this.front.push({ name, x, flip: !Props.NO_FLIP.has(name) && rand() < 0.5, phase: rand() * 6.28 });
     }
 
     // Primeros planos de arriba: desactivados (no gustaron); el código queda por si se quieren recuperar con TOP_ENABLED
     const topNames = Object.keys(Props.TOP);
     this.top = [];
     for (let index = 0; index < scenes; index++) {
-      if (!Props.TOP_ENABLED || Math.random() > 0.35) continue;
-      const name = topNames[Math.floor(Math.random() * topNames.length)];
-      const x = index * stride + overlap + 120 + Math.random() * (Level.TILE_WIDTH - 2 * overlap - 240);
-      this.top.push({ name, x, flip: Math.random() < 0.5, phase: Math.random() * 6.28 });
+      if (!Props.TOP_ENABLED || rand() > 0.35) continue;
+      const name = topNames[Math.floor(rand() * topNames.length)];
+      const x = index * stride + overlap + 120 + rand() * (Level.TILE_WIDTH - 2 * overlap - 240);
+      this.top.push({ name, x, flip: rand() < 0.5, phase: rand() * 6.28 });
     }
   }
 
