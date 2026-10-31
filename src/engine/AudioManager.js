@@ -419,8 +419,6 @@ class AudioManager {
   sample(name, options = {}) {
     const { count = 0, volume = 1, rate = 1, jitter = 0.05, pan = 0, wet = 0, loop = false } = options;
     if (!this.sfx || !this.ready) return null;
-    // Si el sistema suspendió el audio (móviles: carga pesada, video, llamadas), se reanuda antes de lanzar la voz
-    if (this.context.state !== 'running' && this.context.resume) this.context.resume().catch(() => {});
     // Tope de voces a la vez (más bajo en móviles): demasiadas grabaciones largas juntas saturan el audio
     // Tope de voces a la vez. Se cuenta por la hora de fin de cada una (no por el evento 'ended', que en móviles puede no llegar y dejaba el
     // contador pegado: así dejaban de sonar los sonidos de ECO)
