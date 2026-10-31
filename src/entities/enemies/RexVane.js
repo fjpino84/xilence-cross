@@ -14,6 +14,8 @@ class RexVane extends Enemy {
   // g = px de juego por px del lienzo; scales corrige cuadros que en la hoja se dibujaron más pequeños (relativo al lienzo común)
   static GIF_G = 0.62; // px de juego por px del lienzo del GIF
   static GIF_FEET = 0.93;
+  // Cuadros de la entrada (segundos 5 a 10 del video): flotando de frente (hov4-hov9) y poder en altura (bol1-bol18)
+  static ENTRY = ['hov4', 'hov5', 'hov6', 'hov7', 'hov8', 'hov9', ...Array.from({ length: 18 }, (_, i) => 'bol' + (i + 1))];
   static AIR_G = 0.95; // px de juego por px de los cuadros del vuelo (384×384)
   static AIR_TORSO = 95; // altura (px sobre los pies) a la que queda el centro del dibujo: el torso de Rex
   static SUELO_G = 1.1; // px de juego por px de los cuadros del poder del suelo (576×324)
@@ -539,7 +541,15 @@ class RexVane extends Enemy {
   airFrame() {
     let key;
     let blend = null;
-    if (this.state === 'bolts') {
+    if (this.state === 'arrive' || this.state === 'talk') {
+      // Entrada de frente: la parte del video entre los segundos 5 y 10 (flota, levanta el cetro y se envuelve en relámpagos y humo)
+      const entry = RexVane.ENTRY;
+      const position = Math.min(entry.length - 1.001, this.age * 8);
+      const index = Math.floor(position);
+      key = entry[index];
+      const f = position - index;
+      if (index < entry.length - 1) blend = [entry[index + 1], f * f * (3 - 2 * f)];
+    } else if (this.state === 'bolts') {
       const chargeTime = this.enraged ? 0.9 : 1.2;
       let idx;
       let position;
@@ -580,7 +590,7 @@ class RexVane extends Enemy {
   }
 
   currentFrame() {
-    if ((this.state === 'float' || this.state === 'bolts') && Assets.image('rexA_fly1')) return this.airFrame();
+    if ((this.state === 'float' || this.state === 'bolts' || this.state === 'arrive' || this.state === 'talk') && Assets.image('rexA_fly1')) return this.airFrame();
     if (this.state === 'slam' && Assets.image('rexS1')) return this.sueloFrame();
     if (this.state !== 'dead' && Assets.image('rexG1')) return this.gifFrame();
     const F = RexVane.FRAMES;
