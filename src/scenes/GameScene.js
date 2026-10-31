@@ -884,7 +884,7 @@ class GameScene {
     { who: 'stage', text: '(Por primera vez se mueve — un paso adelante, lento, definitivo.)', event: 'step' },
     { who: 'batuk', name: 'BATUK', text: 'Hazte a un lado, chico, no tienes nada que hacer aquí.' },
     { who: 'eco', name: 'ECO', text: 'No puedo, debo entender.' },
-    { who: 'batuk', name: 'BATUK', text: 'Tú no eres especial. Solo eres un error del pasado, y voy a eliminarlo de raíz.' },
+    { who: 'batuk', name: 'BATUK', text: 'Tú no eres especial. Solo eres un error del pasado, y voy a eliminarlo de raíz.', event: 'summon' },
   ];
   // Después del combate: Batuk, caído, se levanta y habla de la Orden del Silencio
   static BATUK_EPILOGUE = [
@@ -931,7 +931,12 @@ class GameScene {
     player.energy = 0;
     this.hud.finaleStart = this.hud.time;
     // Video "intro Batuk" entre el último combate y la entrada de Batuk (con ?duel=skip se salta); después suena el retumbar y entra Batuk
-    if (!this.skipBatukDialogue && this.playBatukVideo()) return;
+    // El juego se funde a negro y recién entonces arranca el video (ver updateFinale)
+    if (!this.skipBatukDialogue && typeof document !== 'undefined' && document.querySelector && document.querySelector('.game-shell')) {
+      this.finale.lead = GameScene.VIDEO_LEAD;
+      this.finale.afterVideo = true;
+      return;
+    }
     this.game.audio.play('drumRumble');
   }
 
@@ -956,7 +961,10 @@ class GameScene {
     if (!shell || !video || !shell.appendChild) return false;
     this.finale.video = true;
     this.finale.videoTime = 0;
+    video.style.opacity = '0';
+    video.style.transition = 'opacity ' + GameScene.VIDEO_FADE + 's ease';
     shell.appendChild(video);
+    requestAnimationFrame(() => { video.style.opacity = '1'; });
     const skip = document.createElement('button');
     skip.type = 'button';
     skip.className = 'dialogue-skip';
@@ -979,24 +987,57 @@ class GameScene {
     const finale = this.finale;
     if (!finale || !finale.video) return;
     finale.video = false;
-    if (this.batukVideo) {
-      try { this.batukVideo.pause(); } catch (error) { /* ya detenido */ }
-      this.batukVideo.onended = null;
-      this.batukVideo.onerror = null;
-      if (this.batukVideo.remove) this.batukVideo.remove();
+    const video = this.batukVideo;
+    if (video) {
+      try { video.pause(); } catch (error) { /* ya detenido */ }
+      video.onended = null;
+      video.onerror = null;
+      // El video se desvanece sobre la escena de diálogo, que ya está lista debajo
+      if (video.style) video.style.opacity = '0';
+      setTimeout(() => { if (video.remove) video.remove(); }, GameScene.VIDEO_FADE * 1000 + 100);
     }
     if (this.batukSkip) { this.batukSkip.remove(); this.batukSkip = null; }
     if (this.onBatukKey) { window.removeEventListener('keydown', this.onBatukKey); this.onBatukKey = null; }
     this.game.audio.duckMusic(false);
-    this.game.audio.play('drumRumble'); // empieza el retumbar: ahora entra Batuk
+    this.readyBatukScene();
+  }
+
+  // Tras el video: ECO y Batuk ya están en sus posiciones de combate, hablando; los instrumentos esperan al último diálogo
+  readyBatukScene() {
+    const finale = this.finale;
+    this.player.x = this.camera.x + 150;
+    this.player.facing = 1;
+    finale.time = GameScene.FINALE_FALL_AT;
+    finale.boss = new BatukBoss(this.camera.x + 765, 462);
+    finale.boss.placeReady(this.camera.x + 765);
+    finale.fade = 1;
+    finale.fadeIn = GameScene.VIDEO_FADE;
+    this.game.audio.startBoss();
   }
 
   // Control de ECO anulado durante el cierre
   static BATUK_VIDEO = 'assets/video/intro-batuk.mp4';
+  static VIDEO_LEAD = 1.3; // fundido a negro antes del video
+  static VIDEO_FADE = 0.8; // entrada y salida suave del video
   static NO_INPUT = { isDown: () => false, justPressed: () => false, preserve() {}, endStep() {} };
 
   updateFinale(dt, input) {
     const finale = this.finale;
+    // Fundido a negro tras el último adversario; al terminar arranca el video (si no puede, se pasa directo a la escena de diálogo)
+    if (finale.lead > 0) {
+      finale.lead -= dt;
+      finale.fade = Math.min(1, 1 - finale.lead / GameScene.VIDEO_LEAD);
+      if (finale.lead <= 0) {
+        finale.lead = 0;
+        if (!this.playBatukVideo()) this.readyBatukScene();
+      }
+      return;
+    }
+    // Fundido de entrada a la escena de diálogo tras el video
+    if (finale.fadeIn > 0) {
+      finale.fadeIn = Math.max(0, finale.fadeIn - dt);
+      finale.fade = finale.fadeIn / GameScene.VIDEO_FADE;
+    }
     if (finale.video) { // mientras suena el video la secuencia espera (con un tope por si no arranca)
       finale.videoTime += dt;
       if (finale.videoTime > 40) this.endBatukVideo();
@@ -1028,12 +1069,13 @@ class GameScene {
         const startDuel = () => {
           this.showCallout('BATUK', 2.4, { y: 84, colors: ['#ffffff', '#ffd23a', '#9a5a00'], glow: '#ffb000', rim: '#2a1600' }); // el nombre aparece al empezar el duelo
           finale.phase = 'duel';
+          boss.summonInstruments();
           this.duel = new RhythmDuel(this, boss, () => this.batukDefeated(boss));
         };
         if (this.skipBatukDialogue) {
           startDuel();
         } else {
-          this.dialogue = new Dialogue(GameScene.BATUK_DIALOGUE, startDuel, (index, line) => { if (line.event === 'step') boss.stepForward(); });
+          this.dialogue = new Dialogue(GameScene.BATUK_DIALOGUE, startDuel, (index, line) => { if (line.event === 'step') boss.stepForward(); if (line.event === 'summon') boss.summonInstruments(); });
         }
       }
     }

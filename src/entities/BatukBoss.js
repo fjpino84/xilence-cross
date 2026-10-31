@@ -33,6 +33,8 @@ class BatukBoss {
     this.orbitSpeed = 1.1;
     this.instruments = [];
     this.initialSpawned = 0;
+    this.holdInstruments = false; // true = espera en su sitio sin invocar instrumentos (diálogo previo al duelo)
+    this.summonTime = 0;
     this.spawnCount = 0;
     this.emberTimer = 0;
     this.defeatTime = 0;
@@ -41,6 +43,20 @@ class BatukBoss {
     this.powerPose = 0;
     this.forward = 0;
     this.forwardTarget = 0;
+  }
+
+  // Ya plantado en su sitio de combate (sin caminar ni pisotón); los instrumentos esperan hasta summonInstruments()
+  placeReady(x) {
+    this.x = x;
+    this.targetX = x;
+    this.state = 'idle';
+    this.landedTime = 0;
+    this.holdInstruments = true;
+  }
+
+  // Los instrumentos de percusión acuden y empiezan a orbitar a su alrededor
+  summonInstruments() {
+    this.holdInstruments = false;
   }
 
   get landed() { return this.landedTime >= 0; }
@@ -90,7 +106,8 @@ class BatukBoss {
       this.orbit += dt * this.orbitSpeed;
       this.auraEffects(dt, world);
       // Los primeros instrumentos llegan escalonados, de lugares distintos
-      while (this.initialSpawned < 6 && this.landedTime > 0.3 + this.initialSpawned * 0.28) {
+      if (!this.holdInstruments) this.summonTime += dt;
+      while (!this.holdInstruments && this.initialSpawned < 6 && this.summonTime > 0.3 + this.initialSpawned * 0.28) {
         this.initialSpawned++;
         this.spawnInstrument(world);
       }
