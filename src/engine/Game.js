@@ -90,7 +90,7 @@ class Game {
     const scene = this.scenes.current;
     const lines = [
       'fps ' + this.debugFps.toFixed(0) + '  peor ' + this.debugWorst.toFixed(0) + ' ms  escala ' + this.renderScale + '  fx ' + (FX.low ? 'bajo' : 'alto'),
-      'audio ' + (audio.context ? audio.context.state : 'sin contexto') + '  voces ' + audio.voiceEnds.length + '  sfx ' + (audio.sfx ? 'ok' : 'NO'),
+      'audio ' + (audio.context ? audio.context.state : 'sin contexto') + '  voces ' + audio.voiceEnds.length + '  sfx ' + (audio.sfx ? 'ok' : 'NO') + '  descartados ' + (audio.dropped || 0) + '  nivel ' + audio.sfxLevel,
       'escena ' + (scene && scene.camera ? Math.floor(scene.camera.x / Level.TILE_STRIDE) + 1 : '-') + '  enemigos ' + (scene && scene.enemies ? scene.enemies.length : '-'),
     ];
     if (performance.memory) lines.push('memoria ' + (performance.memory.usedJSHeapSize / 1048576).toFixed(0) + ' MB');
