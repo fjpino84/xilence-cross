@@ -122,3 +122,5 @@ No se ha definido aún una licencia para el código ni para el arte, por lo que,
 - **Atajo para Rex Vane**: añade `?rex=1` a la dirección para ir directo a su escena (la 7); con `?rex=skip` además se salta su diálogo. Se puede combinar con `&skipintro=1`.
 
 - **Optimización (fase 1)**: los sprites pasaron de PNG a WebP (58,6 → 13,0 MB, sin diferencia visible; herramienta tools/to_webp.js) y las imágenes se cargan por etapas (CORE_ASSETS al abrir; ASSET_GROUPS: operador desde la escena 2, Rex Vane desde la 4 —y se libera al derrotarlo—, Batuk desde la 9, final desde la 11; los objetos sueltos y lámparas desactivados no se cargan).
+
+- **Video "intro Batuk"** (assets/video/intro-batuk.mp4, 10 s): suena al terminar el último combate, antes de que entre Batuk y empiece su diálogo con ECO. Botón SALTAR (o S, Enter o Esc); la música baja mientras suena. Se precarga al llegar a la escena 9. Con ?duel=skip se salta; con ?duel=1 se ve.

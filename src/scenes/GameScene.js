@@ -125,6 +125,7 @@ class GameScene {
   }
 
   exit() {
+    if (this.finale && this.finale.video) this.endBatukVideo();
     if (this.dialogue) this.dialogue.dispose();
     if (this.duel) this.duel.dispose();
     this.game.modal.hide();
@@ -928,15 +929,79 @@ class GameScene {
     this.camera.lockX = this.camera.x; // la cámara se queda quieta
     player.facing = 1;
     player.energy = 0;
-    this.game.audio.play('drumRumble');
     this.hud.finaleStart = this.hud.time;
+    // Video "intro Batuk" entre el último combate y la entrada de Batuk (con ?duel=skip se salta); después suena el retumbar y entra Batuk
+    if (!this.skipBatukDialogue && this.playBatukVideo()) return;
+    this.game.audio.play('drumRumble');
+  }
+
+  // Prepara el video con antelación (se pide al acercarse al final) para que empiece sin esperar
+  prepareBatukVideo() {
+    if (this.batukVideo || typeof document === 'undefined' || !document.createElement) return;
+    const video = document.createElement('video');
+    if (!video || !video.setAttribute) return;
+    video.className = 'intro-video';
+    video.src = GameScene.BATUK_VIDEO;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('aria-label', 'Introducción de Batuk');
+    video.preload = 'auto';
+    this.batukVideo = video;
+  }
+
+  // Reproduce el video sobre el lienzo con un botón para saltarlo; devuelve false si no se puede (la partida sigue sin él)
+  playBatukVideo() {
+    this.prepareBatukVideo();
+    const shell = typeof document !== 'undefined' && document.querySelector ? document.querySelector('.game-shell') : null;
+    const video = this.batukVideo;
+    if (!shell || !video || !shell.appendChild) return false;
+    this.finale.video = true;
+    this.finale.videoTime = 0;
+    shell.appendChild(video);
+    const skip = document.createElement('button');
+    skip.type = 'button';
+    skip.className = 'dialogue-skip';
+    skip.textContent = 'Saltar ▶▶';
+    skip.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); this.endBatukVideo(); });
+    shell.appendChild(skip);
+    this.batukSkip = skip;
+    this.onBatukKey = (event) => { if (!event.repeat && ['KeyS', 'Enter', 'Escape'].includes(event.code)) this.endBatukVideo(); };
+    window.addEventListener('keydown', this.onBatukKey);
+    video.onended = () => this.endBatukVideo();
+    video.onerror = () => this.endBatukVideo();
+    this.game.audio.duckMusic(true); // la música de la etapa baja mientras suena el video
+    video.currentTime = 0;
+    const attempt = video.play();
+    if (attempt && attempt.catch) attempt.catch(() => { video.muted = true; const retry = video.play(); if (retry && retry.catch) retry.catch(() => this.endBatukVideo()); });
+    return true;
+  }
+
+  endBatukVideo() {
+    const finale = this.finale;
+    if (!finale || !finale.video) return;
+    finale.video = false;
+    if (this.batukVideo) {
+      try { this.batukVideo.pause(); } catch (error) { /* ya detenido */ }
+      this.batukVideo.onended = null;
+      this.batukVideo.onerror = null;
+      if (this.batukVideo.remove) this.batukVideo.remove();
+    }
+    if (this.batukSkip) { this.batukSkip.remove(); this.batukSkip = null; }
+    if (this.onBatukKey) { window.removeEventListener('keydown', this.onBatukKey); this.onBatukKey = null; }
+    this.game.audio.duckMusic(false);
+    this.game.audio.play('drumRumble'); // empieza el retumbar: ahora entra Batuk
   }
 
   // Control de ECO anulado durante el cierre
+  static BATUK_VIDEO = 'assets/video/intro-batuk.mp4';
   static NO_INPUT = { isDown: () => false, justPressed: () => false, preserve() {}, endStep() {} };
 
   updateFinale(dt, input) {
     const finale = this.finale;
+    if (finale.video) { // mientras suena el video la secuencia espera (con un tope por si no arranca)
+      finale.videoTime += dt;
+      if (finale.videoTime > 40) this.endBatukVideo();
+      return;
+    }
     finale.time += dt;
     const world = this.world;
 
@@ -1129,7 +1194,7 @@ class GameScene {
     const scene = Math.floor(this.camera.x / Level.TILE_STRIDE); // escena de la cámara (0 = la primera)
     if (scene >= 1) Assets.loadGroup('operador');
     if (scene >= 3 && !this.rexDone) Assets.loadGroup('rex');
-    if (scene >= 8) Assets.loadGroup('batuk');
+    if (scene >= 8) { Assets.loadGroup('batuk'); this.prepareBatukVideo(); }
     if (scene >= 10) Assets.loadGroup('final');
     if (scene >= 8 && !this.rexDone && !this.enemies.some((enemy) => enemy.boss)) { this.rexDone = true; Assets.unloadGroup('rex'); }
   }
