@@ -47,7 +47,7 @@ class IntroScene {
     // Ayuda para saltar, en una esquina y sin tapar el video
     const hint = document.createElement('div');
     hint.className = 'intro-skip';
-    hint.textContent = (typeof TouchControls !== 'undefined' && TouchControls.enabled) ? 'Toca para saltar ▶' : 'ENTER para saltar ▶';
+    hint.textContent = (typeof TouchControls !== 'undefined' && TouchControls.enabled) ? 'Toca para saltar »' : 'ENTER para saltar ▶';
     shell.appendChild(hint);
     this.hint = hint;
     this.attachSkip();

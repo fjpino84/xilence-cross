@@ -164,16 +164,33 @@ class AudioManager {
   static BOSS_BOOST = 2.4; // ganancia extra de la canción del jefe (ver boostBoss)
 
   // Empieza la canción del jefe desde el principio; la música de fondo normal se apaga con un fundido cruzado
+  // Crea el elemento de audio de la canción del jefe (una sola vez)
+  ensureBoss() {
+    if (this.boss || typeof Audio === 'undefined') return;
+    this.boss = new Audio(AudioManager.BOSS_MUSIC);
+    this.boss.preload = 'auto';
+    this.boss.loop = false;
+    this.bossError = false;
+    this.boss.addEventListener('error', () => { this.bossError = true; });
+  }
+
+  // En iPhone un audio solo puede sonar después por código si antes se lanzó dentro de un toque: se "abre" ahora (en silencio) para que
+  // la canción pueda empezar sola cuando arranque el diálogo con Batuk
+  primeBoss() {
+    this.ensureBoss();
+    if (!this.boss || this.bossPrimed) return;
+    this.bossPrimed = true;
+    const boss = this.boss;
+    boss.muted = true;
+    const attempt = boss.play();
+    const restore = () => { boss.pause(); try { boss.currentTime = 0; } catch (error) { /* sin metadatos */ } boss.muted = this.muted; };
+    if (attempt && attempt.then) attempt.then(restore).catch(() => { boss.muted = this.muted; });
+  }
+
   startBoss() {
     this.pauseMusic(true, 1.4);
-    if (typeof Audio === 'undefined') return;
-    if (!this.boss) {
-      this.boss = new Audio(AudioManager.BOSS_MUSIC);
-      this.boss.preload = 'auto';
-      this.boss.loop = false;
-      this.bossError = false;
-      this.boss.addEventListener('error', () => { this.bossError = true; });
-    }
+    this.ensureBoss();
+    if (!this.boss) return;
     this.boostBoss();
     this.boss.volume = 0;
     this.boss.muted = this.muted;

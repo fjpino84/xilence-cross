@@ -978,7 +978,7 @@ class GameScene {
     const skip = document.createElement('button');
     skip.type = 'button';
     skip.className = 'dialogue-skip';
-    skip.textContent = 'Saltar ▶▶';
+    skip.textContent = 'Saltar »';
     skip.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); this.endBatukVideo(); });
     shell.appendChild(skip);
     this.batukSkip = skip;
@@ -986,7 +986,7 @@ class GameScene {
     window.addEventListener('keydown', this.onBatukKey);
     video.onended = () => this.endBatukVideo();
     video.onerror = () => this.endBatukVideo();
-    this.game.audio.duckMusic(true); // la música de la etapa baja mientras suena el video
+    this.game.audio.pauseMusic(true, 0.2); // la música de la etapa calla mientras suena el video
     video.currentTime = 0;
     const attempt = video.play();
     if (attempt && attempt.catch) attempt.catch(() => { video.muted = true; const retry = video.play(); if (retry && retry.catch) retry.catch(() => this.endBatukVideo()); });
@@ -998,6 +998,7 @@ class GameScene {
     const shell = typeof document !== 'undefined' && document.querySelector ? document.querySelector('.game-shell') : null;
     if (!shell || !shell.appendChild) return false;
     this.finale.card = true;
+    this.game.audio.pauseMusic(true, 0.8); // la música del juego calla mientras dura la presentación y el video
     const card = document.createElement('div');
     card.className = 'batuk-card';
     card.setAttribute('role', 'note');
@@ -1007,13 +1008,17 @@ class GameScene {
     const quote = document.createElement('p');
     quote.className = 'batuk-card-quote';
     quote.textContent = GameScene.BATUK_QUOTE;
-    card.append(name, quote);
+    const hint = document.createElement('p');
+    hint.className = 'batuk-card-hint';
+    hint.textContent = (typeof IS_TOUCH_DEVICE !== 'undefined' && IS_TOUCH_DEVICE) ? 'Toca para continuar' : 'Enter para continuar';
+    card.append(name, quote, hint);
     card.addEventListener('click', (event) => { event.preventDefault(); this.endBatukCard(true); });
     shell.appendChild(card);
     this.batukCard = card;
     this.onCardKey = (event) => { if (!event.repeat && ['KeyS', 'Enter', 'Escape', 'Space'].includes(event.code)) this.endBatukCard(true); };
     window.addEventListener('keydown', this.onCardKey);
-    this.cardTimer = setTimeout(() => this.endBatukCard(true), GameScene.CARD_TIME * 1000);
+    // En móviles el video con sonido solo puede arrancar tras un toque: la presentación espera ese toque. En computador se cierra sola
+    if (!(typeof IS_TOUCH_DEVICE !== 'undefined' && IS_TOUCH_DEVICE)) this.cardTimer = setTimeout(() => this.endBatukCard(true), GameScene.CARD_TIME * 1000);
     return true;
   }
 
@@ -1030,6 +1035,7 @@ class GameScene {
       card.classList.add('out');
       setTimeout(() => { if (card.remove) card.remove(); }, 700);
     }
+    if (startVideo) this.game.audio.primeBoss(); // dentro del toque: deja lista la canción de Batuk para el diálogo
     if (startVideo && !this.playBatukVideo()) this.readyBatukScene();
   }
 

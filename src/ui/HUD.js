@@ -503,9 +503,31 @@ class HUD {
     Draw.rock(ctx, '¡AVANZA!', CONFIG.WIDTH - 96 + bounce, CONFIG.HEIGHT / 2 - 40, {
       size: 44, align: 'right', colors: ['#ffffff', '#ffe600', '#d06000'], glow: '#ffb000', glowBlur: 16, rim: '#4a2400',
     });
-    Draw.rock(ctx, '▶▶', CONFIG.WIDTH - 26 + bounce, CONFIG.HEIGHT / 2 - 40, {
-      size: 40, align: 'right', colors: ['#ffffff', '#ffe600', '#d06000'], glow: '#ffb000', glowBlur: 16, rim: '#4a2400', skew: 0,
-    });
+    // Dos puntas de flecha dibujadas como figuras (las letras ▶ no existen en todos los móviles y salían como cuadrados)
+    const tipX = CONFIG.WIDTH - 22 + bounce;
+    const tipY = CONFIG.HEIGHT / 2 - 58;
+    ctx.save();
+    ctx.shadowColor = '#ffb000';
+    ctx.shadowBlur = 14;
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#4a2400';
+    const gradient = ctx.createLinearGradient(0, tipY - 20, 0, tipY + 20);
+    gradient.addColorStop(0, '#ffffff');
+    gradient.addColorStop(0.5, '#ffe600');
+    gradient.addColorStop(1, '#d06000');
+    ctx.fillStyle = gradient;
+    for (let i = 0; i < 2; i++) {
+      const x = tipX - i * 26;
+      ctx.beginPath();
+      ctx.moveTo(x, tipY);
+      ctx.lineTo(x - 22, tipY - 20);
+      ctx.lineTo(x - 22, tipY + 20);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
   renderControlsHint(ctx) {

@@ -37,7 +37,7 @@ class Dialogue {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'dialogue-skip';
-    button.textContent = 'Saltar ▶▶';
+    button.textContent = 'Saltar »';
     button.setAttribute('aria-label', 'Saltar el diálogo');
     button.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); this.skip(); });
     this.onKey = (event) => { if (event.code === 'KeyS' && !event.repeat) this.skip(); };

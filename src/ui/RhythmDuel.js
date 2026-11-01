@@ -992,7 +992,7 @@ class RhythmDuel {
     });
     Draw.rock(ctx, this.rank, x + width - 62, y + 190, { size: 96, align: 'center', colors: ['#ffffff', '#ffe600', '#c46a00'], glow: '#ffb000', glowBlur: 16, outlineWidth: 10 });
     if (this.stateTime > 1.6 && Math.floor(this.age * 2.5) % 2 === 0) {
-      Draw.text(ctx, 'ENTER ▶', CONFIG.WIDTH / 2, y + height - 22, { size: 20, align: 'center', color: '#00f5ff', strokeWidth: 4 });
+      Draw.text(ctx, 'ENTER »', CONFIG.WIDTH / 2, y + height - 22, { size: 20, align: 'center', color: '#00f5ff', strokeWidth: 4 });
     }
     ctx.restore();
   }
