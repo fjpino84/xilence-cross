@@ -125,6 +125,7 @@ class GameScene {
   }
 
   exit() {
+    if (this.finale && this.finale.card) this.endBatukCard(false);
     if (this.finale && this.finale.video) this.endBatukVideo();
     if (this.dialogue) this.dialogue.dispose();
     if (this.duel) this.duel.dispose();
@@ -983,6 +984,46 @@ class GameScene {
     return true;
   }
 
+  // Pantalla de presentación de Batuk antes del video: su nombre y una frase, sobre fondo negro (se cierra sola o al tocar / pulsar S, Enter, Escape)
+  showBatukCard() {
+    const shell = typeof document !== 'undefined' && document.querySelector ? document.querySelector('.game-shell') : null;
+    if (!shell || !shell.appendChild) return false;
+    this.finale.card = true;
+    const card = document.createElement('div');
+    card.className = 'batuk-card';
+    card.setAttribute('role', 'note');
+    const name = document.createElement('div');
+    name.className = 'batuk-card-name';
+    name.textContent = 'BATUK';
+    const quote = document.createElement('p');
+    quote.className = 'batuk-card-quote';
+    quote.textContent = GameScene.BATUK_QUOTE;
+    card.append(name, quote);
+    card.addEventListener('click', (event) => { event.preventDefault(); this.endBatukCard(true); });
+    shell.appendChild(card);
+    this.batukCard = card;
+    this.onCardKey = (event) => { if (!event.repeat && ['KeyS', 'Enter', 'Escape', 'Space'].includes(event.code)) this.endBatukCard(true); };
+    window.addEventListener('keydown', this.onCardKey);
+    this.cardTimer = setTimeout(() => this.endBatukCard(true), GameScene.CARD_TIME * 1000);
+    return true;
+  }
+
+  // Cierra la presentación con un fundido y, si corresponde, arranca el video
+  endBatukCard(startVideo) {
+    const finale = this.finale;
+    if (!finale || !finale.card) return;
+    finale.card = false;
+    clearTimeout(this.cardTimer);
+    if (this.onCardKey) { window.removeEventListener('keydown', this.onCardKey); this.onCardKey = null; }
+    const card = this.batukCard;
+    this.batukCard = null;
+    if (card) {
+      card.classList.add('out');
+      setTimeout(() => { if (card.remove) card.remove(); }, 700);
+    }
+    if (startVideo && !this.playBatukVideo()) this.readyBatukScene();
+  }
+
   endBatukVideo() {
     const finale = this.finale;
     if (!finale || !finale.video) return;
@@ -1017,6 +1058,8 @@ class GameScene {
 
   // Control de ECO anulado durante el cierre
   static BATUK_VIDEO = 'assets/video/intro-batuk.mp4';
+  static BATUK_QUOTE = 'El ritmo no miente. Es la estructura que sobrevive cuando todo lo demás se apaga.';
+  static CARD_TIME = 6; // segundos que se queda la presentación de Batuk
   static VIDEO_LEAD = 1.3; // fundido a negro antes del video
   static VIDEO_FADE = 0.8; // entrada y salida suave del video
   static NO_INPUT = { isDown: () => false, justPressed: () => false, preserve() {}, endStep() {} };
@@ -1029,10 +1072,11 @@ class GameScene {
       finale.fade = Math.min(1, 1 - finale.lead / GameScene.VIDEO_LEAD);
       if (finale.lead <= 0) {
         finale.lead = 0;
-        if (!this.playBatukVideo()) this.readyBatukScene();
+        if (!this.showBatukCard() && !this.playBatukVideo()) this.readyBatukScene();
       }
       return;
     }
+    if (finale.card) return; // la pantalla de presentación de Batuk espera su turno
     // Fundido de entrada a la escena de diálogo tras el video
     if (finale.fadeIn > 0) {
       finale.fadeIn = Math.max(0, finale.fadeIn - dt);
