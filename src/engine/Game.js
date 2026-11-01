@@ -28,6 +28,19 @@ class Game {
     // Safari en iPhone solo permite sonido tras soltar el dedo (touchend) o un clic
     window.addEventListener('touchend', unlock, { passive: true });
     window.addEventListener('click', unlock);
+    // La sombra (resplandor) se mide en píxeles reales: al subir la resolución se amplía para que los resplandores no se vean más finos
+    this.shadowScale = 1;
+    if (typeof CanvasRenderingContext2D !== 'undefined') {
+      const native = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'shadowBlur');
+      const game = this;
+      if (native && native.get && native.set) {
+        Object.defineProperty(this.ctx, 'shadowBlur', { get() { return native.get.call(this) / game.shadowScale; }, set(value) { native.set.call(this, value * game.shadowScale); }, configurable: true });
+      }
+    }
+    // En pantallas grandes (computador) el lienzo se dibuja a más resolución para que se vea nítido
+    this.fitResolution();
+    let resizeTimer = null;
+    window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => this.fitResolution(), 250); });
     if (FX.low) this.enableLowFx();
     this.debug = /[?&]debug=1/.test(window.location.search || '');
     if (this.debug) window.addEventListener('error', (event) => { window.lastError = event.message; });
@@ -53,15 +66,35 @@ class Game {
     // Se mide en segundos (no en fotogramas) para que un dispositivo muy lento también lo detecte pronto
     if (frameSeconds > 0.026) this.slowTime += Math.min(frameSeconds, 0.25);
     else this.slowTime = Math.max(0, this.slowTime - frameSeconds * 2);
-    if (this.slowTime > 2.5) this.enableLowFx();
+    if (this.slowTime > 2.5) {
+      // Antes de quitar efectos se baja la resolución si estaba por encima de la base
+      if (this.renderScale > 1) { this.setRenderScale(1); this.slowTime = 0; } else this.enableLowFx();
+    }
+  }
+
+  // Ajusta la resolución interna al tamaño real del lienzo en pantalla (solo computador; ?res=1 la deja en 960×540)
+  fitResolution() {
+    if (this.lowRes || (typeof IS_TOUCH_DEVICE !== 'undefined' && IS_TOUCH_DEVICE) || /[?&]res=1/.test(window.location.search || '')) return;
+    if (!this.canvas.getBoundingClientRect) return;
+    const width = this.canvas.getBoundingClientRect().width * (window.devicePixelRatio || 1);
+    const scale = Math.max(1, Math.min(1.5, Math.round((width / CONFIG.WIDTH) * 4) / 4));
+    if (scale !== this.renderScale) this.applyScale(scale);
+  }
+
+  // Aplica una escala de resolución al lienzo y a los cachés que dependen de ella
+  applyScale(scale) {
+    this.renderScale = scale;
+    this.canvas.width = Math.round(CONFIG.WIDTH * scale);
+    this.canvas.height = Math.round(CONFIG.HEIGHT * scale);
+    this.shadowScale = Math.max(1, scale);
+    Draw.res = Math.max(1, scale);
+    Draw.rockCache.clear();
   }
 
   // Cambia la resolución interna del lienzo (las coordenadas del juego siguen siendo 960×540)
   setRenderScale(scale) {
-    this.renderScale = scale;
-    this.lowRes = true;
-    this.canvas.width = Math.round(CONFIG.WIDTH * scale);
-    this.canvas.height = Math.round(CONFIG.HEIGHT * scale);
+    this.lowRes = true; // desde aquí la resolución ya no se ajusta sola
+    this.applyScale(scale);
     console.info('Resolución reducida a ' + scale);
   }
 

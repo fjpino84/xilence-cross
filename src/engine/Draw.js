@@ -40,6 +40,7 @@ const Draw = {
   // Caché de textos de rock: dibujar contorno triple + degradado + resplandor cada fotograma era lo más caro de toda la escena.
   // Cada texto se pinta una vez en un lienzo pequeño y después solo se copia (~50 veces más barato).
   rockCache: new Map(),
+  res: 1, // resolución interna del lienzo (1 = 960×540; en pantallas grandes sube hasta 1,5): los textos en caché se pintan a esa resolución
   ROCK_CACHE_MAX: 220,
 
   // Texto de rock: cromado inclinado, con contorno grueso, sombra y brillo.
@@ -47,7 +48,7 @@ const Draw = {
   rock(ctx, str, x, y, options = {}) {
     // Con zoom (banner que entra de golpe, título que late) el mapa de bits saldría borroso: se dibuja directo
     const matrix = ctx.getTransform();
-    if (typeof document === 'undefined' || Math.abs(matrix.a - 1) > 0.12 || Math.abs(matrix.d - 1) > 0.12 || matrix.b || matrix.c) {
+    if (typeof document === 'undefined' || Math.abs(matrix.a / this.res - 1) > 0.12 || Math.abs(matrix.d / this.res - 1) > 0.12 || matrix.b || matrix.c) {
       this.rockDirect(ctx, str, x, y, options);
       return;
     }
@@ -57,7 +58,7 @@ const Draw = {
     } = options;
     const qSize = Math.round(size / 2) * 2; // tamaños cercanos comparten imagen
     const qGlow = glow ? Math.round(glowBlur / 6) * 6 : 0;
-    const key = [str, qSize, align, colors.join(), skew, glow, qGlow, tracking, rim, Math.round(outlineWidth)].join('|');
+    const key = [str, qSize, align, colors.join(), skew, glow, qGlow, tracking, rim, Math.round(outlineWidth), this.res].join('|');
     let entry = this.rockCache.get(key);
     if (!entry) {
       entry = this.buildRock(str, { ...options, size: qSize, glowBlur: qGlow || glowBlur, outlineWidth: outlineWidth * qSize / size });
@@ -69,7 +70,7 @@ const Draw = {
     }
     ctx.save();
     ctx.globalAlpha *= alpha;
-    ctx.drawImage(entry.canvas, x - entry.originX, y - entry.originY);
+    ctx.drawImage(entry.canvas, x - entry.originX, y - entry.originY, entry.width, entry.height);
     ctx.restore();
   },
 
@@ -83,12 +84,16 @@ const Draw = {
     const pad = Math.ceil(outlineWidth * 0.8 + size * 0.15 + (glow ? glowBlur * 1.6 : 0) + 4);
     const slant = Math.ceil(skew * size);
     const canvas = document.createElement('canvas');
-    canvas.width = width + pad * 2 + slant;
-    canvas.height = Math.ceil(size * 1.3) + pad * 2;
+    const logicalWidth = width + pad * 2 + slant;
+    const logicalHeight = Math.ceil(size * 1.3) + pad * 2;
+    canvas.width = Math.ceil(logicalWidth * this.res);
+    canvas.height = Math.ceil(logicalHeight * this.res);
     const originX = pad + (align === 'center' ? width / 2 : align === 'right' ? width : 0);
     const originY = pad + Math.ceil(size * 0.95);
-    this.rockDirect(canvas.getContext('2d'), str, originX, originY, { ...options, alpha: 1 });
-    return { canvas, originX, originY };
+    const context = canvas.getContext('2d');
+    context.scale(this.res, this.res);
+    this.rockDirect(context, str, originX, originY, { ...options, alpha: 1 });
+    return { canvas, originX, originY, width: canvas.width / this.res, height: canvas.height / this.res };
   },
 
   rockDirect(ctx, str, x, y, options = {}) {
