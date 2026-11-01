@@ -45,7 +45,7 @@ const Draw = {
   // Caché de textos de rock: dibujar contorno triple + degradado + resplandor cada fotograma era lo más caro de toda la escena.
   // Cada texto se pinta una vez en un lienzo pequeño y después solo se copia (~50 veces más barato).
   rockCache: new Map(),
-  res: 1, // resolución interna del lienzo (1 = 960×540; en pantallas grandes sube hasta 1,5): los textos en caché se pintan a esa resolución
+  res: 1, // resolución interna del lienzo (1 = 960×540; en pantallas grandes sube hasta 1,25): los textos en caché se pintan a esa resolución
   ROCK_CACHE_MAX: 220,
 
   // Texto de rock: cromado inclinado, con contorno grueso, sombra y brillo.

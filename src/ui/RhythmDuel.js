@@ -50,6 +50,7 @@ class RhythmDuel {
     // y se callan los ruidos ambientales (truenos, descargas eléctricas, helicóptero…)
     this.game.audio.setSfxFilter(this.song === TrackMusic ? RhythmDuel.QUIET_SFX : null);
     this.game.audio.setSfxLevel(this.song === TrackMusic ? 0.04 : 1);
+    this.game.setHeavyScene(true); // el duelo está lleno de resplandores: se dibuja a la resolución base para que no se trabe
   }
 
   get active() { return !this.done; }
@@ -103,6 +104,7 @@ class RhythmDuel {
     this.music.stop();
     this.done = true;
     this.setPaused(false);
+    this.game.setHeavyScene(false);
     this.game.audio.setSfxFilter(null);
     this.game.audio.setSfxLevel(1);
     // Con la canción del jefe la música de la etapa NO vuelve al terminar el duelo (se libera al volver al menú)

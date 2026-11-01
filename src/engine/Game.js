@@ -74,11 +74,18 @@ class Game {
 
   // Ajusta la resolución interna al tamaño real del lienzo en pantalla (solo computador; ?res=1 la deja en 960×540)
   fitResolution() {
-    if (this.lowRes || (typeof IS_TOUCH_DEVICE !== 'undefined' && IS_TOUCH_DEVICE) || /[?&]res=1/.test(window.location.search || '')) return;
+    if (this.lowRes || this.heavyScene || (typeof IS_TOUCH_DEVICE !== 'undefined' && IS_TOUCH_DEVICE) || /[?&]res=1/.test(window.location.search || '')) return;
     if (!this.canvas.getBoundingClientRect) return;
     const width = this.canvas.getBoundingClientRect().width * (window.devicePixelRatio || 1);
-    const scale = Math.max(1, Math.min(1.5, Math.round((width / CONFIG.WIDTH) * 4) / 4));
+    const scale = Math.max(1, Math.min(1.25, Math.round((width / CONFIG.WIDTH) * 4) / 4));
     if (scale !== this.renderScale) this.applyScale(scale);
+  }
+
+  // En escenas muy cargadas de efectos (el duelo) la resolución vuelve a la base; al salir se recupera la que corresponde a la pantalla
+  setHeavyScene(on) {
+    this.heavyScene = on;
+    if (on && this.renderScale > 1) this.applyScale(1);
+    else if (!on) this.fitResolution();
   }
 
   // Aplica una escala de resolución al lienzo y a los cachés que dependen de ella
