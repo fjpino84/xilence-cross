@@ -118,6 +118,30 @@ class Level {
     });
   }
 
+  // Libera todas las escenas fuera del rango [from, to] (imagen, copia escalada y máscara de líquido)
+  releaseTiles(from, to) {
+    const sequence = this.config.backgroundSequence;
+    if (!sequence) return;
+    sequence.forEach((tile, index) => {
+      if (index >= from && index <= to) return;
+      if (Assets.image(tile.key)) Assets.unload(tile.key);
+      this.tileCanvases[index] = null;
+      if (this.liquid && this.liquid.masks) this.liquid.masks[index] = undefined;
+    });
+  }
+
+  // Carga las escenas del rango [from, to] que falten; devuelve una promesa
+  loadTiles(from, to) {
+    const sequence = this.config.backgroundSequence;
+    if (!sequence) return Promise.resolve();
+    const jobs = [];
+    sequence.forEach((tile, index) => {
+      if (index < from || index > to || Assets.image(tile.key)) return;
+      jobs.push(Assets.loadOne(tile.key, 'assets/backgrounds/nivel1/escena-' + (index + 1) + '.webp'));
+    });
+    return Promise.all(jobs);
+  }
+
   // Ilustración de la secuencia ya escalada, reflejada si toca y con el borde izquierdo difuminado (salvo la primera)
   tileCanvas(index) {
     if (this.tileCanvases[index]) return this.tileCanvases[index];

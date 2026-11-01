@@ -1087,10 +1087,12 @@ class GameScene {
       finale.fade = Math.min(1, 1 - finale.lead / GameScene.VIDEO_LEAD);
       if (finale.lead <= 0) {
         finale.lead = 0;
-        if (!this.showBatukCard() && !this.playBatukVideo()) this.readyBatukScene();
+        const next = () => { if (!this.showBatukCard() && !this.playBatukVideo()) this.readyBatukScene(); };
+        if (IS_TOUCH_DEVICE && !this.loadGate) this.startLoadStage2(next); else next();
       }
       return;
     }
+    if (finale.gating) return; // pantalla de carga de la etapa 2
     if (finale.card) return; // la pantalla de presentación de Batuk espera su turno
     // Fundido de entrada a la escena de diálogo tras el video
     if (finale.fadeIn > 0) {
@@ -1197,6 +1199,7 @@ class GameScene {
   // ECO gana el duelo: Batuk cae y, pasado un momento, aparece la imagen de derrota
   batukDefeated(boss) {
     this.duel = null;
+    Assets.loadGroup('final'); // lo de la pantalla final se pide ahora (en móviles no se cargó antes)
     this.game.audio.keepBoss(); // la canción de Batuk sigue sonando tras el duelo (no vuelve la de la etapa)
     this.finale.phase = 'defeat';
     this.finale.defeatTime = 0;
@@ -1231,7 +1234,7 @@ class GameScene {
   update(dt) {
     const input = this.game.input;
     if (!this.finished && input.justPressed('pause')) this.togglePause();
-    if (this.paused) return;
+    if (this.paused || this.loadGate) return; // durante una pantalla de carga la partida espera
     if (this.duel) this.duel.update(dt, input);
     if (this.dialogue) {
       this.updateDialogue(dt, input);
@@ -1295,11 +1298,111 @@ class GameScene {
     const scene = Math.floor(this.camera.x / Level.TILE_STRIDE); // escena de la cámara (0 = la primera)
     if (scene >= 1) Assets.loadGroup('operador');
     if (scene >= 3 && !this.rexDone) Assets.loadGroup('rex');
-    // En móviles el video se prepara solo al llegar a la última escena: tenerlo almacenado y decodificándose mientras se pelea quitaba recursos al audio
-    if (scene >= (IS_TOUCH_DEVICE ? 10 : 8)) Assets.loadGroup('batuk');
-    if (scene >= (IS_TOUCH_DEVICE ? 11 : 8)) this.prepareBatukVideo();
-    if (scene >= (IS_TOUCH_DEVICE ? 11 : 10)) Assets.loadGroup('final');
-    if (scene >= 8 && !this.rexDone && !this.enemies.some((enemy) => enemy.boss)) { this.rexDone = true; Assets.unloadGroup('rex'); }
+    const bossAlive = this.enemies.some((enemy) => enemy.boss);
+    if (bossAlive) this.rexSeen = true;
+    if (IS_TOUCH_DEVICE) {
+      // Móviles: la carga se hace por etapas con pantalla de carga. Al caer Rex Vane se suelta todo lo anterior (etapa 1) y antes de
+      // Batuk se suelta lo de los adversarios y se carga lo de Batuk (etapa 2, ver startLoadStage2). Nada de Batuk se carga antes.
+      if (!this.rexDone && !this.loadGate && !this.finale && ((this.rexSeen && !bossAlive) || (scene >= 8 && !bossAlive))) this.startLoadStage1();
+      return;
+    }
+    if (scene >= 8) { Assets.loadGroup('batuk'); this.prepareBatukVideo(); }
+    if (scene >= 10) Assets.loadGroup('final');
+    if (scene >= 8 && !this.rexDone && !bossAlive) { this.rexDone = true; Assets.unloadGroup('rex'); }
+  }
+
+  // ---------------------------------------------------------------- pantallas de carga (móviles)
+
+  // Muestra una pantalla de carga con barra de progreso, ejecuta la tarea (que recibe setProgress(0-1)) y la quita. La partida espera mientras tanto
+  runLoadGate(title, task, minSeconds = 1.6) {
+    const shell = typeof document !== 'undefined' && document.querySelector ? document.querySelector('.game-shell') : null;
+    if (!shell || !shell.appendChild) return Promise.resolve().then(() => task(() => {})).catch(() => {});
+    this.loadGate = true;
+    const gate = document.createElement('div');
+    gate.className = 'load-gate';
+    gate.setAttribute('role', 'status');
+    const heading = document.createElement('p');
+    heading.className = 'load-gate-title';
+    heading.textContent = title;
+    const bar = document.createElement('div');
+    bar.className = 'load-gate-bar';
+    const fill = document.createElement('div');
+    fill.className = 'load-gate-fill';
+    bar.appendChild(fill);
+    const hint = document.createElement('p');
+    hint.className = 'load-gate-hint';
+    hint.textContent = 'Cargando…';
+    gate.append(heading, bar, hint);
+    shell.appendChild(gate);
+    const started = performance.now();
+    const setProgress = (value) => { fill.style.width = Math.round(Math.max(0, Math.min(1, value)) * 100) + '%'; };
+    setProgress(0.02);
+    return Promise.resolve().then(() => task(setProgress)).catch(() => {}).then(() => {
+      setProgress(1);
+      const wait = Math.max(0, minSeconds * 1000 - (performance.now() - started));
+      return new Promise((resolve) => setTimeout(resolve, wait));
+    }).then(() => {
+      gate.classList.add('out');
+      setTimeout(() => { if (gate.remove) gate.remove(); }, 500);
+      this.loadGate = false;
+    });
+  }
+
+  // Espera a que termine la carga de un grupo (con tope de tiempo) avanzando la barra de from a to
+  async waitForGroup(name, setProgress, from, to) {
+    const started = performance.now();
+    while (Assets.groupPending(name) && performance.now() - started < 25000) {
+      setProgress(from + (to - from) * Math.min(0.95, (performance.now() - started) / 6000));
+      await new Promise((resolve) => setTimeout(resolve, 120));
+    }
+    setProgress(to);
+  }
+
+  // Libera lo que ya no hace falta fuera de las escenas indicadas y vacía las copias de color y textos en caché
+  freeMemory(keepFrom, keepTo) {
+    this.level.releaseTiles(keepFrom, keepTo);
+    if (typeof Sprite !== 'undefined') { Sprite.variantCache.clear(); Sprite.variantCount = 0; }
+    if (typeof Draw !== 'undefined') Draw.rockCache.clear();
+  }
+
+  // Etapa 1 (móviles): cae Rex Vane. Se libera todo lo de atrás (Rex y escenas pasadas) y se carga lo que viene
+  startLoadStage1() {
+    this.rexDone = true;
+    this.runLoadGate('Preparando el siguiente tramo', async (setProgress) => {
+      Assets.unloadGroup('rex');
+      const current = Math.floor(this.camera.x / Level.TILE_STRIDE);
+      this.freeMemory(current, current + 3);
+      setProgress(0.2);
+      await Promise.all([this.level.loadTiles(current, current + 3), Assets.loadGroup('operador')]);
+      setProgress(1);
+    });
+  }
+
+  // Etapa 2 (móviles): terminó el último combate. Se libera lo de los adversarios y las escenas anteriores y se carga solo lo de Batuk
+  startLoadStage2(then) {
+    this.finale.gating = true;
+    this.runLoadGate('Preparando el combate con Batuk', async (setProgress) => {
+      Assets.unloadGroup('rex');
+      Assets.unloadGroup('operador');
+      const last = this.level.config.backgroundSequence.length - 1;
+      this.freeMemory(last - 1, last);
+      setProgress(0.15);
+      await Promise.all([this.level.loadTiles(last - 1, last), Assets.loadGroup('batuk')]);
+      setProgress(0.5);
+      await this.waitForGroup('batuk', setProgress, 0.5, 0.75);
+      // El video se baja ahora (y no antes) para que la presentación y el video arranquen sin esperas
+      this.prepareBatukVideo();
+      const video = this.batukVideo;
+      if (video && video.addEventListener && video.readyState < 3) {
+        await new Promise((resolve) => {
+          const done = () => resolve();
+          video.addEventListener('canplay', done, { once: true });
+          video.addEventListener('error', done, { once: true });
+          setTimeout(done, 15000);
+        });
+      }
+      setProgress(1);
+    }).then(() => { this.finale.gating = false; then(); });
   }
 
   updateFeedback(dt) {

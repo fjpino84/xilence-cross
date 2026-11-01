@@ -391,6 +391,16 @@
       text-shadow: 2px 2px 0 #000; animation: cardQuote 1.6s ease-out 0.9s both;
     }
     .batuk-card-hint { margin: 10px 0 0; font-family: var(--comic); font-size: clamp(11px, 2.4vh, 18px); letter-spacing: 0.12em; text-transform: uppercase; color: #9a8a62; animation: cardQuote 1.6s ease-out 2.6s both; }
+    /* Pantalla de carga entre etapas (móviles) */
+    .load-gate {
+      position: absolute; inset: 0; z-index: 9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+      background: #03030a; animation: cardIn 0.4s ease-out both;
+    }
+    .load-gate.out { animation: cardOut 0.5s ease-in both; pointer-events: none; }
+    .load-gate-title { margin: 0; font-family: var(--comic); font-size: clamp(22px, 6vh, 46px); letter-spacing: 0.08em; color: #ffe600; text-shadow: 3px 3px 0 #000, 0 0 16px #ff9a00; }
+    .load-gate-bar { width: min(60%, 420px); height: 14px; border: 3px solid var(--cyan); background: rgba(0, 245, 255, 0.08); transform: skewX(-12deg); box-shadow: 0 0 14px rgba(0, 245, 255, 0.5); }
+    .load-gate-fill { height: 100%; width: 0; background: linear-gradient(90deg, #00f5ff, #7c3aff); transition: width 0.25s ease-out; }
+    .load-gate-hint { margin: 0; font-family: var(--comic); font-size: clamp(11px, 2.6vh, 20px); letter-spacing: 0.14em; text-transform: uppercase; color: #8da2bd; }
     @keyframes cardIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes cardOut { from { opacity: 1; } to { opacity: 0; } }
     @keyframes cardQuote { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -410,55 +420,55 @@
   </main>
 
   <!-- Orden de carga: configuración → motor → entidades → niveles → UI → escenas → arranque -->
-  <script src="src/config.js?v=173"></script>
-  <script src="src/engine/Draw.js?v=173"></script>
-  <script src="src/engine/Assets.js?v=173"></script>
-  <script src="src/engine/Sprite.js?v=173"></script>
-  <script src="src/engine/ParticleSystem.js?v=173"></script>
-  <script src="src/engine/SfxData.js?v=173"></script>
-  <script src="src/engine/AudioManager.js?v=173"></script>
-  <script src="src/engine/InputManager.js?v=173"></script>
-  <script src="src/engine/TouchControls.js?v=173"></script>
-  <script src="src/engine/Camera.js?v=173"></script>
-  <script src="src/engine/Collision.js?v=173"></script>
-  <script src="src/engine/Records.js?v=173"></script>
-  <script src="src/engine/DuelMusic.js?v=173"></script>
-  <script src="src/levels/BatukChart.js?v=173"></script>
-  <script src="src/engine/TrackMusic.js?v=173"></script>
-  <script src="src/engine/SceneManager.js?v=173"></script>
-  <script src="src/engine/Game.js?v=173"></script>
-  <script src="src/entities/Entity.js?v=173"></script>
-  <script src="src/entities/Player.js?v=173"></script>
-  <script src="src/entities/Trino.js?v=173"></script>
-  <script src="src/entities/VoidharFinale.js?v=173"></script>
-  <script src="src/entities/BatukBoss.js?v=173"></script>
-  <script src="src/entities/enemies/Enemy.js?v=173"></script>
-  <script src="src/entities/DefeatFrames.js?v=173"></script>
-  <script src="src/entities/enemies/Operador.js?v=173"></script>
-  <script src="src/entities/enemies/Silenciador.js?v=173"></script>
-  <script src="src/entities/enemies/RexVane.js?v=173"></script>
-  <script src="src/levels/PuddleData.js?v=173"></script>
-  <script src="src/levels/OccluderData.js?v=173"></script>
-  <script src="src/levels/Level.js?v=173"></script>
-  <script src="src/levels/Atmosphere.js?v=173"></script>
-  <script src="src/levels/Foreground.js?v=173"></script>
-  <script src="src/levels/LiveBackground.js?v=173"></script>
-  <script src="src/levels/Liquid.js?v=173"></script>
-  <script src="src/levels/Props.js?v=173"></script>
-  <script src="src/levels/Level01.js?v=173"></script>
-  <script src="src/levels/Level02.js?v=173"></script>
-  <script src="src/levels/Level04.js?v=173"></script>
-  <script src="src/levels/Level07.js?v=173"></script>
-  <script src="src/ui/HUD.js?v=173"></script>
-  <script src="src/ui/Modal.js?v=173"></script>
-  <script src="src/ui/Dialogue.js?v=173"></script>
-  <script src="src/ui/DefeatCard.js?v=173"></script>
-  <script src="src/ui/RhythmDuel.js?v=173"></script>
-  <script src="src/scenes/TitleScene.js?v=173"></script>
-  <script src="src/scenes/IntroScene.js?v=173"></script>
-  <script src="src/scenes/GameScene.js?v=173"></script>
-  <script src="src/scenes/GameOverScene.js?v=173"></script>
-  <script src="src/scenes/EndingScene.js?v=173"></script>
-  <script src="src/main.js?v=173"></script>
+  <script src="src/config.js?v=174"></script>
+  <script src="src/engine/Draw.js?v=174"></script>
+  <script src="src/engine/Assets.js?v=174"></script>
+  <script src="src/engine/Sprite.js?v=174"></script>
+  <script src="src/engine/ParticleSystem.js?v=174"></script>
+  <script src="src/engine/SfxData.js?v=174"></script>
+  <script src="src/engine/AudioManager.js?v=174"></script>
+  <script src="src/engine/InputManager.js?v=174"></script>
+  <script src="src/engine/TouchControls.js?v=174"></script>
+  <script src="src/engine/Camera.js?v=174"></script>
+  <script src="src/engine/Collision.js?v=174"></script>
+  <script src="src/engine/Records.js?v=174"></script>
+  <script src="src/engine/DuelMusic.js?v=174"></script>
+  <script src="src/levels/BatukChart.js?v=174"></script>
+  <script src="src/engine/TrackMusic.js?v=174"></script>
+  <script src="src/engine/SceneManager.js?v=174"></script>
+  <script src="src/engine/Game.js?v=174"></script>
+  <script src="src/entities/Entity.js?v=174"></script>
+  <script src="src/entities/Player.js?v=174"></script>
+  <script src="src/entities/Trino.js?v=174"></script>
+  <script src="src/entities/VoidharFinale.js?v=174"></script>
+  <script src="src/entities/BatukBoss.js?v=174"></script>
+  <script src="src/entities/enemies/Enemy.js?v=174"></script>
+  <script src="src/entities/DefeatFrames.js?v=174"></script>
+  <script src="src/entities/enemies/Operador.js?v=174"></script>
+  <script src="src/entities/enemies/Silenciador.js?v=174"></script>
+  <script src="src/entities/enemies/RexVane.js?v=174"></script>
+  <script src="src/levels/PuddleData.js?v=174"></script>
+  <script src="src/levels/OccluderData.js?v=174"></script>
+  <script src="src/levels/Level.js?v=174"></script>
+  <script src="src/levels/Atmosphere.js?v=174"></script>
+  <script src="src/levels/Foreground.js?v=174"></script>
+  <script src="src/levels/LiveBackground.js?v=174"></script>
+  <script src="src/levels/Liquid.js?v=174"></script>
+  <script src="src/levels/Props.js?v=174"></script>
+  <script src="src/levels/Level01.js?v=174"></script>
+  <script src="src/levels/Level02.js?v=174"></script>
+  <script src="src/levels/Level04.js?v=174"></script>
+  <script src="src/levels/Level07.js?v=174"></script>
+  <script src="src/ui/HUD.js?v=174"></script>
+  <script src="src/ui/Modal.js?v=174"></script>
+  <script src="src/ui/Dialogue.js?v=174"></script>
+  <script src="src/ui/DefeatCard.js?v=174"></script>
+  <script src="src/ui/RhythmDuel.js?v=174"></script>
+  <script src="src/scenes/TitleScene.js?v=174"></script>
+  <script src="src/scenes/IntroScene.js?v=174"></script>
+  <script src="src/scenes/GameScene.js?v=174"></script>
+  <script src="src/scenes/GameOverScene.js?v=174"></script>
+  <script src="src/scenes/EndingScene.js?v=174"></script>
+  <script src="src/main.js?v=174"></script>
 </body>
 </html>
