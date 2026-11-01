@@ -46,7 +46,7 @@ class Game {
     // Ya en efectos reducidos y aun así lento (móviles): se baja una vez más la resolución del lienzo para dejar aire al audio
     if (FX.low) {
       if (this.renderScale <= 0.5 || this.renderScale >= 1 || this.lowRes) return;
-      this.lowSlow = frameSeconds > 0.03 ? (this.lowSlow || 0) + Math.min(frameSeconds, 0.25) : Math.max(0, (this.lowSlow || 0) - frameSeconds * 2);
+      this.lowSlow = frameSeconds > 0.022 ? (this.lowSlow || 0) + Math.min(frameSeconds, 0.25) : Math.max(0, (this.lowSlow || 0) - frameSeconds * 2);
       if (this.lowSlow > 3) this.setRenderScale(0.5);
       return;
     }

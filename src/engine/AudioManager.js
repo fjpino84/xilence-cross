@@ -325,10 +325,19 @@ class AudioManager {
     // Tras el compresor: ganancia de compensación y limitador suave (tanh) para que nada pase de 1.0
     const makeup = context.createGain();
     makeup.gain.value = 1.35;
-    const limiter = context.createWaveShaper();
-    limiter.curve = this.buildCurve(1);
     this.master.connect(this.compressor);
     this.compressor.connect(makeup);
+    if (this.isMobile) {
+      // En móviles se ahorra trabajo al hilo de audio: sin limitador de curva (el compresor ya contiene los picos) y sin reverberación
+      makeup.gain.value = 1.1;
+      makeup.connect(context.destination);
+      this.reverbSend = context.createGain(); // nodo suelto: nadie envía a la reverberación en móviles (ver out)
+      this.noiseBuffer = this.buildNoise();
+      this.curves = { soft: this.buildCurve(2.2), hard: this.buildCurve(9) };
+      return;
+    }
+    const limiter = context.createWaveShaper();
+    limiter.curve = this.buildCurve(1);
     makeup.connect(limiter);
     limiter.connect(context.destination);
 
