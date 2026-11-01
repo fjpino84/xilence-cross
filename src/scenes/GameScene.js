@@ -875,17 +875,15 @@ class GameScene {
     { who: 'stage', text: '(Señala el pecho de Batuk.)' },
     { who: 'eco', name: 'ECO', text: 'Te escuché desde otra galaxia. Algo en ti vibra distinto, es especial. ¿Por qué?' },
     { who: 'stage', text: '(Pausa larga.)' },
-    { who: 'batuk', name: 'BATUK', text: '...' },
     { who: 'stage', text: '(Algo cruza su cara — demasiado rápido para leerlo; luego se cierra como una puerta.)' },
-    { who: 'batuk', name: 'BATUK', text: 'Ya nadie es especial.' },
+    { who: 'batuk', name: 'BATUK', text: '¿Alguna vez tocaste como suena en tu propio corazón, o solo robas el de los demás? Ya nadie es especial.' },
     { who: 'stage', text: '(Voz plana, sin rabia — peor que la rabia.)' },
-    { who: 'batuk', name: 'BATUK', text: 'Eso que escuchas... es lo que queda cuando alguien creyó que sí lo era. Y se equivocó.' },
-    { who: 'eco', name: 'ECO', text: '¿Qué te hicieron?' },
-    { who: 'batuk', name: 'BATUK', text: 'Nada que no me haya hecho yo solo.' },
+    { who: 'batuk', name: 'BATUK', text: 'Eso que escuchas... Ritmo vs. Melodía. Orden vs. Libertad, no tiene sentido en este universo.' },
+    { who: 'eco', name: 'ECO', text: '¿Por qué ocultas lo que eres?' },
     { who: 'stage', text: '(Por primera vez se mueve — un paso adelante, lento, definitivo.)', event: 'step' },
-    { who: 'batuk', name: 'BATUK', text: 'Hazte a un lado, chico, no tienes nada que hacer aquí.' },
-    { who: 'eco', name: 'ECO', text: 'No puedo, debo entender.' },
-    { who: 'batuk', name: 'BATUK', text: 'Tú no eres especial. Solo eres un error del pasado, y voy a eliminarlo de raíz.', event: 'summon' },
+    { who: 'batuk', name: 'BATUK', text: 'La pregunta que planteas no tiene una respuesta honesta. Ahora hazte a un lado, chico, no tienes nada que hacer aquí.' },
+    { who: 'eco', name: 'ECO', text: 'Debo entender...' },
+    { who: 'batuk', name: 'BATUK', text: 'Entiende que no eres especial, solo un error. Y te lo voy a demostrar.', event: 'summon' },
   ];
   // Después del combate: Batuk, caído, se levanta y habla de la Orden del Silencio
   static BATUK_EPILOGUE = [
