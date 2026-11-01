@@ -399,7 +399,7 @@ class TitleScene {
     const { COLORS } = CONFIG;
     const x = TitleScene.TEXT_X;
     if (Math.floor(this.time * 2) % 2 === 0) {
-      Draw.rock(ctx, "LET'S ROCK!!", x, 468, {
+      Draw.rock(ctx, "LET'S ROCK!!", x, 468, { title: true,
         size: 62, colors: ['#ffffff', COLORS.YELLOW, '#d06000'], glow: '#ffb000', glowBlur: 20, rim: '#4a2400', tracking: 3,
       });
     }

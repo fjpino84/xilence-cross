@@ -19,7 +19,8 @@
       --red: #ff003c;
       --yellow: #ffe600;
       --purple: #7c3aff;
-      --font: Impact, "Arial Black", sans-serif;
+      --font: Impact, "Arial Black", sans-serif; /* grandes títulos */
+      --comic: 'Bangers', Impact, 'Arial Black', sans-serif; /* resto de textos: la fuente de los diálogos */
     }
 
     * { box-sizing: border-box; }
@@ -32,7 +33,7 @@
       justify-content: center;
       background: var(--navy);
       color: #fff;
-      font-family: var(--font);
+      font-family: var(--comic);
     }
 
     .game-shell {
@@ -59,7 +60,7 @@
       right: 3%;
       bottom: 4%;
       z-index: 6;
-      font-family: var(--font);
+      font-family: var(--comic);
       font-style: italic;
       font-size: clamp(12px, 2.4vh, 22px);
       letter-spacing: 0.06em;
@@ -153,7 +154,7 @@
       border: 0.7vh solid var(--cyan);
       background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.22), rgba(3, 3, 10, 0.62));
       color: #fff;
-      font-family: var(--font);
+      font-family: var(--comic);
       font-style: italic;
       font-size: 3.1vh;
       letter-spacing: 0.04em;
@@ -179,7 +180,7 @@
       border-radius: 50%;
       border: 0.8vh solid currentColor;
       background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.25), rgba(3, 3, 10, 0.6));
-      font-family: var(--font);
+      font-family: var(--comic);
       font-style: italic;
       font-size: 5vh;
       text-shadow: 0 0.3vh 0 #000, 0 0 1vh currentColor;
@@ -213,7 +214,7 @@
       border: 0.5vh solid rgba(255, 255, 255, 0.55);
       background: rgba(3, 3, 10, 0.55);
       color: #fff;
-      font-family: var(--font);
+      font-family: var(--comic);
       font-size: 3.2vh;
       padding: 0;
       opacity: 0.8;
@@ -290,6 +291,7 @@
     }
 
     .modal-title {
+      font-family: var(--font);
       margin: 0 0 14px;
       font-size: 2.9rem;
       font-style: italic;
@@ -319,7 +321,7 @@
 
     .modal-button {
       padding: 11px 28px;
-      font-family: var(--font);
+      font-family: var(--comic);
       font-size: 1.2rem;
       font-style: italic;
       letter-spacing: 0.08em;
@@ -357,7 +359,7 @@
     }
     .modal-stats { display: flex; gap: 12px; justify-content: center; margin: -6px 0 22px; flex-wrap: wrap; }
     .modal-stat { min-width: 110px; padding: 8px 14px; background: rgba(255, 255, 255, 0.06); border: 2px solid #000; outline: 2px solid var(--accent, var(--cyan)); transform: skewX(-8deg); font-family: 'Bangers', Impact, sans-serif; }
-    .modal-stat strong { display: block; font-family: var(--font); font-size: 1.7rem; font-style: italic; color: #fff; text-shadow: 2px 2px 0 #000; }
+    .modal-stat strong { display: block; font-family: var(--comic); font-size: 1.7rem; font-style: italic; color: #fff; text-shadow: 2px 2px 0 #000; }
     .modal-stat span { font-size: 1rem; letter-spacing: 0.12em; text-transform: uppercase; color: #9fb4cc; }
     .modal-hint { margin: 18px 0 0; font-family: 'Bangers', Impact, sans-serif; font-size: 1.1rem; letter-spacing: 0.1em; color: #8da2bd; }
     .modal-overlay--pause { --accent: #00f5ff; background: radial-gradient(circle at 50% 50%, rgba(3, 12, 30, 0.7), rgba(3, 3, 10, 0.92)); backdrop-filter: blur(3px); }
@@ -385,15 +387,15 @@
       text-shadow: 3px 3px 0 #000, 0 0 22px #ff9a00; transform: skewX(-8deg);
     }
     .batuk-card-quote {
-      margin: 0; max-width: 760px; font-family: var(--font); font-size: clamp(16px, 4.2vh, 34px); line-height: 1.35; letter-spacing: 0.03em; color: #f3e6c4;
+      margin: 0; max-width: 760px; font-family: var(--comic); font-size: clamp(16px, 4.2vh, 34px); line-height: 1.35; letter-spacing: 0.03em; color: #f3e6c4;
       text-shadow: 2px 2px 0 #000; animation: cardQuote 1.6s ease-out 0.9s both;
     }
-    .batuk-card-hint { margin: 10px 0 0; font-family: var(--font); font-size: clamp(11px, 2.4vh, 18px); letter-spacing: 0.12em; text-transform: uppercase; color: #9a8a62; animation: cardQuote 1.6s ease-out 2.6s both; }
+    .batuk-card-hint { margin: 10px 0 0; font-family: var(--comic); font-size: clamp(11px, 2.4vh, 18px); letter-spacing: 0.12em; text-transform: uppercase; color: #9a8a62; animation: cardQuote 1.6s ease-out 2.6s both; }
     @keyframes cardIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes cardOut { from { opacity: 1; } to { opacity: 0; } }
     @keyframes cardQuote { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
     .dialogue-skip {
-      position: absolute; right: 3.2%; top: 3.6%; z-index: 7; padding: 7px 16px; font-family: var(--font); font-style: italic; font-size: clamp(11px, 2.2vh, 20px);
+      position: absolute; right: 3.2%; top: 3.6%; z-index: 7; padding: 7px 16px; font-family: var(--comic); font-style: italic; font-size: clamp(11px, 2.2vh, 20px);
       letter-spacing: 0.08em; text-transform: uppercase; color: #fff; background: rgba(3, 3, 10, 0.72); border: 2px solid var(--cyan); box-shadow: 3px 3px 0 #000, 0 0 12px rgba(0, 245, 255, 0.5);
       transform: skewX(-10deg); cursor: pointer;
     }
@@ -408,55 +410,55 @@
   </main>
 
   <!-- Orden de carga: configuración → motor → entidades → niveles → UI → escenas → arranque -->
-  <script src="src/config.js?v=170"></script>
-  <script src="src/engine/Draw.js?v=170"></script>
-  <script src="src/engine/Assets.js?v=170"></script>
-  <script src="src/engine/Sprite.js?v=170"></script>
-  <script src="src/engine/ParticleSystem.js?v=170"></script>
-  <script src="src/engine/SfxData.js?v=170"></script>
-  <script src="src/engine/AudioManager.js?v=170"></script>
-  <script src="src/engine/InputManager.js?v=170"></script>
-  <script src="src/engine/TouchControls.js?v=170"></script>
-  <script src="src/engine/Camera.js?v=170"></script>
-  <script src="src/engine/Collision.js?v=170"></script>
-  <script src="src/engine/Records.js?v=170"></script>
-  <script src="src/engine/DuelMusic.js?v=170"></script>
-  <script src="src/levels/BatukChart.js?v=170"></script>
-  <script src="src/engine/TrackMusic.js?v=170"></script>
-  <script src="src/engine/SceneManager.js?v=170"></script>
-  <script src="src/engine/Game.js?v=170"></script>
-  <script src="src/entities/Entity.js?v=170"></script>
-  <script src="src/entities/Player.js?v=170"></script>
-  <script src="src/entities/Trino.js?v=170"></script>
-  <script src="src/entities/VoidharFinale.js?v=170"></script>
-  <script src="src/entities/BatukBoss.js?v=170"></script>
-  <script src="src/entities/enemies/Enemy.js?v=170"></script>
-  <script src="src/entities/DefeatFrames.js?v=170"></script>
-  <script src="src/entities/enemies/Operador.js?v=170"></script>
-  <script src="src/entities/enemies/Silenciador.js?v=170"></script>
-  <script src="src/entities/enemies/RexVane.js?v=170"></script>
-  <script src="src/levels/PuddleData.js?v=170"></script>
-  <script src="src/levels/OccluderData.js?v=170"></script>
-  <script src="src/levels/Level.js?v=170"></script>
-  <script src="src/levels/Atmosphere.js?v=170"></script>
-  <script src="src/levels/Foreground.js?v=170"></script>
-  <script src="src/levels/LiveBackground.js?v=170"></script>
-  <script src="src/levels/Liquid.js?v=170"></script>
-  <script src="src/levels/Props.js?v=170"></script>
-  <script src="src/levels/Level01.js?v=170"></script>
-  <script src="src/levels/Level02.js?v=170"></script>
-  <script src="src/levels/Level04.js?v=170"></script>
-  <script src="src/levels/Level07.js?v=170"></script>
-  <script src="src/ui/HUD.js?v=170"></script>
-  <script src="src/ui/Modal.js?v=170"></script>
-  <script src="src/ui/Dialogue.js?v=170"></script>
-  <script src="src/ui/DefeatCard.js?v=170"></script>
-  <script src="src/ui/RhythmDuel.js?v=170"></script>
-  <script src="src/scenes/TitleScene.js?v=170"></script>
-  <script src="src/scenes/IntroScene.js?v=170"></script>
-  <script src="src/scenes/GameScene.js?v=170"></script>
-  <script src="src/scenes/GameOverScene.js?v=170"></script>
-  <script src="src/scenes/EndingScene.js?v=170"></script>
-  <script src="src/main.js?v=170"></script>
+  <script src="src/config.js?v=171"></script>
+  <script src="src/engine/Draw.js?v=171"></script>
+  <script src="src/engine/Assets.js?v=171"></script>
+  <script src="src/engine/Sprite.js?v=171"></script>
+  <script src="src/engine/ParticleSystem.js?v=171"></script>
+  <script src="src/engine/SfxData.js?v=171"></script>
+  <script src="src/engine/AudioManager.js?v=171"></script>
+  <script src="src/engine/InputManager.js?v=171"></script>
+  <script src="src/engine/TouchControls.js?v=171"></script>
+  <script src="src/engine/Camera.js?v=171"></script>
+  <script src="src/engine/Collision.js?v=171"></script>
+  <script src="src/engine/Records.js?v=171"></script>
+  <script src="src/engine/DuelMusic.js?v=171"></script>
+  <script src="src/levels/BatukChart.js?v=171"></script>
+  <script src="src/engine/TrackMusic.js?v=171"></script>
+  <script src="src/engine/SceneManager.js?v=171"></script>
+  <script src="src/engine/Game.js?v=171"></script>
+  <script src="src/entities/Entity.js?v=171"></script>
+  <script src="src/entities/Player.js?v=171"></script>
+  <script src="src/entities/Trino.js?v=171"></script>
+  <script src="src/entities/VoidharFinale.js?v=171"></script>
+  <script src="src/entities/BatukBoss.js?v=171"></script>
+  <script src="src/entities/enemies/Enemy.js?v=171"></script>
+  <script src="src/entities/DefeatFrames.js?v=171"></script>
+  <script src="src/entities/enemies/Operador.js?v=171"></script>
+  <script src="src/entities/enemies/Silenciador.js?v=171"></script>
+  <script src="src/entities/enemies/RexVane.js?v=171"></script>
+  <script src="src/levels/PuddleData.js?v=171"></script>
+  <script src="src/levels/OccluderData.js?v=171"></script>
+  <script src="src/levels/Level.js?v=171"></script>
+  <script src="src/levels/Atmosphere.js?v=171"></script>
+  <script src="src/levels/Foreground.js?v=171"></script>
+  <script src="src/levels/LiveBackground.js?v=171"></script>
+  <script src="src/levels/Liquid.js?v=171"></script>
+  <script src="src/levels/Props.js?v=171"></script>
+  <script src="src/levels/Level01.js?v=171"></script>
+  <script src="src/levels/Level02.js?v=171"></script>
+  <script src="src/levels/Level04.js?v=171"></script>
+  <script src="src/levels/Level07.js?v=171"></script>
+  <script src="src/ui/HUD.js?v=171"></script>
+  <script src="src/ui/Modal.js?v=171"></script>
+  <script src="src/ui/Dialogue.js?v=171"></script>
+  <script src="src/ui/DefeatCard.js?v=171"></script>
+  <script src="src/ui/RhythmDuel.js?v=171"></script>
+  <script src="src/scenes/TitleScene.js?v=171"></script>
+  <script src="src/scenes/IntroScene.js?v=171"></script>
+  <script src="src/scenes/GameScene.js?v=171"></script>
+  <script src="src/scenes/GameOverScene.js?v=171"></script>
+  <script src="src/scenes/EndingScene.js?v=171"></script>
+  <script src="src/main.js?v=171"></script>
 </body>
 </html>

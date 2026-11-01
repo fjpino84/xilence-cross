@@ -3,7 +3,7 @@ const Draw = {
   // Texto con contorno negro
   text(ctx, str, x, y, options = {}) {
     const { size = 24, color = '#fff', align = 'left', stroke = '#000', strokeWidth = 5 } = options;
-    ctx.font = `${size}px ${CONFIG.FONT}`;
+    ctx.font = `${size}px ${CONFIG.COMIC_FONT}`;
     ctx.textAlign = align;
     ctx.textBaseline = 'alphabetic';
     ctx.lineJoin = 'round';
@@ -58,7 +58,7 @@ const Draw = {
     } = options;
     const qSize = Math.round(size / 2) * 2; // tamaños cercanos comparten imagen
     const qGlow = glow ? Math.round(glowBlur / 6) * 6 : 0;
-    const key = [str, qSize, align, colors.join(), skew, glow, qGlow, tracking, rim, Math.round(outlineWidth), this.res].join('|');
+    const key = [str, qSize, align, colors.join(), skew, glow, qGlow, tracking, rim, Math.round(outlineWidth), this.res, options.title ? 1 : 0].join('|');
     let entry = this.rockCache.get(key);
     if (!entry) {
       entry = this.buildRock(str, { ...options, size: qSize, glowBlur: qGlow || glowBlur, outlineWidth: outlineWidth * qSize / size });
@@ -78,7 +78,7 @@ const Draw = {
   buildRock(str, options) {
     const { size, align = 'left', tracking = 0, skew = 0.2, glow = null, glowBlur = 14, outlineWidth = size * 0.2 } = options;
     const probe = document.createElement('canvas').getContext('2d');
-    probe.font = size + 'px ' + CONFIG.FONT;
+    probe.font = size + 'px ' + (options.title ? CONFIG.FONT : CONFIG.COMIC_FONT);
     if ('letterSpacing' in probe) probe.letterSpacing = tracking + 'px';
     const width = Math.ceil(probe.measureText(str).width);
     const pad = Math.ceil(outlineWidth * 0.8 + size * 0.15 + (glow ? glowBlur * 1.6 : 0) + 4);
@@ -103,7 +103,7 @@ const Draw = {
     } = options;
     ctx.save();
     ctx.globalAlpha *= alpha;
-    ctx.font = `${size}px ${CONFIG.FONT}`;
+    ctx.font = `${size}px ${options.title ? CONFIG.FONT : CONFIG.COMIC_FONT}`; // title: true = gran título (Impact); el resto usa la fuente de los diálogos
     ctx.textAlign = align;
     ctx.textBaseline = 'alphabetic';
     ctx.lineJoin = 'round';

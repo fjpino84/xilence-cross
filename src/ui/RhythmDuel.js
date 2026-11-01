@@ -938,14 +938,14 @@ class RhythmDuel {
   // Cuenta atrás y ayuda de teclas antes de la primera nota
   renderCountIn(ctx) {
     if (this.state === 'intro') {
-      Draw.rock(ctx, 'DUELO MUSICAL', CONFIG.WIDTH / 2, 250, { size: 40, align: 'center', colors: ['#ffffff', '#00f5ff', '#005e8a'], glow: '#00f5ff', glowBlur: 16, outlineWidth: 8, tracking: 3 });
+      Draw.rock(ctx, 'DUELO MUSICAL', CONFIG.WIDTH / 2, 250, { title: true, size: 40, align: 'center', colors: ['#ffffff', '#00f5ff', '#005e8a'], glow: '#00f5ff', glowBlur: 16, outlineWidth: 8, tracking: 3 });
       return;
     }
     if (this.state !== 'play') return;
     const time = this.songTime;
     const countIn = this.song.countInTime;
     if (time < countIn - (this.song === DuelMusic ? 0.2 : 0)) {
-      Draw.rock(ctx, 'TOCA AL RITMO', CONFIG.WIDTH / 2, 232, { size: 34, align: 'center', colors: ['#ffffff', '#ffe600', '#c46a00'], outlineWidth: 7, tracking: 3 });
+      Draw.rock(ctx, 'TOCA AL RITMO', CONFIG.WIDTH / 2, 232, { title: true, size: 34, align: 'center', colors: ['#ffffff', '#ffe600', '#c46a00'], outlineWidth: 7, tracking: 3 });
       Draw.text(ctx, 'Z  X  C  V   o   ←  ↓  ↑  →', CONFIG.WIDTH / 2, 270, { size: 20, align: 'center', color: '#cfe', strokeWidth: 4 });
       if (time >= 0) {
         if (this.song === DuelMusic) {
@@ -976,7 +976,7 @@ class RhythmDuel {
     ctx.strokeRect(x + 5, y + 5, width - 10, height - 10);
     ctx.shadowBlur = 0;
 
-    Draw.rock(ctx, '¡DUELO GANADO!', CONFIG.WIDTH / 2, y + 52, { size: 32, align: 'center', colors: ['#ffffff', '#00f5ff', '#005e8a'], glow: '#00f5ff', glowBlur: 12, outlineWidth: 6, tracking: 2 });
+    Draw.rock(ctx, '¡DUELO GANADO!', CONFIG.WIDTH / 2, y + 52, { title: true, size: 32, align: 'center', colors: ['#ffffff', '#00f5ff', '#005e8a'], glow: '#00f5ff', glowBlur: 12, outlineWidth: 6, tracking: 2 });
     const rows = [
       ['Perfectos', this.counts.perfect],
       ['Bien', this.counts.good],

@@ -104,7 +104,7 @@ class Dialogue {
   wrap(ctx, text, maxWidth, size, fontOverride = null) {
     const key = `${text}|${maxWidth}|${size}|${fontOverride}`;
     if (this.wrapCache.has(key)) return this.wrapCache.get(key);
-    ctx.font = fontOverride || `${size}px ${CONFIG.FONT}`;
+    ctx.font = fontOverride || `${size}px ${CONFIG.COMIC_FONT}`;
     const lines = [];
     let current = '';
     for (const word of text.split(' ')) {
@@ -272,7 +272,7 @@ class Dialogue {
 
     // Placa de nombre: paralelogramo que sobresale por arriba del panel
     if (hasPortrait) {
-      ctx.font = `24px ${CONFIG.FONT}`;
+      ctx.font = `24px ${CONFIG.COMIC_FONT}`;
       const nameWidth = ctx.measureText(this.line.name).width + 40 + (this.line.name.length - 1) * 2;
       const tagX = textX - 12;
       const tagY = panelY - 14;

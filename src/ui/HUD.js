@@ -439,7 +439,7 @@ class HUD {
     const shake = this.comboPop > 0 ? (Math.random() - 0.5) * 7 * (this.comboPop / 0.2) : 0;
     const [x, y] = [22 + shake, 186 + shake];
 
-    Draw.rock(ctx, tier.word, x, y - 56, {
+    Draw.rock(ctx, tier.word, x, y - 56, { title: true,
       size: 32 * (tier.hits >= 7 ? 1.1 : 1), colors: tier.colors, glow: tier.glow, glowBlur: 12 + tier.hits, rim: '#000', skew: 0.24,
     });
     Draw.rock(ctx, `x${hits}`, x, y + 12, {
@@ -486,10 +486,10 @@ class HUD {
 
     ctx.translate(cx + shake, cy + shake);
     ctx.scale(scale, scale);
-    Draw.rock(ctx, this.levelNumber, 0, -2, {
+    Draw.rock(ctx, this.levelNumber, 0, -2, { title: true,
       size: 70, align: 'center', colors: ['#ffffff', '#00f5ff', '#005e8a'], glow: CONFIG.COLORS.CYAN, glowBlur: 22, rim: '#00323f', tracking: 4,
     });
-    Draw.rock(ctx, this.levelPlace, 0, 32, {
+    Draw.rock(ctx, this.levelPlace, 0, 32, { title: true,
       size: 28, align: 'center', colors: ['#ffffff', '#ffe600', '#c46a00'], glow: '#ffb000', glowBlur: 10, rim: '#3a2000', tracking: 6,
     });
     ctx.restore();
@@ -500,7 +500,7 @@ class HUD {
     if (level.locked || level.completed) return;
     if (Math.floor(this.time * 2.5) % 2 === 0) return;
     const bounce = Math.sin(this.time * 12) * 6;
-    Draw.rock(ctx, '¡AVANZA!', CONFIG.WIDTH - 96 + bounce, CONFIG.HEIGHT / 2 - 40, {
+    Draw.rock(ctx, '¡AVANZA!', CONFIG.WIDTH - 96 + bounce, CONFIG.HEIGHT / 2 - 40, { title: true,
       size: 44, align: 'right', colors: ['#ffffff', '#ffe600', '#d06000'], glow: '#ffb000', glowBlur: 16, rim: '#4a2400',
     });
     // Dos puntas de flecha dibujadas como figuras (las letras ▶ no existen en todos los móviles y salían como cuadrados)

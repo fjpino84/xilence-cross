@@ -26,7 +26,7 @@ const DefeatCard = {
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    Draw.rock(ctx, title, WIDTH / 2, 92, { size: 56, align: 'center', colors: ['#ffffff', '#ffd23a', '#9a5a00'], glow: '#ffb000', glowBlur: 18, outlineWidth: 10, tracking: 3 });
+    Draw.rock(ctx, title, WIDTH / 2, 92, { title: true, size: 56, align: 'center', colors: ['#ffffff', '#ffd23a', '#9a5a00'], glow: '#ffb000', glowBlur: 18, outlineWidth: 10, tracking: 3 });
     Draw.text(ctx, subtitle, WIDTH / 2, 138, { size: 24, align: 'center', color: '#ffe9b0', strokeWidth: 5 });
     if (age > 1.8 && Math.floor(age * 2.5) % 2 === 0) {
       Draw.text(ctx, 'ENTER »', WIDTH / 2, HEIGHT - 22, { size: 24, align: 'center', color: '#ffd23a', strokeWidth: 5 });

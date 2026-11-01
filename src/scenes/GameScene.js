@@ -639,7 +639,7 @@ class GameScene {
     ctx.restore();
 
     const pop = 1 + Math.max(0, 0.3 - callout.age * 2.2);
-    Draw.rock(ctx, callout.text, CONFIG.WIDTH / 2 - (1 - ease) * 420, cy + 25, {
+    Draw.rock(ctx, callout.text, CONFIG.WIDTH / 2 - (1 - ease) * 420, cy + 25, { title: true,
       size: 66 * pop, align: 'center', colors: callout.colors, glow: callout.glow, glowBlur: 24, rim: callout.rim, skew: 0.28, tracking: 3,
     });
     ctx.restore();
@@ -919,8 +919,8 @@ class GameScene {
     { who: 'stage', text: '(Batuk duda un momento.)' },
     { who: 'batuk', name: 'BATUK', text: 'Dispersos. Algunos cedieron como yo. Otros... no sé. Pero hace poco, antes de que me pusieran aquí de guardia...' },
     { who: 'stage', text: '(Baja la voz, como si The Inquietsition pudiera escucharlo.)' },
-    { who: 'batuk', name: 'BATUK', whisper: true, text: 'Vi a alguien. En las estaciones de tren del Sector Meridian — las viejas, las que ya no usa nadie.' },
-    { who: 'batuk', name: 'BATUK', whisper: true, text: 'Una figura que se movía entre los andenes vacíos como si estuviera esperando algo. O a alguien.' },
+    { who: 'batuk', name: 'BATUK', whisper: true, text: 'Yo también he sentido vibraciones que aún laten firmes. En las estaciones de tren del Sector Meridian — las viejas, las que ya no usa nadie.' },
+    { who: 'batuk', name: 'BATUK', whisper: true, text: 'Frecuencias rebotaban entre los andenes vacíos como si estuvieran preparándose para algo... o alguien.' },
     { who: 'batuk', name: 'BATUK', text: 'No vi su cara. Pero la frecuencia...' },
     { who: 'stage', text: '(Se toca el pecho.)' },
     { who: 'batuk', name: 'BATUK', text: 'Era de los nuestros.' },
