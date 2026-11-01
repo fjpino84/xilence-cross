@@ -105,6 +105,16 @@ class GameScene {
       this.enemies.length = 0;
       this.skipRexDialogue = rexShortcut[1] === 'skip';
     }
+    // ?last=1 va a la última escena (la 12): hay que vencer a sus adversarios y luego sigue el cierre con Batuk (presentación, video, diálogo y duelo)
+    if (/[?&]last=1/.test(window.location.search || '')) {
+      for (const group of ['operador', 'batuk', 'final']) Assets.loadGroup(group);
+      const lastWave = this.level.waves.length - 1;
+      this.level.waves.forEach((wave, index) => { if (index < lastWave) { wave.started = true; wave.cleared = true; } });
+      const lastScene = this.level.waves.length; // posición 12 = índice 11
+      this.camera.x = lastScene * Level.TILE_STRIDE;
+      this.player.x = this.level.waves[lastWave].triggerX - 60;
+      this.enemies.length = 0;
+    }
     if (shortcut) {
       this.enemies.length = 0;
       this.startFinale();
