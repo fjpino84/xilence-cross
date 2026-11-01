@@ -25,6 +25,13 @@ class TouchControls {
     const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     const forced = /[?&]touch=1/.test(window.location.search);
     if (coarse || forced) this.enable();
+    // Un toque en cualquier parte equivale a ENTER (avanzar tarjetas y resultados, donde no hay botones a la vista)
+    const tapArea = document.querySelector ? document.querySelector('.game-shell') : null;
+    if (tapArea) tapArea.addEventListener('pointerdown', () => {
+      if (!TouchControls.enabled) return;
+      this.input.virtualDown('confirm');
+      setTimeout(() => this.input.virtualUp('confirm'), 90);
+    });
     // Un dispositivo híbrido (portátil con pantalla táctil) los activa al primer toque
     window.addEventListener('touchstart', () => this.enable(), { once: true, passive: true });
   }

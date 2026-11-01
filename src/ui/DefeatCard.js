@@ -1,7 +1,7 @@
 // Imagen de jefe derrotado, a pantalla completa. Si hubiera una ilustración a pantalla completa ('art') se muestra con un zoom
 // lento; por defecto se compone la escena con la ilustración del jefe de rodillas, sus instrumentos y rayos dorados.
 const DefeatCard = {
-  render(ctx, age, { title = 'BATUK DERROTADO', subtitle = 'Su ritmo se quebró... y una melodía vuelve a sonar.', art = 'batukDefeated' } = {}) {
+  render(ctx, age, { title = 'El ritmo no se detiene,\nes la conciencia dentro de cualquier canción', subtitle = 'Batuk ha sido derrotado', art = 'batukDefeated' } = {}) {
     const { WIDTH, HEIGHT } = CONFIG;
     const fade = Math.min(1, age / 0.9);
     ctx.save();
@@ -26,10 +26,12 @@ const DefeatCard = {
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    Draw.rock(ctx, title, WIDTH / 2, 92, { title: true, size: 56, align: 'center', colors: ['#ffffff', '#ffd23a', '#9a5a00'], glow: '#ffb000', glowBlur: 18, outlineWidth: 10, tracking: 3 });
-    Draw.text(ctx, subtitle, WIDTH / 2, 138, { size: 24, align: 'center', color: '#ffe9b0', strokeWidth: 5 });
+    // El título puede ocupar dos líneas (separadas por un salto)
+    const titleLines = title.split('\n');
+    titleLines.forEach((line, index) => Draw.rock(ctx, line, WIDTH / 2, 70 + index * 52, { title: true, size: titleLines.length > 1 ? 40 : 56, align: 'center', colors: ['#ffffff', '#ffd23a', '#9a5a00'], glow: '#ffb000', glowBlur: 18, outlineWidth: 10, tracking: 3 }));
+    Draw.text(ctx, subtitle, WIDTH / 2, 70 + titleLines.length * 52 + 8, { size: 24, align: 'center', color: '#ffe9b0', strokeWidth: 5 });
     if (age > 1.8 && Math.floor(age * 2.5) % 2 === 0) {
-      Draw.text(ctx, 'ENTER »', WIDTH / 2, HEIGHT - 22, { size: 24, align: 'center', color: '#ffd23a', strokeWidth: 5 });
+      Draw.text(ctx, Draw.advanceHint(), WIDTH / 2, HEIGHT - 22, { size: 24, align: 'center', color: '#ffd23a', strokeWidth: 5 });
     }
     ctx.restore();
   },

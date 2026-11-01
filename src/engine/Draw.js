@@ -1,6 +1,11 @@
 // Utilidades de dibujo compartidas (estilo cel-shading: contornos negros gruesos).
 const Draw = {
   // Texto con contorno negro
+  // Texto para avanzar: en el teléfono no existe la tecla ENTER, se toca la pantalla
+  advanceHint() {
+    return (typeof TouchControls !== 'undefined' && TouchControls.enabled) ? 'TOCA PARA CONTINUAR' : 'ENTER »';
+  },
+
   text(ctx, str, x, y, options = {}) {
     const { size = 24, color = '#fff', align = 'left', stroke = '#000', strokeWidth = 5 } = options;
     ctx.font = `${size}px ${CONFIG.COMIC_FONT}`;
