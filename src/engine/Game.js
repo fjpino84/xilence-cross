@@ -133,6 +133,7 @@ class Game {
       'audio ' + (audio.context ? audio.context.state : 'sin contexto') + '  voces ' + audio.voiceEnds.length + '  sfx ' + (audio.sfx ? 'ok' : 'NO') + '  descartados ' + (audio.dropped || 0) + '  nivel ' + audio.sfxLevel,
       'escena ' + (scene && scene.camera ? Math.floor(scene.camera.x / Level.TILE_STRIDE) + 1 : '-') + '  enemigos ' + (scene && scene.enemies ? scene.enemies.length : '-'),
     ];
+    lines.push('imágenes ' + (Assets.images ? Assets.images.size : 0) + '  fallidas ' + (Assets.failed || 0));
     if (performance.memory) lines.push('memoria ' + (performance.memory.usedJSHeapSize / 1048576).toFixed(0) + ' MB');
     if (window.lastError) lines.push('ERROR ' + window.lastError);
     lines.forEach((line, i) => Draw.text(this.ctx, line, 8, 18 + i * 17, { size: 14, align: 'left', color: '#7dff9a', strokeWidth: 4 }));

@@ -7,13 +7,20 @@ const Assets = {
   // sources: { clave: 'ruta/relativa.png' } → promesa que siempre se resuelve
   loadImages(sources) {
     const loads = Object.entries(sources).map(([key, src]) => new Promise((resolve) => {
-      const image = new Image();
-      image.onload = () => {
-        this.images.set(key, image);
-        resolve();
+      // Si una imagen falla (en móviles con poca memoria puede ocurrir) se reintenta hasta 3 veces antes de rendirse
+      const attempt = (tries) => {
+        const image = new Image();
+        image.onload = () => {
+          this.images.set(key, image);
+          resolve();
+        };
+        image.onerror = () => {
+          if (tries < 3) setTimeout(() => attempt(tries + 1), 400 * (tries + 1));
+          else { this.failed = (this.failed || 0) + 1; resolve(); }
+        };
+        image.src = src + (src.includes('?') ? '&' : '?') + 'v=' + this.version + (tries ? '&r=' + tries : ''); // la versión del juego evita ver imágenes viejas en caché
       };
-      image.onerror = () => resolve();
-      image.src = src + (src.includes('?') ? '&' : '?') + 'v=' + this.version; // la versión del juego evita ver imágenes viejas en caché
+      attempt(0);
     }));
     return Promise.all(loads);
   },
