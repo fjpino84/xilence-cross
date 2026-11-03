@@ -3,7 +3,7 @@
 // El navegador exige un gesto del usuario antes de sonar: unlock() se llama en la primera pulsación.
 class AudioManager {
   static MASTER_VOLUME = 0.8;
-  static MOBILE_TRIM = 0.62; // recorte de los efectos en móviles (ver masterLevel)
+  static MOBILE_TRIM = 0.8; // recorte de los efectos en móviles (ver masterLevel)
   static MUSIC_VOLUME = 0.3;
   static MUSIC_DUCKED = 0.1; // volumen bajo mientras el juego está en pausa
   static SFX_FILE = 'assets/audio/sfx.wav';
@@ -356,8 +356,12 @@ class AudioManager {
       makeup.gain.value = 1.0;
       const mobileLimiter = context.createWaveShaper();
       mobileLimiter.curve = this.buildCurve(1);
+      // Techo de los efectos: 0.62. La canción llega hasta ~0.3 y se suma en el altavoz; entre las dos no pasan de 1.0 (antes saturaban)
+      const ceiling = context.createGain();
+      ceiling.gain.value = 0.62;
       makeup.connect(mobileLimiter);
-      mobileLimiter.connect(context.destination);
+      mobileLimiter.connect(ceiling);
+      ceiling.connect(context.destination);
       this.reverbSend = context.createGain(); // nodo suelto: nadie envía a la reverberación en móviles (ver out)
       this.noiseBuffer = this.buildNoise();
       this.curves = { soft: this.buildCurve(2.2), hard: this.buildCurve(9) };
