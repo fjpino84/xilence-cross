@@ -3,6 +3,7 @@
 // El navegador exige un gesto del usuario antes de sonar: unlock() se llama en la primera pulsación.
 class AudioManager {
   static MASTER_VOLUME = 0.8;
+  static MOBILE_TRIM = 0.62; // recorte de los efectos en móviles (ver masterLevel)
   static MUSIC_VOLUME = 0.3;
   static MUSIC_DUCKED = 0.1; // volumen bajo mientras el juego está en pausa
   static SFX_FILE = 'assets/audio/sfx.wav';
@@ -296,6 +297,11 @@ class AudioManager {
 
   // ---------------------------------------------------------------- motor de efectos
 
+  // Volumen de la bandeja de efectos. En móviles es menor: la canción y los efectos se suman en el altavoz y por encima de 1.0 se saturan
+  masterLevel(level = this.sfxLevel) {
+    return AudioManager.MASTER_VOLUME * level * (this.isMobile ? AudioManager.MOBILE_TRIM : 1);
+  }
+
   get ready() { return this.context !== null && !this.muted; }
 
   // En móviles se pide un búfer de audio grande ('playback'): un poco más de retardo, pero sin cortes ni chasquidos
@@ -330,7 +336,7 @@ class AudioManager {
     this.context = context;
     this.loadSamples();
     this.master = context.createGain();
-    this.master.gain.value = this.muted ? 0 : AudioManager.MASTER_VOLUME * this.sfxLevel;
+    this.master.gain.value = this.muted ? 0 : this.masterLevel();
 
     // Compresor/limitador: deja apilar capas fuertes sin que sature
     this.compressor = context.createDynamicsCompressor();
@@ -345,9 +351,13 @@ class AudioManager {
     this.master.connect(this.compressor);
     this.compressor.connect(makeup);
     if (this.isMobile) {
-      // En móviles se ahorra trabajo al hilo de audio: sin limitador de curva (el compresor ya contiene los picos) y sin reverberación
-      makeup.gain.value = 1.1;
-      makeup.connect(context.destination);
+      // En móviles se ahorra trabajo al hilo de audio: sin reverberación
+      // y el limitador de curva se mantiene: sin él los picos pasaban de 1.0 y el altavoz los saturaba
+      makeup.gain.value = 1.0;
+      const mobileLimiter = context.createWaveShaper();
+      mobileLimiter.curve = this.buildCurve(1);
+      makeup.connect(mobileLimiter);
+      mobileLimiter.connect(context.destination);
       this.reverbSend = context.createGain(); // nodo suelto: nadie envía a la reverberación en móviles (ver out)
       this.noiseBuffer = this.buildNoise();
       this.curves = { soft: this.buildCurve(2.2), hard: this.buildCurve(9) };
@@ -511,12 +521,12 @@ class AudioManager {
   // Nivel de los efectos (1 = normal). En el duelo bajan para que la canción sea lo principal
   setSfxLevel(level) {
     this.sfxLevel = level;
-    if (this.master) this.master.gain.value = this.muted ? 0 : AudioManager.MASTER_VOLUME * level;
+    if (this.master) this.master.gain.value = this.muted ? 0 : this.masterLevel(level);
   }
 
   toggleMute() {
     this.muted = !this.muted;
-    if (this.master) this.master.gain.value = this.muted ? 0 : AudioManager.MASTER_VOLUME * this.sfxLevel;
+    if (this.master) this.master.gain.value = this.muted ? 0 : this.masterLevel();
     if (this.music) this.music.muted = this.muted;
     return this.muted;
   }

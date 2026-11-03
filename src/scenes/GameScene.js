@@ -1381,6 +1381,7 @@ class GameScene {
   // Etapa 2 (móviles): terminó el último combate. Se libera lo de los adversarios y las escenas anteriores y se carga solo lo de Batuk
   startLoadStage2(then) {
     this.finale.gating = true;
+    this.game.audio.pauseMusic(true, 0.6); // la carga va en silencio
     this.runLoadGate('Preparando el combate con Batuk', async (setProgress) => {
       Assets.unloadGroup('rex');
       Assets.unloadGroup('operador');
@@ -1398,7 +1399,7 @@ class GameScene {
           const done = () => resolve();
           video.addEventListener('canplay', done, { once: true });
           video.addEventListener('error', done, { once: true });
-          setTimeout(done, 15000);
+          setTimeout(done, 3000); // iPhone no precarga video hasta el toque: no se espera más de 3 s
         });
       }
       setProgress(1);
