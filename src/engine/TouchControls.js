@@ -195,7 +195,8 @@ class TouchControls {
       pad.type = 'button';
       pad.textContent = keys[lane];
       pad.style.color = colors[lane];
-      pad.style.left = 'calc(50% + ' + (lane - 1.5) * (TouchControls.neckMode ? 20.8 : 20) + 'vh)'; // en modo mástil coincide con el ancho de cada carril
+      if (TouchControls.neckMode) pad.style.left = lane * 25 + '%'; // en modo mástil cada pad ocupa un cuarto del ancho de la pantalla
+      else pad.style.left = 'calc(50% + ' + (lane - 1.5) * 20 + 'vh)';
       this.bindHold(pad, 'lane' + lane);
     }
     this.duelLayer.addEventListener('contextmenu', (event) => event.preventDefault());
