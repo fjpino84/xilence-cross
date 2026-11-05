@@ -23,6 +23,13 @@ class RhythmDuel {
   // scene: GameScene; boss: el jefe en pantalla (VoidharFinale); onWin: se llama al cerrar la pantalla de resultados
   constructor(scene, boss, onWin, { travel = RhythmDuel.TRAVEL } = {}) {
     this.travel = travel;
+    // Modo mástil (beta, ?neck=1): el teléfono se sostiene como el mástil de una guitarra. La pista se acorta y los pads táctiles
+    // pasan a ser cuatro botones altos y anchos, uno por dedo
+    this.neck = TouchControls.neckMode;
+    this.top = this.neck ? 84 : RhythmDuel.TOP;
+    this.hit = this.neck ? 318 : RhythmDuel.HIT;
+    this.laneMin = this.neck ? 56 : 50;
+    this.laneMax = this.neck ? 112 : 100;
     this.scene = scene;
     this.game = scene.game;
     this.player = scene.player;
@@ -271,8 +278,8 @@ class RhythmDuel {
   hitEffects(lane, perfect) {
     const color = RhythmDuel.LANE_COLORS[lane];
     const camera = this.scene.camera;
-    const x = camera.x + RhythmDuel.CX + (lane - 1.5) * 100;
-    const y = RhythmDuel.HIT;
+    const x = camera.x + RhythmDuel.CX + (lane - 1.5) * this.laneMax;
+    const y = this.hit;
     this.scene.particles.burst({ x, y, count: perfect ? 14 : 8, speed: [140, 460], angle: [-Math.PI * 0.95, -Math.PI * 0.05], life: [0.15, 0.4], size: [2, 4.2], colors: [color, '#ffffff'], type: 'spark', drag: 2 });
     this.scene.particles.add({ type: 'ring', x, y, size: 8, sizeEnd: perfect ? 70 : 46, life: 0.3, color, width: 4 });
   }
@@ -346,9 +353,10 @@ class RhythmDuel {
   // Perspectiva lineal: la posición en pantalla depende del tiempo en línea recta, así que las notas cruzan la pista
   // siempre a la misma velocidad (depth: 0 = arriba, 1 = línea de aciertos)
   lanePoint(lane, depth) {
-    const { TOP, HIT, CX } = RhythmDuel;
+    const { CX } = RhythmDuel;
+    const { top: TOP, hit: HIT } = this;
     const y = TOP + (HIT - TOP) * depth;
-    const width = 50 + 50 * depth;
+    const width = this.laneMin + (this.laneMax - this.laneMin) * depth;
     return { x: CX + (lane - 1.5) * width, y, scale: width / 100, width };
   }
 
@@ -411,7 +419,7 @@ class RhythmDuel {
   }
 
   renderHighway(ctx, pulse) {
-    const { TOP, HIT } = RhythmDuel;
+    const { top: TOP, hit: HIT } = this;
     const bottomDepth = (HIT + 36 - TOP) / (HIT - TOP);
     const topL = this.lanePoint(-0.5, 0);
     const topR = this.lanePoint(3.5, 0);
@@ -690,7 +698,7 @@ class RhythmDuel {
   renderX10(ctx) {
     const flash = this.x10Flash || 0;
     if (flash <= 0.01) return;
-    const { TOP, HIT } = RhythmDuel;
+    const { top: TOP, hit: HIT } = this;
     const progress = 1 - flash; // 0 → 1 a lo largo de la animación
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -877,11 +885,11 @@ class RhythmDuel {
         ctx.fillRect(side < 0 ? 0 : CONFIG.WIDTH - 230, 0, 230, CONFIG.HEIGHT);
       }
       // Luz bajo la pista
-      const floor = ctx.createRadialGradient(CONFIG.WIDTH / 2, RhythmDuel.HIT + 30, 20, CONFIG.WIDTH / 2, RhythmDuel.HIT + 30, 330);
+      const floor = ctx.createRadialGradient(CONFIG.WIDTH / 2, this.hit + 30, 20, CONFIG.WIDTH / 2, this.hit + 30, 330);
       floor.addColorStop(0, `rgba(${style.rail}, ${0.2 + 0.1 * this.tier + 0.15 * pulse})`);
       floor.addColorStop(1, `rgba(${style.rail}, 0)`);
       ctx.fillStyle = floor;
-      ctx.fillRect(0, RhythmDuel.HIT - 300, CONFIG.WIDTH, 420);
+      ctx.fillRect(0, this.hit - 300, CONFIG.WIDTH, 420);
     }
 
     // Rayos que recorren los bordes de la pista (a partir de ×3), más frecuentes en leyenda
@@ -930,7 +938,7 @@ class RhythmDuel {
       const point = this.lanePoint(Math.min(3, Math.max(0, pop.lane)), 1);
       ctx.save();
       ctx.globalAlpha *= 1 - t * t;
-      Draw.text(ctx, pop.text, pop.lane === 1.5 ? RhythmDuel.CX : point.x, (pop.lane === 1.5 ? RhythmDuel.HIT - 170 : RhythmDuel.HIT - 52) - t * 36, {
+      Draw.text(ctx, pop.text, pop.lane === 1.5 ? RhythmDuel.CX : point.x, (pop.lane === 1.5 ? this.hit - 170 : this.hit - 52) - t * 36, {
         size: (pop.size || 24) + (1 - t) * 8, align: 'center', color: pop.color, strokeWidth: 5,
       });
       ctx.restore();

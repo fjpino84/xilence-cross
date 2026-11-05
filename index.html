@@ -190,6 +190,8 @@
       pointer-events: auto;
       touch-action: none;
     }
+    /* Modo mástil (beta): botones altos que ocupan la franja inferior, uno bajo cada carril */
+    .touch-duel.neck .touch-pad { width: 20.2vh; height: 31vh; bottom: calc(1vh + env(safe-area-inset-bottom, 0px)); border-radius: 2.4vh; font-size: 7vh; }
     .touch-pad.pressed { opacity: 1; background: currentColor; color: #000; }
 
     .touch-button.pressed {
@@ -420,55 +422,55 @@
   </main>
 
   <!-- Orden de carga: configuración → motor → entidades → niveles → UI → escenas → arranque -->
-  <script src="src/config.js?v=177"></script>
-  <script src="src/engine/Draw.js?v=177"></script>
-  <script src="src/engine/Assets.js?v=177"></script>
-  <script src="src/engine/Sprite.js?v=177"></script>
-  <script src="src/engine/ParticleSystem.js?v=177"></script>
-  <script src="src/engine/SfxData.js?v=177"></script>
-  <script src="src/engine/AudioManager.js?v=177"></script>
-  <script src="src/engine/InputManager.js?v=177"></script>
-  <script src="src/engine/TouchControls.js?v=177"></script>
-  <script src="src/engine/Camera.js?v=177"></script>
-  <script src="src/engine/Collision.js?v=177"></script>
-  <script src="src/engine/Records.js?v=177"></script>
-  <script src="src/engine/DuelMusic.js?v=177"></script>
-  <script src="src/levels/BatukChart.js?v=177"></script>
-  <script src="src/engine/TrackMusic.js?v=177"></script>
-  <script src="src/engine/SceneManager.js?v=177"></script>
-  <script src="src/engine/Game.js?v=177"></script>
-  <script src="src/entities/Entity.js?v=177"></script>
-  <script src="src/entities/Player.js?v=177"></script>
-  <script src="src/entities/Trino.js?v=177"></script>
-  <script src="src/entities/VoidharFinale.js?v=177"></script>
-  <script src="src/entities/BatukBoss.js?v=177"></script>
-  <script src="src/entities/enemies/Enemy.js?v=177"></script>
-  <script src="src/entities/DefeatFrames.js?v=177"></script>
-  <script src="src/entities/enemies/Operador.js?v=177"></script>
-  <script src="src/entities/enemies/Silenciador.js?v=177"></script>
-  <script src="src/entities/enemies/RexVane.js?v=177"></script>
-  <script src="src/levels/PuddleData.js?v=177"></script>
-  <script src="src/levels/OccluderData.js?v=177"></script>
-  <script src="src/levels/Level.js?v=177"></script>
-  <script src="src/levels/Atmosphere.js?v=177"></script>
-  <script src="src/levels/Foreground.js?v=177"></script>
-  <script src="src/levels/LiveBackground.js?v=177"></script>
-  <script src="src/levels/Liquid.js?v=177"></script>
-  <script src="src/levels/Props.js?v=177"></script>
-  <script src="src/levels/Level01.js?v=177"></script>
-  <script src="src/levels/Level02.js?v=177"></script>
-  <script src="src/levels/Level04.js?v=177"></script>
-  <script src="src/levels/Level07.js?v=177"></script>
-  <script src="src/ui/HUD.js?v=177"></script>
-  <script src="src/ui/Modal.js?v=177"></script>
-  <script src="src/ui/Dialogue.js?v=177"></script>
-  <script src="src/ui/DefeatCard.js?v=177"></script>
-  <script src="src/ui/RhythmDuel.js?v=177"></script>
-  <script src="src/scenes/TitleScene.js?v=177"></script>
-  <script src="src/scenes/IntroScene.js?v=177"></script>
-  <script src="src/scenes/GameScene.js?v=177"></script>
-  <script src="src/scenes/GameOverScene.js?v=177"></script>
-  <script src="src/scenes/EndingScene.js?v=177"></script>
-  <script src="src/main.js?v=177"></script>
+  <script src="src/config.js?v=178"></script>
+  <script src="src/engine/Draw.js?v=178"></script>
+  <script src="src/engine/Assets.js?v=178"></script>
+  <script src="src/engine/Sprite.js?v=178"></script>
+  <script src="src/engine/ParticleSystem.js?v=178"></script>
+  <script src="src/engine/SfxData.js?v=178"></script>
+  <script src="src/engine/AudioManager.js?v=178"></script>
+  <script src="src/engine/InputManager.js?v=178"></script>
+  <script src="src/engine/TouchControls.js?v=178"></script>
+  <script src="src/engine/Camera.js?v=178"></script>
+  <script src="src/engine/Collision.js?v=178"></script>
+  <script src="src/engine/Records.js?v=178"></script>
+  <script src="src/engine/DuelMusic.js?v=178"></script>
+  <script src="src/levels/BatukChart.js?v=178"></script>
+  <script src="src/engine/TrackMusic.js?v=178"></script>
+  <script src="src/engine/SceneManager.js?v=178"></script>
+  <script src="src/engine/Game.js?v=178"></script>
+  <script src="src/entities/Entity.js?v=178"></script>
+  <script src="src/entities/Player.js?v=178"></script>
+  <script src="src/entities/Trino.js?v=178"></script>
+  <script src="src/entities/VoidharFinale.js?v=178"></script>
+  <script src="src/entities/BatukBoss.js?v=178"></script>
+  <script src="src/entities/enemies/Enemy.js?v=178"></script>
+  <script src="src/entities/DefeatFrames.js?v=178"></script>
+  <script src="src/entities/enemies/Operador.js?v=178"></script>
+  <script src="src/entities/enemies/Silenciador.js?v=178"></script>
+  <script src="src/entities/enemies/RexVane.js?v=178"></script>
+  <script src="src/levels/PuddleData.js?v=178"></script>
+  <script src="src/levels/OccluderData.js?v=178"></script>
+  <script src="src/levels/Level.js?v=178"></script>
+  <script src="src/levels/Atmosphere.js?v=178"></script>
+  <script src="src/levels/Foreground.js?v=178"></script>
+  <script src="src/levels/LiveBackground.js?v=178"></script>
+  <script src="src/levels/Liquid.js?v=178"></script>
+  <script src="src/levels/Props.js?v=178"></script>
+  <script src="src/levels/Level01.js?v=178"></script>
+  <script src="src/levels/Level02.js?v=178"></script>
+  <script src="src/levels/Level04.js?v=178"></script>
+  <script src="src/levels/Level07.js?v=178"></script>
+  <script src="src/ui/HUD.js?v=178"></script>
+  <script src="src/ui/Modal.js?v=178"></script>
+  <script src="src/ui/Dialogue.js?v=178"></script>
+  <script src="src/ui/DefeatCard.js?v=178"></script>
+  <script src="src/ui/RhythmDuel.js?v=178"></script>
+  <script src="src/scenes/TitleScene.js?v=178"></script>
+  <script src="src/scenes/IntroScene.js?v=178"></script>
+  <script src="src/scenes/GameScene.js?v=178"></script>
+  <script src="src/scenes/GameOverScene.js?v=178"></script>
+  <script src="src/scenes/EndingScene.js?v=178"></script>
+  <script src="src/main.js?v=178"></script>
 </body>
 </html>

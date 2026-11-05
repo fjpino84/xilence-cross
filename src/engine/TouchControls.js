@@ -3,6 +3,7 @@
 class TouchControls {
   static enabled = false; // lo consultan el HUD y el título para mostrar la ayuda adecuada
   static STICK_DEAD = 0.28;
+  static neckMode = typeof window !== 'undefined' && /[?&]neck=1/.test(window.location.search || ''); // beta: duelo con el teléfono como mástil
 
   // Botones: acción, texto, tamaño y posición en unidades de alto de pantalla (vh) desde la esquina inferior derecha
   static BUTTONS = [
@@ -185,7 +186,7 @@ class TouchControls {
 
   // --- Pads del duelo musical: cuatro círculos grandes bajo la pista, uno por carril ---
   buildDuelPads() {
-    this.duelLayer = this.element('div', 'touch-duel', this.shell);
+    this.duelLayer = this.element('div', 'touch-duel' + (TouchControls.neckMode ? ' neck' : ''), this.shell);
     this.duelLayer.setAttribute('aria-hidden', 'true');
     const colors = ['#00f5ff', '#ffe600', '#ff003c', '#9b6bff'];
     const keys = ['Z', 'X', 'C', 'V'];
@@ -194,7 +195,7 @@ class TouchControls {
       pad.type = 'button';
       pad.textContent = keys[lane];
       pad.style.color = colors[lane];
-      pad.style.left = 'calc(50% + ' + (lane - 1.5) * 20 + 'vh)';
+      pad.style.left = 'calc(50% + ' + (lane - 1.5) * (TouchControls.neckMode ? 20.8 : 20) + 'vh)'; // en modo mástil coincide con el ancho de cada carril
       this.bindHold(pad, 'lane' + lane);
     }
     this.duelLayer.addEventListener('contextmenu', (event) => event.preventDefault());
